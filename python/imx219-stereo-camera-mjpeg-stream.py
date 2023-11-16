@@ -3,12 +3,14 @@
 # Based on https://gist.github.com/misaelnieto/2409785
 # Waveshare IMX219-83 CSI Stereo Camera: https://www.waveshare.com/wiki/IMX219-83_Stereo_Camera
 # To add cameras overlays modyfy 'fdtoverlays' property of '/boot/firmware/extlinux/extlinux.conf' with:
-# fdtoverlays /overlays/BBAI64-CSI0-imx219.dtbo /overlays/BBAI64-CSI1-imx219.dtbo
-# Get TI Drivers:
+#   fdtoverlays /overlays/BBAI64-CSI0-imx219.dtbo /overlays/BBAI64-CSI1-imx219.dtbo
+# and reboot
+# Get TI Image Signal Processing GStreamer drivers:
 #   wget https://github.com/Hypnotriod/bbai64/raw/master/imaging.zip
-#   sudo unzip imaging.zip -d opt/
-# Launch script with sudo ./imx219-stereo-camera-mjpeg-stream.py
-# To view stereo camera stream connect with browser to http://{hostname}:{appport} ex: http://192.168.7.2:1337
+#   sudo unzip imaging.zip -d /opt/
+# Launch script with:
+#   sudo ./imx219-stereo-camera-mjpeg-stream.py
+# To view stereo camera stream connect with browser to http://hostname:port ex: http://192.168.7.2:1337
 
 import os
 import time
