@@ -1,0 +1,20 @@
+{
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "sudo",
+            "args": [
+                "./python/imx219-stereo-camera-mjpeg-stream.py"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "clear": true
+            }
+        },
+    ]
+}

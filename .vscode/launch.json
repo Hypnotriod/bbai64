@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against 192.168.7.2:1337",
+            "url": "http://192.168.7.2:1337",
+            "webRoot": "${workspaceFolder}"
+        }
+    ]
+}

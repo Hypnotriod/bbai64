@@ -26,11 +26,13 @@ from socketserver import ThreadingMixIn
 APPLICATION_WEB_PORT = 1337
 CAMERA_STREAM_1_PORT = 9990
 CAMERA_STREAM_2_PORT = 9991
-JPEG_QUALITY = 85 # 0 - 100
-CAMERA_WIDTH = 640
-CAMERA_HEIGHT = 480
-# CAMERA_WIDTH = 1920
-# CAMERA_HEIGHT = 1080
+# JPEG_QUALITY = 85 # 0 - 100
+JPEG_QUALITY = 50 # 0 - 100
+# CAMERA_WIDTH = 640
+# CAMERA_HEIGHT = 480
+CAMERA_WIDTH = 1920
+CAMERA_HEIGHT = 1080
+DO_RESCALE = True
 RESCALE_WIDTH = 1280
 RESCALE_HEIGHT = 740
 
@@ -142,8 +144,10 @@ class StereoCameraApp(object):
     def start_camera1(self, port):
         time.sleep(0.2)
         os.system(f"media-ctl -d 0 --set-v4l2 '\"imx219 6-0010\":0[fmt:SRGGB8_1X8/{CAMERA_WIDTH}x{CAMERA_HEIGHT}]'")
-        # cmd = f"gst-launch-1.0 v4l2src device=/dev/video2 ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev2 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7 ! videoscale method=0 add-borders=false ! video/x-raw,width={RESCALE_WIDTH},height={RESCALE_HEIGHT} ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"
-        cmd = f"gst-launch-1.0 v4l2src device=/dev/video2 ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev2 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7 ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"
+        if DO_RESCALE:
+            cmd = f"gst-launch-1.0 v4l2src device=/dev/video2 ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev2 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7 ! decodebin ! videoscale method=0 add-borders=false ! video/x-raw,width={RESCALE_WIDTH},height={RESCALE_HEIGHT} ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"
+        else:
+            cmd = f"gst-launch-1.0 v4l2src device=/dev/video2 ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev2 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7 ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"
         for line in self.execute(cmd):
             print(line, end="")
 
@@ -151,8 +155,10 @@ class StereoCameraApp(object):
     def start_camera2(self, port):
         time.sleep(0.2)
         os.system(f"media-ctl -d 1 --set-v4l2 '\"imx219 4-0010\":0[fmt:SRGGB8_1X8/{CAMERA_WIDTH}x{CAMERA_HEIGHT}]'")
-        # cmd = f"gst-launch-1.0 v4l2src device=/dev/video18 ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev5 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7 ! videoscale method=0 add-borders=false ! video/x-raw,width={RESCALE_WIDTH},height={RESCALE_HEIGHT} ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"
-        cmd = f"gst-launch-1.0 v4l2src device=/dev/video18 ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev5 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7 ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"
+        if DO_RESCALE:
+            cmd = f"gst-launch-1.0 v4l2src device=/dev/video18 ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev5 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7 ! decodebin ! videoscale method=0 add-borders=false ! video/x-raw,width={RESCALE_WIDTH},height={RESCALE_HEIGHT} ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"
+        else:
+            cmd = f"gst-launch-1.0 v4l2src device=/dev/video18 ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev5 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7 ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"
         for line in self.execute(cmd):
             print(line, end="")
 
