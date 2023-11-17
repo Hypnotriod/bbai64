@@ -29,15 +29,10 @@ CAMERA_STREAM_2_PORT = 9991
 JPEG_QUALITY = 85 # 0 - 100
 CAMERA_WIDTH = 640
 CAMERA_HEIGHT = 480
-#CAMERA_WIDTH = 1920
-#CAMERA_HEIGHT = 1080
-# Not working resolutions:
-#CAMERA_WIDTH = 320
-#CAMERA_HEIGHT = 240
-#CAMERA_WIDTH = 1280
-#CAMERA_HEIGHT = 720
-#CAMERA_WIDTH = 1640
-#CAMERA_HEIGHT = 1232
+# CAMERA_WIDTH = 1920
+# CAMERA_HEIGHT = 1080
+RESCALE_WIDTH = 1280
+RESCALE_HEIGHT = 740
 
 SENSOR_ISP_DRIVERS_PATH = "/opt/imaging/imx219/"
 SENSOR_NAME = "SENSOR_SONY_IMX219_RPI"
@@ -107,7 +102,7 @@ class StereoCameraApp(object):
             ])
             return iter([ERROR_404.encode()])
     
-    def launch(self, width, height):
+    def launch(self):
         print("Launch input stream thread camera 1")
         t1 = Thread(target=self.input_loop, args=[self.stream1_queues, CAMERA_STREAM_1_PORT])
         t1.setDaemon(True)
@@ -119,12 +114,12 @@ class StereoCameraApp(object):
         t2.start()
         
         print("Launch camera 1")
-        t3 = Thread(target=self.start_camera1, args=[width, height, CAMERA_STREAM_1_PORT])
+        t3 = Thread(target=self.start_camera1, args=[CAMERA_STREAM_1_PORT])
         t3.setDaemon(True)
         t3.start()
         
         print("Launch camera 2")
-        t4 = Thread(target=self.start_camera2, args=[width, height, CAMERA_STREAM_2_PORT])
+        t4 = Thread(target=self.start_camera2, args=[CAMERA_STREAM_2_PORT])
         t4.setDaemon(True)
         t4.start()
 
@@ -144,17 +139,19 @@ class StereoCameraApp(object):
             queues.remove(q)
 
     # CSI0 Right Camera
-    def start_camera1(self, width, height, port):
+    def start_camera1(self, port):
         time.sleep(0.2)
-        os.system(f"media-ctl -d 0 --set-v4l2 '\"imx219 6-0010\":0[fmt:SRGGB8_1X8/{width}x{height}]'")
-        for line in self.execute(f"gst-launch-1.0 v4l2src device=/dev/video2 ! video/x-bayer, width={width}, height={height}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev2 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{width}x{height}.bin format-msb=7 ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"):
+        os.system(f"media-ctl -d 0 --set-v4l2 '\"imx219 6-0010\":0[fmt:SRGGB8_1X8/{CAMERA_WIDTH}x{CAMERA_HEIGHT}]'")
+        # for line in self.execute(f"gst-launch-1.0 v4l2src device=/dev/video2 ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev2 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7 ! videoscale method=0 add-borders=false ! video/x-raw,width={RESCALE_WIDTH},height={RESCALE_HEIGHT} ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"):
+        for line in self.execute(f"gst-launch-1.0 v4l2src device=/dev/video2 ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev2 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7 ! videoconvert ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"):
             print(line, end="")
 
     # CSI1 Left Camera
-    def start_camera2(self, width, height, port):
+    def start_camera2(self, port):
         time.sleep(0.2)
-        os.system(f"media-ctl -d 1 --set-v4l2 '\"imx219 4-0010\":0[fmt:SRGGB8_1X8/{width}x{height}]'")
-        for line in self.execute(f"gst-launch-1.0 v4l2src device=/dev/video18 ! video/x-bayer, width={width}, height={height}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev5 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{width}x{height}.bin format-msb=7 ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"):
+        os.system(f"media-ctl -d 1 --set-v4l2 '\"imx219 4-0010\":0[fmt:SRGGB8_1X8/{CAMERA_WIDTH}x{CAMERA_HEIGHT}]'")
+        # for line in self.execute(f"gst-launch-1.0 v4l2src device=/dev/video18 ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev5 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7 ! videoscale method=0 add-borders=false ! video/x-raw,width={RESCALE_WIDTH},height={RESCALE_HEIGHT} ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"):
+        for line in self.execute(f"gst-launch-1.0 v4l2src device=/dev/video18 ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev5 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7 ! videoconvert ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"):
             print(line, end="")
 
     def input_loop(self, queues, port):
@@ -193,7 +190,7 @@ if __name__ == "__main__":
     app = StereoCameraApp()
     print("Launching camera server on port", APPLICATION_WEB_PORT)
     httpd = create_server("", APPLICATION_WEB_PORT, app)
-    app.launch(CAMERA_WIDTH, CAMERA_HEIGHT)
+    app.launch()
     try:
         print("Httpd serve forever")
         httpd.serve_forever()
