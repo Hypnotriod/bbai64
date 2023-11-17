@@ -30,13 +30,6 @@ CAMERA_HEIGHT = 480
 SENSOR_ISP_DRIVERS_PATH = "/opt/imaging/imx219/"
 SENSOR_NAME = "SENSOR_SONY_IMX219_RPI"
 
-class CameraWSGIServer(ThreadingMixIn, WSGIServer):
-    pass
-
-def create_server(host, port, app, server_class=CameraWSGIServer,
-        handler_class=WSGIRequestHandler):
-    return make_server(host, port, app, server_class, handler_class)
-
 INDEX_PAGE = """
 <html>
 <head>
@@ -79,7 +72,6 @@ ERROR_404 = """
 </html>
 """
 
-
 class IPCameraApp(object):
     stream1Queues = []
     stream2Queues = []
@@ -101,7 +93,7 @@ class IPCameraApp(object):
                 ("Content-Length", str(len(ERROR_404)))
             ])
             return iter([ERROR_404.encode()])
-
+    
     def stream(self, start_response, queues):
         start_response('200 OK', [('Content-type', 'multipart/x-mixed-replace; boundary=--spionisto')])
         q = Queue()
@@ -113,7 +105,6 @@ class IPCameraApp(object):
                 if q in queues:
                     queues.remove(q)
                 return
-
 
 def input_loop(queues, port):
     sock = socket()
@@ -144,9 +135,13 @@ def start_camera2(width, height, port):
     os.system(f'media-ctl -d 1 --set-v4l2 \'"imx219 4-0010":0[fmt:SRGGB8_1X8/{width}x{height}]\'')
     os.system(f'sudo gst-launch-1.0 v4l2src device=/dev/video18 ! video/x-bayer, width={width}, height={height}, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev5 sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{width}x{height}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{width}x{height}.bin format-msb=7 ! jpegenc ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}')
 
-if __name__ == '__main__':
+class CameraWSGIServer(ThreadingMixIn, WSGIServer):
+    pass
 
-    #Launch an instance of wsgi server
+def create_server(host, port, app, server_class=CameraWSGIServer, handler_class=WSGIRequestHandler):
+    return make_server(host, port, app, server_class, handler_class)
+
+if __name__ == '__main__':
     app = IPCameraApp()
     print('Launching camera server on port', APPLICATION_WEB_PORT)
     httpd = create_server('', APPLICATION_WEB_PORT, app)
@@ -178,4 +173,3 @@ if __name__ == '__main__':
         print("Shutdown camera server ...")
         httpd.shutdown()
         sys.exit()
-        
