@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# BeagleBone AI-64 streaming Waveshare IMX219-83 Stereo Camera MJPEG with GStreamer example
+# BeagleBone AI-64 MJPEG stream of Waveshare IMX219-83 Stereo Camera with GStreamer example
 # Based on https://gist.github.com/misaelnieto/2409785
 # Waveshare IMX219-83 CSI Stereo Camera: https://www.waveshare.com/wiki/IMX219-83_Stereo_Camera
 # To add cameras overlays modyfy 'fdtoverlays' property of '/boot/firmware/extlinux/extlinux.conf' with:
