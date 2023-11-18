@@ -1,7 +1,7 @@
 {
     "tasks": [
         {
-            "label": "Start imx219-stereo-camera-mjpeg-stream.py",
+            "label": "Launch on target: imx219-stereo-camera-mjpeg-stream.py",
             "type": "shell",
             "command": "sudo",
             "args": [
