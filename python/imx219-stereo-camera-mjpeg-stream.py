@@ -133,7 +133,7 @@ class StereoCameraApp(object):
         self.is_running = False
 
     def stream(self, start_response, queues):
-        start_response("200 OK", [("Content-type", "multipart/x-mixed-replace; boundary=--spionisto")])
+        start_response("200 OK", [("Content-type", "multipart/x-mixed-replace; boundary=--frameboundary")])
         q = Queue()
         queues.append(q)
         while self.is_running:
@@ -152,7 +152,7 @@ class StereoCameraApp(object):
         cmd = f"gst-launch-1.0 v4l2src device={device} ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device={subdev} sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7"
         if DO_RESCALE:
             cmd += f" ! decodebin ! videoscale method=0 add-borders=false ! video/x-raw,width={RESCALE_WIDTH},height={RESCALE_HEIGHT}"
-        cmd += f" ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=spionisto ! tcpclientsink host=127.0.0.1 port={port}"
+        cmd += f" ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=frameboundary ! tcpclientsink host=127.0.0.1 port={port}"
         for line in self.execute(cmd):
             print(line, end="")
 
