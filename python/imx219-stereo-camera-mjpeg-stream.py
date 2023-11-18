@@ -2,7 +2,7 @@
 # BeagleBone AI-64 MJPEG stream of Waveshare IMX219-83 Stereo Camera with GStreamer example
 # Based on https://gist.github.com/misaelnieto/2409785
 # Waveshare IMX219-83 CSI Stereo Camera: https://www.waveshare.com/wiki/IMX219-83_Stereo_Camera
-# To add cameras overlays modyfy 'fdtoverlays' property of '/boot/firmware/extlinux/extlinux.conf' with:
+# To add cameras overlays modify 'fdtoverlays' property of '/boot/firmware/extlinux/extlinux.conf' with:
 #   fdtoverlays /overlays/BBAI64-CSI0-imx219.dtbo /overlays/BBAI64-CSI1-imx219.dtbo
 # and reboot
 # Get TI Image Signal Processing GStreamer drivers:
