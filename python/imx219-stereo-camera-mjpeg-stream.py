@@ -58,9 +58,10 @@ INDEX_PAGE = """
         }
         #container {
             display: flex;
-            position: relative;
-            top: 50%;
-            transform: translateY(-50%);
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 100vh;
         }
     </style>
 </head>
