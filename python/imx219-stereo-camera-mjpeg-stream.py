@@ -8,6 +8,8 @@
 # Get TI Image Signal Processing GStreamer drivers:
 #   wget https://github.com/Hypnotriod/bbai64/raw/master/imaging.zip
 #   sudo unzip imaging.zip -d /opt/
+# Make this script executable with:
+#   sudo chmod +x imx219-stereo-camera-mjpeg-stream.py
 # Launch script with:
 #   sudo ./imx219-stereo-camera-mjpeg-stream.py
 # To view stereo camera stream connect with browser to http://hostname:port ex: http://192.168.7.2:1337
