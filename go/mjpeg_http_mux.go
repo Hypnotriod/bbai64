@@ -95,6 +95,7 @@ func makeMjpegMuxer(inputAddr string, outputAddr string) {
 }
 
 func main() {
+	// gst-launch-1.0 -v videotestsrc ! video/x-raw,width=640,height=480 ! jpegenc quality=80 ! multipartmux boundary=frameboundary ! tcpclientsink host=127.0.0.1 port=9990
 	makeMjpegMuxer(":9990", "/mjpeg_stream1")
 
 	http.ListenAndServe(SERVER_ADDRESS, nil)
