@@ -38,12 +38,12 @@ type Muxer struct {
 	Broadcast chan *Chunk
 }
 
-func NewMuxer(broadcastSize int) *Muxer {
+func NewMuxer(buffSize int) *Muxer {
 	return &Muxer{
 		clients:   make(map[*Client]bool),
 		add:       make(chan *Client),
 		remove:    make(chan *Client),
-		Broadcast: make(chan *Chunk, broadcastSize),
+		Broadcast: make(chan *Chunk, buffSize),
 	}
 }
 

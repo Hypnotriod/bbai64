@@ -57,7 +57,7 @@ func serveTcpSocketConnection(conn net.Conn, mux *muxer.Muxer, address string) {
 
 func handleMjpegStreamRequest(mux *muxer.Muxer) func(w http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
-		log.Print("Connection established")
+		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		client := muxer.NewClient(mux)
 		defer client.Close()
@@ -68,7 +68,7 @@ func handleMjpegStreamRequest(mux *muxer.Muxer) func(w http.ResponseWriter, req 
 		for {
 			select {
 			case <-timer.C:
-				log.Print("Lost stream")
+				log.Print("Lost stream for ", req.RemoteAddr)
 				return
 			case chunk, ok = <-client.Send:
 			}
@@ -78,12 +78,12 @@ func handleMjpegStreamRequest(mux *muxer.Muxer) func(w http.ResponseWriter, req 
 			}
 			_, err := rw.Write(chunk.Data[:chunk.Size])
 			if err != nil {
-				log.Print("Cannot write response")
+				log.Print("Cannot write response to ", req.RemoteAddr)
 				break
 			}
 		}
 
-		log.Print("Connection closed")
+		log.Print("HTTP Connection closed with ", req.RemoteAddr)
 	}
 }
 
