@@ -1,6 +1,6 @@
 package muxer
 
-const CHUNK_SIZE = 1024
+const CHUNK_SIZE = 4096
 
 type Chunk struct {
 	Data [CHUNK_SIZE]byte
