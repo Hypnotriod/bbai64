@@ -40,6 +40,7 @@ RESCALE_HEIGHT = 720
 
 SENSOR_ISP_DRIVERS_PATH = "/opt/imaging/imx219/"
 SENSOR_NAME = "SENSOR_SONY_IMX219_RPI"
+CHUNK_SIZE = 4096
 
 INDEX_PAGE = """
 <html>
@@ -171,7 +172,7 @@ class StereoCameraApp(object):
             while data:
                 readable = select([sd], [], [], 0.1)[0]
                 for s in readable:
-                    data = s.recv(4096)
+                    data = s.recv(CHUNK_SIZE)
                     if not data:
                         break
                     for q in queues:
@@ -183,7 +184,7 @@ class StereoCameraApp(object):
         for stdout_line in iter(popen.stdout.readline, ""):
             yield stdout_line 
         popen.stdout.close()
-        return_code = popen.wait()
+        popen.wait()
 
 class CameraWSGIServer(ThreadingMixIn, WSGIServer):
     pass
