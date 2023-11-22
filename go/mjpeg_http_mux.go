@@ -11,7 +11,7 @@ import (
 )
 
 const SERVER_ADDRESS = ":1337"
-const CHUNKS_BUFFER_SIZE = 128
+const CHUNKS_BUFFER_SIZE = 16
 const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
 
@@ -95,11 +95,13 @@ func makeMjpegMuxer(inputAddr string, outputAddr string) {
 
 func main() {
 	// gst-launch-1.0 -v videotestsrc ! video/x-raw,width=640,height=480 ! jpegenc quality=80 ! multipartmux boundary=frameboundary ! tcpclientsink host=127.0.0.1 port=9990
-	// sudo gst-launch-1.0 v4l2src device=/dev/video2 ! video/x-bayer, width=1920, height=1080, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev2 sensor-name=SENSOR_SONY_IMX219_RPI dcc-isp-file=/opt/imaging/imx219/dcc_viss_1920x1080.bin sink_0::dcc-2a-file=/opt/imaging/imx219/dcc_2a_1920x1080.bin format-msb=7 ! decodebin ! videoscale method=0 add-borders=false ! video/x-raw,width=1280,height=720 ! jpegenc quality=80 ! multipartmux boundary=frameboundary ! tcpclientsink host=127.0.0.1 port=9990
+	// sudo gst-launch-1.0 v4l2src device=/dev/video2 ! video/x-bayer, width=1920, height=1080, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev2 sensor-name=SENSOR_SONY_IMX219_RPI dcc-isp-file=/opt/imaging/imx219/dcc_viss_1920x1080.bin sink_0::dcc-2a-file=/opt/imaging/imx219/dcc_2a_1920x1080.bin format-msb=7 ! decodebin ! videoscale method=0 add-borders=false ! video/x-raw,width=1280,height=720 ! jpegenc quality=50 ! multipartmux boundary=frameboundary ! tcpclientsink host=127.0.0.1 port=9990
 	makeMjpegMuxer(":9990", "/mjpeg_stream1")
 
-	// sudo gst-launch-1.0 v4l2src device=/dev/video18 ! video/x-bayer, width=1920, height=1080, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev5 sensor-name=SENSOR_SONY_IMX219_RPI dcc-isp-file=/opt/imaging/imx219/dcc_viss_1920x1080.bin sink_0::dcc-2a-file=/opt/imaging/imx219/dcc_2a_1920x1080.bin format-msb=7 ! decodebin ! videoscale method=0 add-borders=false ! video/x-raw,width=1280,height=720 ! jpegenc quality=80 ! multipartmux boundary=frameboundary ! tcpclientsink host=127.0.0.1 port=9991
-	//makeMjpegMuxer(":9991", "/mjpeg_stream2")
+	// sudo gst-launch-1.0 v4l2src device=/dev/video18 ! video/x-bayer, width=1920, height=1080, format=rggb ! tiovxisp sink_0::device=/dev/v4l-subdev5 sensor-name=SENSOR_SONY_IMX219_RPI dcc-isp-file=/opt/imaging/imx219/dcc_viss_1920x1080.bin sink_0::dcc-2a-file=/opt/imaging/imx219/dcc_2a_1920x1080.bin format-msb=7 ! decodebin ! videoscale method=0 add-borders=false ! video/x-raw,width=1280,height=720 ! jpegenc quality=50 ! multipartmux boundary=frameboundary ! tcpclientsink host=127.0.0.1 port=9991
+	makeMjpegMuxer(":9991", "/mjpeg_stream2")
+
+	http.Handle("/", http.FileServer(http.Dir("./public")))
 
 	http.ListenAndServe(SERVER_ADDRESS, nil)
 }

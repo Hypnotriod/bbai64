@@ -1,0 +1,30 @@
+<html>
+<head>
+    <title>Waveshare IMX219-83 CSI Stereo Camera testing</title>
+    <style>
+        body, div, img {
+            outline: none;
+            margin: 0;
+            padding: 0;
+            background-color: black;
+        }
+        img {
+            width: 50%;
+            height: auto;
+        }
+        #container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <img src="/mjpeg_stream1"/>
+        <img src="/mjpeg_stream2"/>
+    </div>
+</body>
+</html>
