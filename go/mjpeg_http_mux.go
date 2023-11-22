@@ -40,8 +40,7 @@ func serveTcpSocketConnection(conn net.Conn, mux *muxer.Muxer, address string) {
 	for {
 		chunk := &buffer[buffIndex]
 		buffIndex = (buffIndex + 1) % CHUNKS_BUFFER_SIZE
-		data := chunk.Data[:]
-		size, err := reader.Read(data)
+		size, err := reader.Read(chunk.Data[:])
 		if err != nil {
 			if err == io.EOF {
 				log.Print("Socket connection closed at ", address)
