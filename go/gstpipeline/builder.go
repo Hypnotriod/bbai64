@@ -38,10 +38,10 @@ func CsiCameraSource(sensor Sensor, index uint, width uint, height uint) string 
 	var formatMsb uint
 	switch sensor {
 	case IMX219:
-		sensor = "SENSOR_SONY_IMX219_RPI"
+		sensorName = "SENSOR_SONY_IMX219_RPI"
 		formatMsb = 7
 	case IMX390:
-		sensor = "IMX390-UB953_D3"
+		sensorName = "IMX390-UB953_D3"
 		formatMsb = 11
 	}
 	switch index {
@@ -52,21 +52,21 @@ func CsiCameraSource(sensor Sensor, index uint, width uint, height uint) string 
 		device = "/dev/video18"
 		subdev = "/dev/v4l-subdev5"
 	}
-	return fmt.Sprintf("v4l2src device=%s ! video/x-bayer, width=%d, height=%d, format=rggb ! tiovxisp sink_0::device=%s sensor-name=%s dcc-isp-file=%s/%s/dcc_viss.bin sink_0::dcc-2a-file=%s/%s/dcc_2a.bin format-msb=%d",
+	return fmt.Sprintf(" v4l2src device=%s ! video/x-bayer, width=%d, height=%d, format=rggb ! tiovxisp sink_0::device=%s sensor-name=%s dcc-isp-file=%s/%s/dcc_viss.bin sink_0::dcc-2a-file=%s/%s/dcc_2a.bin format-msb=%d",
 		device, width, height, subdev, sensorName, SENSORS_DSP_PATH, sensor, SENSORS_DSP_PATH, sensor, formatMsb)
 }
 
 func TestSource(width uint, height uint) string {
-	return fmt.Sprintf("videotestsrc ! video/x-raw, width=%d, height=%d",
+	return fmt.Sprintf(" videotestsrc ! video/x-raw, width=%d, height=%d",
 		width, height)
 }
 
 func DecodeBinRescale(width uint, height uint) string {
-	return fmt.Sprintf("! decodebin ! videoscale method=0 add-borders=false ! video/x-raw, width=%d, height=%d",
+	return fmt.Sprintf(" ! decodebin ! videoscale method=0 add-borders=false ! video/x-raw, width=%d, height=%d",
 		width, height)
 }
 
 func JpegTcpStreamLocalhost(quality uint, port uint, boundary string) string {
-	return fmt.Sprintf("! jpegenc quality=%d ! multipartmux boundary=%s ! tcpclientsink host=127.0.0.1 port=%d",
+	return fmt.Sprintf(" ! jpegenc quality=%d ! multipartmux boundary=%s ! tcpclientsink host=127.0.0.1 port=%d",
 		quality, boundary, port)
 }
