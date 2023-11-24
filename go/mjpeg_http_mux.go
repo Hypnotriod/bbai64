@@ -13,7 +13,7 @@ import (
 )
 
 const SERVER_ADDRESS = ":1337"
-const CHUNKS_BUFFER_SIZE = 128
+const CHUNKS_BUFFER_SIZE = 1024
 const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
 const CAMERA_WIDTH = 1920
