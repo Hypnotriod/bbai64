@@ -12,12 +12,14 @@ import (
 )
 
 const SERVER_ADDRESS = ":1337"
-const BUFFERED_FRAMES_COUNT = 30
+const BUFFERED_FRAMES_COUNT = 8
 const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
+const IMAGE_WIDTH = 640
+const IMAGE_HEIGHT = 480
 const JPEG_QUALITY = 50
 
-func serveTcpRgbaStreamSocket(fWidth int, fHeight int, mux *muxer.Muxer[image.RGBA], address string) {
+func serveTcpRgbaStreamSocket(width int, height int, mux *muxer.Muxer[image.RGBA], address string) {
 	soc, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
@@ -28,17 +30,17 @@ func serveTcpRgbaStreamSocket(fWidth int, fHeight int, mux *muxer.Muxer[image.RG
 		if err != nil {
 			log.Fatal("Cannot accept socket connection at ", address, " : ", err)
 		}
-		serveTcpRgbaStreamSocketConnection(conn, fWidth, fHeight, mux, address)
+		serveTcpRgbaStreamSocketConnection(conn, width, height, mux, address)
 		conn.Close()
 	}
 }
 
-func serveTcpRgbaStreamSocketConnection(conn net.Conn, fWidth int, fHeight int, mux *muxer.Muxer[image.RGBA], address string) {
+func serveTcpRgbaStreamSocketConnection(conn net.Conn, width int, height int, mux *muxer.Muxer[image.RGBA], address string) {
 	log.Print("Accepted input stream at ", address)
 
 	buffer := [BUFFERED_FRAMES_COUNT]*image.RGBA{}
 	for i := range buffer {
-		buffer[i] = image.NewRGBA(image.Rect(0, 0, fWidth, fHeight))
+		buffer[i] = image.NewRGBA(image.Rect(0, 0, width, height))
 	}
 
 	var buffIndex int32
@@ -62,32 +64,32 @@ func serveTcpRgbaStreamSocketConnection(conn net.Conn, fWidth int, fHeight int, 
 	}
 }
 
-func handleMjpegStreamRequest(rWidth int, rHeight int, mux1 *muxer.Muxer[image.RGBA], mux2 *muxer.Muxer[image.RGBA]) func(w http.ResponseWriter, req *http.Request) {
+func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[image.RGBA], muxR *muxer.Muxer[image.RGBA]) func(w http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		boundary := "\r\n--" + MJPEG_FRAME_BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n"
 		jpegOpts := &jpeg.Options{Quality: JPEG_QUALITY}
 
-		client1 := muxer.NewClient(mux1)
-		defer client1.Close()
-		client2 := muxer.NewClient(mux2)
-		defer client1.Close()
+		clientL := muxer.NewClient(muxL)
+		defer clientL.Close()
+		clientR := muxer.NewClient(muxR)
+		defer clientR.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
 
-		var frame1 *image.RGBA
-		var frame2 *image.RGBA
-		imgCombined := image.NewRGBA(image.Rect(0, 0, rWidth, rHeight))
+		var frameL *image.RGBA
+		var frameR *image.RGBA
+		imgCombined := image.NewRGBA(image.Rect(0, 0, width, height))
 		var ok bool
 		for {
 			select {
 			case <-timer.C:
 				log.Print("Lost stream for ", req.RemoteAddr)
 				return
-			case frame1, ok = <-client1.Send:
-				for len(client1.Send) != 0 {
-					frame1, ok = <-client1.Send
+			case frameL, ok = <-clientL.Send:
+				for len(clientL.Send) != 0 {
+					frameL, ok = <-clientL.Send
 				}
 			}
 			if !ok {
@@ -97,9 +99,9 @@ func handleMjpegStreamRequest(rWidth int, rHeight int, mux1 *muxer.Muxer[image.R
 			case <-timer.C:
 				log.Print("Lost stream for ", req.RemoteAddr)
 				return
-			case frame2, ok = <-client2.Send:
-				for len(client2.Send) != 0 {
-					frame2, ok = <-client2.Send
+			case frameR, ok = <-clientR.Send:
+				for len(clientR.Send) != 0 {
+					frameR, ok = <-clientR.Send
 				}
 			}
 			if !ok {
@@ -107,8 +109,8 @@ func handleMjpegStreamRequest(rWidth int, rHeight int, mux1 *muxer.Muxer[image.R
 			}
 			timer.Reset(CONNECTION_TIMEOUT)
 
-			copy(imgCombined.Pix[:len(frame1.Pix)], frame1.Pix)
-			copy(imgCombined.Pix[len(frame1.Pix):], frame2.Pix)
+			copy(imgCombined.Pix[:len(frameL.Pix)], frameL.Pix)
+			copy(imgCombined.Pix[len(frameL.Pix):], frameR.Pix)
 
 			if n, err := io.WriteString(rw, boundary); err != nil || n != len(boundary) {
 				log.Print("Cannot write response to ", req.RemoteAddr)
@@ -127,16 +129,16 @@ func handleMjpegStreamRequest(rWidth int, rHeight int, mux1 *muxer.Muxer[image.R
 	}
 }
 
-func makeStereoCameraMuxer(inputAddr1 string, inputAddr2 string, outputAddr string) {
-	mux1 := muxer.NewMuxer[image.RGBA](BUFFERED_FRAMES_COUNT)
-	mux2 := muxer.NewMuxer[image.RGBA](BUFFERED_FRAMES_COUNT)
-	go mux1.Run()
-	go mux2.Run()
+func makeStereoCameraMuxer(inputAddrL string, inputAddrR string, outputAddr string) {
+	muxL := muxer.NewMuxer[image.RGBA](BUFFERED_FRAMES_COUNT)
+	muxR := muxer.NewMuxer[image.RGBA](BUFFERED_FRAMES_COUNT)
+	go muxL.Run()
+	go muxR.Run()
 	// gst-launch-1.0 videotestsrc ! video/x-raw, width=640, height=480, format=NV12 ! videoconvert ! video/x-raw, format=RGBA ! tcpclientsink host=127.0.0.1 port=9990
-	go serveTcpRgbaStreamSocket(640, 480, mux1, inputAddr1)
+	go serveTcpRgbaStreamSocket(IMAGE_WIDTH, IMAGE_HEIGHT, muxL, inputAddrL)
 	// gst-launch-1.0 videotestsrc ! video/x-raw, width=640, height=480, format=NV12 ! videoconvert ! video/x-raw, format=RGBA ! tcpclientsink host=127.0.0.1 port=9991
-	go serveTcpRgbaStreamSocket(640, 480, mux2, inputAddr2)
-	http.HandleFunc(outputAddr, handleMjpegStreamRequest(640, 480*2, mux1, mux2))
+	go serveTcpRgbaStreamSocket(IMAGE_WIDTH, IMAGE_HEIGHT, muxR, inputAddrR)
+	http.HandleFunc(outputAddr, handleMjpegStreamRequest(640, 480*2, muxL, muxR))
 }
 
 func main() {

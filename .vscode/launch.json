@@ -14,7 +14,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/go/cmd/mjpeg_http_mux/main.go",
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}/go"
         },
         {
             "name": "Launch Debug rgba_stereo_to_mjpeg_http_mux.go",
@@ -22,7 +22,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/go/cmd/rgba_stereo_to_mjpeg_http_mux/main.go",
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}/go"
         },
     ]
 }
