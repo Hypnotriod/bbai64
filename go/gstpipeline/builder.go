@@ -61,12 +61,20 @@ func TestSource(width uint, height uint) string {
 		width, height)
 }
 
-func DecodeBinRescale(width uint, height uint) string {
-	return fmt.Sprintf(" ! decodebin ! videoscale method=0 add-borders=false ! video/x-raw, width=%d, height=%d",
+func DecodeBin() string {
+	return " ! decodebin"
+}
+
+func Rescale(width uint, height uint) string {
+	return fmt.Sprintf(" ! videoscale method=0 add-borders=false ! video/x-raw, width=%d, height=%d",
 		width, height)
 }
 
-func JpegTcpStreamLocalhost(quality uint, port uint, boundary string) string {
-	return fmt.Sprintf(" ! jpegenc quality=%d ! multipartmux boundary=%s ! tcpclientsink host=127.0.0.1 port=%d",
-		quality, boundary, port)
+func JpegEncode(quality uint) string {
+	return fmt.Sprintf(" ! jpegenc quality=%d", quality)
+}
+
+func JpegTcpStreamLocalhost(boundary string, port uint) string {
+	return fmt.Sprintf(" ! multipartmux boundary=%s ! tcpclientsink host=127.0.0.1 port=%d",
+		boundary, port)
 }

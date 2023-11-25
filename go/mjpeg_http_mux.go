@@ -8,8 +8,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os/exec"
-	"strings"
 	"time"
 )
 
@@ -101,32 +99,14 @@ func makeMjpegMuxer(inputAddr string, outputAddr string) {
 	http.HandleFunc(outputAddr, handleMjpegStreamRequest(mux))
 }
 
-func lauchImx219CsiCameraMjpegStream(index uint, width uint, height uint, rWidth uint, rHeight uint, quality uint, port uint) {
-	cmdSetup := exec.Command(
-		"bash", "-c", gstpipeline.CsiCameraSetup(gstpipeline.IMX219, index, width, height),
-	)
-	if err := cmdSetup.Run(); err != nil {
-		log.Fatal("Cannot setup CsiCamera: ", err)
-	}
-	log.Print(strings.Join(cmdSetup.Args, " "))
-	cmd := exec.Command(
-		"bash", "-c", gstpipeline.GStreamerLaunch()+
-			gstpipeline.CsiCameraSource(gstpipeline.IMX219, index, width, height)+
-			gstpipeline.DecodeBinRescale(rWidth, rHeight)+
-			gstpipeline.JpegTcpStreamLocalhost(quality, port, MJPEG_FRAME_BOUNDARY),
-	)
-	log.Print(strings.Join(cmd.Args, " "))
-	if err := cmd.Run(); err != nil {
-		log.Fatal("Cannot start GStreamer pipeline: ", err)
-	}
-}
-
 func main() {
 	makeMjpegMuxer(":9990", "/mjpeg_stream1")
 	makeMjpegMuxer(":9991", "/mjpeg_stream2")
 
-	go lauchImx219CsiCameraMjpegStream(0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, 9990)
-	go lauchImx219CsiCameraMjpegStream(1, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, 9991)
+	go gstpipeline.LauchImx219CsiCameraMjpegStream(
+		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
+	go gstpipeline.LauchImx219CsiCameraMjpegStream(
+		1, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9991)
 
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 
