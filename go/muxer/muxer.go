@@ -1,14 +1,14 @@
 package muxer
 
 type Client[T any] struct {
-	muxer *Muxer[T]
-	Send  chan *T
+	muxer   *Muxer[T]
+	Receive chan *T
 }
 
 func NewClient[T any](mux *Muxer[T]) *Client[T] {
 	c := &Client[T]{
-		muxer: mux,
-		Send:  make(chan *T),
+		muxer:   mux,
+		Receive: make(chan *T),
 	}
 	c.muxer.add <- c
 	return c
@@ -17,7 +17,7 @@ func NewClient[T any](mux *Muxer[T]) *Client[T] {
 func (c *Client[T]) Close() {
 	for {
 		select {
-		case <-c.Send:
+		case <-c.Receive:
 		case c.muxer.remove <- c:
 			return
 		}
@@ -48,11 +48,11 @@ func (m *Muxer[T]) Run() {
 		case client := <-m.remove:
 			if _, ok := m.clients[client]; ok {
 				delete(m.clients, client)
-				close(client.Send)
+				close(client.Receive)
 			}
 		case chunk := <-m.Broadcast:
 			for client := range m.clients {
-				client.Send <- chunk
+				client.Receive <- chunk
 			}
 		}
 	}

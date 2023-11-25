@@ -54,13 +54,11 @@ func serveTcpRgbaStreamSocketConnection(conn net.Conn, width int, height int, mu
 		if err != nil {
 			if err == io.EOF {
 				log.Print("Socket connection closed at ", address)
+			} else if size != len(frame.Pix) {
+				log.Print("Stream has wrong rgba frame size! Expected: ", len(frame.Pix), ", but got ", size)
 			} else {
 				log.Print("Socket read error ", err)
 			}
-			break
-		}
-		if size != len(frame.Pix) {
-			log.Print("Stream has wrong rgba frame size! Expected: ", len(frame.Pix), ", but got ", size)
 			break
 		}
 		mux.Broadcast <- frame
@@ -90,9 +88,9 @@ func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[image.RGB
 			case <-timer.C:
 				log.Print("Lost stream for ", req.RemoteAddr)
 				return
-			case frameL, ok = <-clientL.Send:
-				for ok && len(clientL.Send) != 0 {
-					frameL, ok = <-clientL.Send
+			case frameL, ok = <-clientL.Receive:
+				for ok && len(clientL.Receive) != 0 {
+					frameL, ok = <-clientL.Receive
 				}
 			}
 			if !ok {
@@ -102,9 +100,9 @@ func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[image.RGB
 			case <-timer.C:
 				log.Print("Lost stream for ", req.RemoteAddr)
 				return
-			case frameR, ok = <-clientR.Send:
-				for ok && len(clientR.Send) != 0 {
-					frameR, ok = <-clientR.Send
+			case frameR, ok = <-clientR.Receive:
+				for ok && len(clientR.Receive) != 0 {
+					frameR, ok = <-clientR.Receive
 				}
 			}
 			if !ok {
