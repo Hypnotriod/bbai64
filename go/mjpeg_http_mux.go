@@ -64,10 +64,12 @@ func handleMjpegStreamRequest(mux *muxer.Muxer) func(w http.ResponseWriter, req 
 	return func(rw http.ResponseWriter, req *http.Request) {
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
+
 		client := muxer.NewClient(mux)
 		defer client.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
+
 		var chunk *muxer.Chunk
 		var ok bool
 		for {

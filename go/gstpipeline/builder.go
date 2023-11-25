@@ -74,7 +74,15 @@ func JpegEncode(quality uint) string {
 	return fmt.Sprintf(" ! jpegenc quality=%d", quality)
 }
 
+func VideoConvertRgba() string {
+	return " ! videoconvert ! video/x-raw, format=RGBA"
+}
+
 func JpegTcpStreamLocalhost(boundary string, port uint) string {
 	return fmt.Sprintf(" ! multipartmux boundary=%s ! tcpclientsink host=127.0.0.1 port=%d",
 		boundary, port)
+}
+
+func TcpStreamLocalhost(port uint) string {
+	return fmt.Sprintf(" ! tcpclientsink host=127.0.0.1 port=%d", port)
 }
