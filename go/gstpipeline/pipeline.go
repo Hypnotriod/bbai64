@@ -20,7 +20,7 @@ func LauchImx219CsiCameraMjpegStream(index uint, width uint, height uint, rWidth
 			DecodeBin()+
 			Rescale(rWidth, rHeight)+
 			JpegEncode(quality)+
-			JpegTcpStreamLocalhost(boundary, port),
+			MjpegTcpStreamLocalhost(boundary, port),
 	)
 	log.Print(strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {

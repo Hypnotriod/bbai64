@@ -78,7 +78,7 @@ func VideoConvertRgba() string {
 	return " ! videoconvert ! video/x-raw, format=RGBA"
 }
 
-func JpegTcpStreamLocalhost(boundary string, port uint) string {
+func MjpegTcpStreamLocalhost(boundary string, port uint) string {
 	return fmt.Sprintf(" ! multipartmux boundary=%s ! tcpclientsink host=127.0.0.1 port=%d",
 		boundary, port)
 }
