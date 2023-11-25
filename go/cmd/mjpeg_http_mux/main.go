@@ -13,6 +13,7 @@ import (
 
 const SERVER_ADDRESS = ":1337"
 const CHUNKS_BUFFER_SIZE = 1024
+const CHUNK_SIZE = 4096
 const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
 const CAMERA_WIDTH = 1920
@@ -21,7 +22,12 @@ const RESCALE_WIDTH = 1280
 const RESCALE_HEIGHT = 720
 const JPEG_QUALITY = 50
 
-func serveTcpSocket(mux *muxer.Muxer, address string) {
+type Chunk struct {
+	Data [CHUNK_SIZE]byte
+	Size int
+}
+
+func serveTcpSocket(mux *muxer.Muxer[Chunk], address string) {
 	soc, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
@@ -38,10 +44,10 @@ func serveTcpSocket(mux *muxer.Muxer, address string) {
 	}
 }
 
-func serveTcpSocketConnection(conn net.Conn, mux *muxer.Muxer, address string) {
+func serveTcpSocketConnection(conn net.Conn, mux *muxer.Muxer[Chunk], address string) {
 	log.Print("Accepted input stream at ", address)
 	var buffIndex int32
-	buffer := [CHUNKS_BUFFER_SIZE]muxer.Chunk{}
+	buffer := [CHUNKS_BUFFER_SIZE]Chunk{}
 	reader := bufio.NewReader(conn)
 	for {
 		chunk := &buffer[buffIndex]
@@ -60,7 +66,7 @@ func serveTcpSocketConnection(conn net.Conn, mux *muxer.Muxer, address string) {
 	}
 }
 
-func handleMjpegStreamRequest(mux *muxer.Muxer) func(w http.ResponseWriter, req *http.Request) {
+func handleMjpegStreamRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
@@ -70,7 +76,7 @@ func handleMjpegStreamRequest(mux *muxer.Muxer) func(w http.ResponseWriter, req 
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
 
-		var chunk *muxer.Chunk
+		var chunk *Chunk
 		var ok bool
 		for {
 			select {
@@ -95,7 +101,7 @@ func handleMjpegStreamRequest(mux *muxer.Muxer) func(w http.ResponseWriter, req 
 }
 
 func makeMjpegMuxer(inputAddr string, outputAddr string) {
-	mux := muxer.NewMuxer(CHUNKS_BUFFER_SIZE)
+	mux := muxer.NewMuxer[Chunk](CHUNKS_BUFFER_SIZE)
 	go mux.Run()
 	go serveTcpSocket(mux, inputAddr)
 	http.HandleFunc(outputAddr, handleMjpegStreamRequest(mux))

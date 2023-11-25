@@ -1,27 +1,20 @@
 package muxer
 
-const CHUNK_SIZE = 4096
-
-type Chunk struct {
-	Data [CHUNK_SIZE]byte
-	Size int
+type Client[T any] struct {
+	muxer *Muxer[T]
+	Send  chan *T
 }
 
-type Client struct {
-	muxer *Muxer
-	Send  chan *Chunk
-}
-
-func NewClient(mux *Muxer) *Client {
-	c := &Client{
+func NewClient[T any](mux *Muxer[T]) *Client[T] {
+	c := &Client[T]{
 		muxer: mux,
-		Send:  make(chan *Chunk),
+		Send:  make(chan *T),
 	}
 	c.muxer.add <- c
 	return c
 }
 
-func (c *Client) Close() {
+func (c *Client[T]) Close() {
 	for {
 		select {
 		case <-c.Send:
@@ -31,23 +24,23 @@ func (c *Client) Close() {
 	}
 }
 
-type Muxer struct {
-	clients   map[*Client]bool
-	add       chan *Client
-	remove    chan *Client
-	Broadcast chan *Chunk
+type Muxer[T any] struct {
+	clients   map[*Client[T]]bool
+	add       chan *Client[T]
+	remove    chan *Client[T]
+	Broadcast chan *T
 }
 
-func NewMuxer(buffSize int) *Muxer {
-	return &Muxer{
-		clients:   make(map[*Client]bool),
-		add:       make(chan *Client),
-		remove:    make(chan *Client),
-		Broadcast: make(chan *Chunk, buffSize),
+func NewMuxer[T any](buffSize int) *Muxer[T] {
+	return &Muxer[T]{
+		clients:   make(map[*Client[T]]bool),
+		add:       make(chan *Client[T]),
+		remove:    make(chan *Client[T]),
+		Broadcast: make(chan *T, buffSize),
 	}
 }
 
-func (m *Muxer) Run() {
+func (m *Muxer[T]) Run() {
 	for {
 		select {
 		case client := <-m.add:
