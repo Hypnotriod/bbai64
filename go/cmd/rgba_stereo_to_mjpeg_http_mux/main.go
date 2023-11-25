@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bbai64/gstpipeline"
 	"bbai64/muxer"
 	"image"
 	"image/jpeg"
@@ -15,8 +16,10 @@ const SERVER_ADDRESS = ":1337"
 const BUFFERED_FRAMES_COUNT = 8
 const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
-const IMAGE_WIDTH = 640
-const IMAGE_HEIGHT = 480
+const CAMERA_WIDTH = 1920
+const CAMERA_HEIGHT = 1080
+const RESCALE_WIDTH = 1280
+const RESCALE_HEIGHT = 720
 const JPEG_QUALITY = 50
 
 func serveTcpRgbaStreamSocket(width int, height int, mux *muxer.Muxer[image.RGBA], address string) {
@@ -135,16 +138,18 @@ func makeStereoCameraMuxer(inputAddrL string, inputAddrR string, outputAddr stri
 	go muxL.Run()
 	go muxR.Run()
 	// gst-launch-1.0 videotestsrc ! video/x-raw, width=640, height=480, format=NV12 ! videoconvert ! video/x-raw, format=RGBA ! tcpclientsink host=127.0.0.1 port=9990
-	go serveTcpRgbaStreamSocket(IMAGE_WIDTH, IMAGE_HEIGHT, muxL, inputAddrL)
+	go serveTcpRgbaStreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxL, inputAddrL)
 	// gst-launch-1.0 videotestsrc ! video/x-raw, width=640, height=480, format=NV12 ! videoconvert ! video/x-raw, format=RGBA ! tcpclientsink host=127.0.0.1 port=9991
-	go serveTcpRgbaStreamSocket(IMAGE_WIDTH, IMAGE_HEIGHT, muxR, inputAddrR)
-	http.HandleFunc(outputAddr, handleMjpegStreamRequest(640, 480*2, muxL, muxR))
+	go serveTcpRgbaStreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxR, inputAddrR)
+	http.HandleFunc(outputAddr, handleMjpegStreamRequest(RESCALE_WIDTH, RESCALE_HEIGHT*2, muxL, muxR))
 }
 
 func main() {
 	makeStereoCameraMuxer(":9990", ":9991", "/mjpeg_stream")
-
+	go gstpipeline.LauchImx219CsiCameraRgbaStream(
+		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, 9990)
+	go gstpipeline.LauchImx219CsiCameraRgbaStream(
+		1, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, 9991)
 	http.Handle("/", http.FileServer(http.Dir("./public")))
-
 	http.ListenAndServe(SERVER_ADDRESS, nil)
 }
