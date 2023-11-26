@@ -47,7 +47,7 @@ func LauchImx219CsiStereoCameraMjpegStream(width uint, height uint, rWidth uint,
 				CsiCameraConfig(1, IMX219, width, height),
 			)+
 			DecodeBin()+
-			Rescale(rWidth*2, rHeight)+
+			Rescale(rWidth, rHeight)+
 			JpegEncode(quality)+
 			MjpegTcpStreamLocalhost(boundary, port),
 	)

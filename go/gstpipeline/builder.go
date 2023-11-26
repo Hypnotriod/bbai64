@@ -66,7 +66,7 @@ func CsiCameraConfig(index uint, sensor Sensor, width uint, height uint) string 
 
 func GlStereoMix(leftSource string, rightSource string, leftConfig string, rightConfig string) string {
 	return fmt.Sprintf(
-		" -ev %s name=left %s name=right glstereomix name=mix left. %s ! glupload ! mix. right. %s ! glupload ! mix. mix. ! video/x-raw(memory:GLMemory), multiview-mode=side-by-side ! gldownload ! queue",
+		" -ev%s name=left%s name=right glstereomix name=mix left.%s ! glupload ! mix. right.%s ! glupload ! mix. mix. ! video/x-raw'(memory:GLMemory)', multiview-mode=side-by-side ! gldownload ! queue",
 		leftSource, rightSource, leftConfig, rightConfig)
 }
 
