@@ -107,20 +107,23 @@ func makeMjpegMuxer(inputAddr string, outputAddr string) {
 }
 
 func main() {
+	// open with stereoseparate.html
+	makeMjpegMuxer(":9990", "/mjpeg_stream1")
+	makeMjpegMuxer(":9991", "/mjpeg_stream2")
+	go gstpipeline.LauchImx219CsiCameraMjpegStream(
+		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
+	go gstpipeline.LauchImx219CsiCameraMjpegStream(
+		1, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9991)
+
 	/*
-		makeMjpegMuxer(":9990", "/mjpeg_stream1")
-		makeMjpegMuxer(":9991", "/mjpeg_stream2")
+		// For now I'm stuck with:
+		// MESA-LOADER: failed to open tidss: /lib/aarch64-linux-gnu/libc.so.6: version `GLIBC_2.32'
+		// not found (required by /usr/lib/dri/tidss_dri.so) (search paths /usr/lib/aarch64-linux-gnu/dri:\$${ORIGIN}/dri:/usr/lib/dri, suffix _dri)
 
-		go gstpipeline.LauchImx219CsiCameraMjpegStream(
-			0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
-		go gstpipeline.LauchImx219CsiCameraMjpegStream(
-			1, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9991)
+		makeMjpegMuxer(":9990", "/mjpeg_stereo_stream")
+		go gstpipeline.LauchImx219CsiStereoCameraMjpegStream(
+			CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
 	*/
-
-	makeMjpegMuxer(":9990", "/mjpeg_stereo_stream")
-
-	go gstpipeline.LauchImx219CsiStereoCameraMjpegStream(
-		CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
 
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 

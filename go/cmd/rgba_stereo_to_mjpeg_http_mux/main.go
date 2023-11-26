@@ -18,9 +18,9 @@ const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
 const CAMERA_WIDTH = 1920
 const CAMERA_HEIGHT = 1080
-const RESCALE_WIDTH = 1280
-const RESCALE_HEIGHT = 720
-const JPEG_QUALITY = 50
+const RESCALE_WIDTH = 320  //1280
+const RESCALE_HEIGHT = 360 //720
+const JPEG_QUALITY = 80
 
 func serveTcpRgbaStreamSocket(width int, height int, mux *muxer.Muxer[image.RGBA], address string) {
 	soc, err := net.Listen("tcp", address)
@@ -117,6 +117,7 @@ func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[image.RGB
 				log.Print("Cannot write response to ", req.RemoteAddr)
 				break
 			}
+			// insanely terrible performance from go standard jpeg.Encode
 			if err := jpeg.Encode(rw, imgCombined, jpegOpts); err != nil {
 				log.Print("Cannot write response to ", req.RemoteAddr)
 				break
@@ -135,17 +136,18 @@ func makeStereoCameraMuxer(inputAddrL string, inputAddrR string, outputAddr stri
 	muxR := muxer.NewMuxer[image.RGBA](BUFFERED_FRAMES_COUNT)
 	go muxL.Run()
 	go muxR.Run()
-	// gst-launch-1.0 videotestsrc ! video/x-raw, width=640, height=480, format=NV12 ! videoconvert ! video/x-raw, format=RGBA ! tcpclientsink host=127.0.0.1 port=9990
 	go serveTcpRgbaStreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxL, inputAddrL)
-	// gst-launch-1.0 videotestsrc ! video/x-raw, width=640, height=480, format=NV12 ! videoconvert ! video/x-raw, format=RGBA ! tcpclientsink host=127.0.0.1 port=9991
 	go serveTcpRgbaStreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxR, inputAddrR)
 	http.HandleFunc(outputAddr, handleMjpegStreamRequest(RESCALE_WIDTH, RESCALE_HEIGHT*2, muxL, muxR))
 }
 
 func main() {
+	// open with stereocomb.html
 	makeStereoCameraMuxer(":9990", ":9991", "/mjpeg_stream")
+	// gst-launch-1.0 videotestsrc ! video/x-raw, width=640, height=480, format=NV12 ! videoconvert ! video/x-raw, format=RGBA ! tcpclientsink host=127.0.0.1 port=9990
 	go gstpipeline.LauchImx219CsiCameraRgbaStream(
 		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, 9990)
+	// gst-launch-1.0 videotestsrc ! video/x-raw, width=640, height=480, format=NV12 ! videoconvert ! video/x-raw, format=RGBA ! tcpclientsink host=127.0.0.1 port=9991
 	go gstpipeline.LauchImx219CsiCameraRgbaStream(
 		1, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, 9991)
 	http.Handle("/", http.FileServer(http.Dir("./public")))
