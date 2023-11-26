@@ -32,7 +32,6 @@ func serveTcpSocket(mux *muxer.Muxer[Chunk], address string) {
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
 	}
-
 	for {
 		log.Print("Waiting for input stream at ", address)
 		conn, err := soc.Accept()
@@ -108,13 +107,20 @@ func makeMjpegMuxer(inputAddr string, outputAddr string) {
 }
 
 func main() {
-	makeMjpegMuxer(":9990", "/mjpeg_stream1")
-	makeMjpegMuxer(":9991", "/mjpeg_stream2")
+	/*
+		makeMjpegMuxer(":9990", "/mjpeg_stream1")
+		makeMjpegMuxer(":9991", "/mjpeg_stream2")
 
-	go gstpipeline.LauchImx219CsiCameraMjpegStream(
-		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
-	go gstpipeline.LauchImx219CsiCameraMjpegStream(
-		1, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9991)
+		go gstpipeline.LauchImx219CsiCameraMjpegStream(
+			0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
+		go gstpipeline.LauchImx219CsiCameraMjpegStream(
+			1, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9991)
+	*/
+
+	makeMjpegMuxer(":9990", "/mjpeg_stereo_stream")
+
+	go gstpipeline.LauchImx219CsiStereoCameraMjpegStream(
+		CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
 
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 

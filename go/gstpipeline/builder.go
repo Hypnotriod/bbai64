@@ -31,8 +31,18 @@ func GStreamerLaunch() string {
 	return "gst-launch-1.0"
 }
 
-func CsiCameraSource(sensor Sensor, index uint, width uint, height uint) string {
+func CsiCameraV4l2Source(index uint) string {
 	var device string
+	switch index {
+	case 0:
+		device = "/dev/video2"
+	case 1:
+		device = "/dev/video18"
+	}
+	return fmt.Sprintf(" v4l2src device=%s", device)
+}
+
+func CsiCameraConfig(index uint, sensor Sensor, width uint, height uint) string {
 	var subdev string
 	var sensorName string
 	var formatMsb uint
@@ -46,14 +56,18 @@ func CsiCameraSource(sensor Sensor, index uint, width uint, height uint) string 
 	}
 	switch index {
 	case 0:
-		device = "/dev/video2"
 		subdev = "/dev/v4l-subdev2"
 	case 1:
-		device = "/dev/video18"
 		subdev = "/dev/v4l-subdev5"
 	}
-	return fmt.Sprintf(" v4l2src device=%s ! video/x-bayer, width=%d, height=%d, format=rggb ! tiovxisp sink_0::device=%s sensor-name=%s dcc-isp-file=%s/%s/dcc_viss.bin sink_0::dcc-2a-file=%s/%s/dcc_2a.bin format-msb=%d",
-		device, width, height, subdev, sensorName, SENSORS_DSP_PATH, sensor, SENSORS_DSP_PATH, sensor, formatMsb)
+	return fmt.Sprintf(" ! video/x-bayer, width=%d, height=%d, format=rggb ! tiovxisp sink_0::device=%s sensor-name=%s dcc-isp-file=%s/%s/dcc_viss.bin sink_0::dcc-2a-file=%s/%s/dcc_2a.bin format-msb=%d",
+		width, height, subdev, sensorName, SENSORS_DSP_PATH, sensor, SENSORS_DSP_PATH, sensor, formatMsb)
+}
+
+func GlStereoMix(leftSource string, rightSource string, leftConfig string, rightConfig string) string {
+	return fmt.Sprintf(
+		" -ev %s name=left %s name=right glstereomix name=mix left. %s ! glupload ! mix. right. %s ! glupload ! mix. mix. ! video/x-raw(memory:GLMemory), multiview-mode=side-by-side ! gldownload ! queue",
+		leftSource, rightSource, leftConfig, rightConfig)
 }
 
 func TestSource(width uint, height uint) string {
