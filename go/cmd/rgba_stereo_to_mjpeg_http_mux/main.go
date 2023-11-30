@@ -23,6 +23,12 @@ const RESCALE_HEIGHT = 720
 
 type PixelsRGB16 []byte
 
+var jpegParams = jpegenc.JpegEncodeParams{
+	QualityFactor: jpegenc.JpegQualityFactorBest,
+	PixelType:     jpegenc.JpegPixelTypeRGB565,
+	Subsample:     jpegenc.JpegSubsample444,
+}
+
 func serveTcpRgbaStreamSocket(width int, height int, mux *muxer.Muxer[PixelsRGB16], address string) {
 	soc, err := net.Listen("tcp", address)
 	if err != nil {
@@ -71,11 +77,6 @@ func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[PixelsRGB
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		boundary := "\r\n--" + MJPEG_FRAME_BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n"
-		jpegParams := jpegenc.JpegEncodeParams{
-			QualityFactor: jpegenc.JpegQualityFactorBest,
-			PixelType:     jpegenc.JpegPixelTypeRGB565,
-			Subsample:     jpegenc.JpegSubsample444,
-		}
 
 		clientL := muxer.NewClient(muxL)
 		defer clientL.Close()
