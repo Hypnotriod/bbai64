@@ -20,7 +20,6 @@ const CAMERA_WIDTH = 1920
 const CAMERA_HEIGHT = 1080
 const RESCALE_WIDTH = 1280
 const RESCALE_HEIGHT = 720
-const JPEG_QUALITY = 80
 
 type PixelsRGB16 []byte
 
