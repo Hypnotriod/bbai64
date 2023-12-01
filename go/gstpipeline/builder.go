@@ -92,6 +92,10 @@ func VideoConvertRgba() string {
 	return " ! videoconvert ! video/x-raw, format=RGBA"
 }
 
+func VideoConvertRgb16() string {
+	return " ! videoconvert ! video/x-raw, format=RGB16"
+}
+
 func MjpegTcpStreamLocalhost(boundary string, port uint) string {
 	return fmt.Sprintf(" ! multipartmux boundary=%s ! tcpclientsink host=127.0.0.1 port=%d",
 		boundary, port)

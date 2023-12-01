@@ -5,8 +5,8 @@ build-mjpeg-http-mux:
 run-mjpeg-http-mux:
 	cd bin && sudo ./mjpeg-http-mux
 
-build-rgba-stereo-to-mjpeg-http-mux:
-	cd go/ && go build -o ../bin/rgba-stereo-to-mjpeg-http-mux cmd/rgba_stereo_to_mjpeg_http_mux/main.go && cp -r public/ ../bin/
+build-comb-mjpeg-http-mux:
+	cd go/ && go build -o ../bin/comb-mjpeg-http-mux cmd/comb_mjpeg_http_mux/main.go && cp -r public/ ../bin/
 
-run-rgba-stereo-to-mjpeg-http-mux:
-	cd bin && sudo ./rgba-stereo-to-mjpeg-http-mux
+run-comb-mjpeg-http-mux:
+	cd bin && sudo ./comb-mjpeg-http-mux

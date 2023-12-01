@@ -57,7 +57,7 @@ func LauchImx219CsiStereoCameraMjpegStream(width uint, height uint, rWidth uint,
 	}
 }
 
-func LauchImx219CsiCameraRgbaStream(index uint, width uint, height uint, rWidth uint, rHeight uint, port uint) {
+func LauchImx219CsiCameraRgb16Stream(index uint, width uint, height uint, rWidth uint, rHeight uint, port uint) {
 	cmdSetup := exec.Command(
 		"bash", "-c", CsiCameraSetup(IMX219, index, width, height),
 	)
@@ -71,7 +71,7 @@ func LauchImx219CsiCameraRgbaStream(index uint, width uint, height uint, rWidth 
 			CsiCameraConfig(index, IMX219, width, height)+
 			DecodeBin()+
 			Rescale(rWidth, rHeight)+
-			VideoConvertRgba()+
+			VideoConvertRgb16()+
 			TcpStreamLocalhost(port),
 	)
 	log.Print(strings.Join(cmd.Args, " "))

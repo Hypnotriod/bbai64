@@ -29,7 +29,7 @@ var jpegParams = jpegenc.EncodeParams{
 	Subsample:     jpegenc.Subsample444,
 }
 
-func serveTcpRgbaStreamSocket(width int, height int, mux *muxer.Muxer[PixelsRGB16], address string) {
+func serveTcpRgb16StreamSocket(width int, height int, mux *muxer.Muxer[PixelsRGB16], address string) {
 	soc, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
@@ -40,12 +40,12 @@ func serveTcpRgbaStreamSocket(width int, height int, mux *muxer.Muxer[PixelsRGB1
 		if err != nil {
 			log.Fatal("Cannot accept socket connection at ", address, " : ", err)
 		}
-		serveTcpRgbaStreamSocketConnection(conn, width, height, mux, address)
+		serveTcpRgb16StreamSocketConnection(conn, width, height, mux, address)
 		conn.Close()
 	}
 }
 
-func serveTcpRgbaStreamSocketConnection(conn net.Conn, width int, height int, mux *muxer.Muxer[PixelsRGB16], address string) {
+func serveTcpRgb16StreamSocketConnection(conn net.Conn, width int, height int, mux *muxer.Muxer[PixelsRGB16], address string) {
 	log.Print("Accepted input stream at ", address)
 
 	buffer := [BUFFERED_FRAMES_COUNT]PixelsRGB16{}
@@ -147,8 +147,8 @@ func makeStereoCameraMuxer(inputAddrL string, inputAddrR string, outputAddr stri
 	muxR := muxer.NewMuxer[PixelsRGB16](BUFFERED_FRAMES_COUNT)
 	go muxL.Run()
 	go muxR.Run()
-	go serveTcpRgbaStreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxL, inputAddrL)
-	go serveTcpRgbaStreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxR, inputAddrR)
+	go serveTcpRgb16StreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxL, inputAddrL)
+	go serveTcpRgb16StreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxR, inputAddrR)
 	http.HandleFunc(outputAddr, handleMjpegStreamRequest(RESCALE_WIDTH, RESCALE_HEIGHT*2, muxL, muxR))
 }
 
@@ -156,10 +156,10 @@ func main() {
 	// open with stereocomb.html
 	makeStereoCameraMuxer(":9990", ":9991", "/mjpeg_stream")
 	// gst-launch-1.0 videotestsrc ! video/x-raw, width=640, height=480, format=NV12 ! videoconvert ! video/x-raw, format=RGB16 ! tcpclientsink host=127.0.0.1 port=9990
-	go gstpipeline.LauchImx219CsiCameraRgbaStream(
+	go gstpipeline.LauchImx219CsiCameraRgb16Stream(
 		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, 9990)
 	// gst-launch-1.0 videotestsrc ! video/x-raw, width=640, height=480, format=NV12 ! videoconvert ! video/x-raw, format=RGB16 ! tcpclientsink host=127.0.0.1 port=9991
-	go gstpipeline.LauchImx219CsiCameraRgbaStream(
+	go gstpipeline.LauchImx219CsiCameraRgb16Stream(
 		1, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, 9991)
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 	http.ListenAndServe(SERVER_ADDRESS, nil)
