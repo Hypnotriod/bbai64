@@ -23,10 +23,10 @@ const RESCALE_HEIGHT = 720
 
 type PixelsRGB16 []byte
 
-var jpegParams = jpegenc.JpegEncodeParams{
-	QualityFactor: jpegenc.JpegQualityFactorBest,
-	PixelType:     jpegenc.JpegPixelTypeRGB565,
-	Subsample:     jpegenc.JpegSubsample444,
+var jpegParams = jpegenc.EncodeParams{
+	QualityFactor: jpegenc.QualityFactorBest,
+	PixelType:     jpegenc.PixelTypeRGB565,
+	Subsample:     jpegenc.Subsample444,
 }
 
 func serveTcpRgbaStreamSocket(width int, height int, mux *muxer.Muxer[PixelsRGB16], address string) {

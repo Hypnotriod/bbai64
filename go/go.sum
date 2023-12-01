@@ -1,2 +1,6 @@
 github.com/Hypnotriod/jpegenc v0.0.0-20231130184854-9353e1e54983 h1:ORnuEwT/YLeHHQtsP0uwa5z33j74/vjLrf6l65L1tug=
 github.com/Hypnotriod/jpegenc v0.0.0-20231130184854-9353e1e54983/go.mod h1:+ROY6of3k86vKz/wmlpGMavEAtvN6RrOPCrFeFQ0BmE=
+github.com/Hypnotriod/jpegenc v0.0.0-20231201145319-d79a112cd742 h1:aSnnf9g7s+FHg2qqdvAMwOFQPpqCWqfnScaU+3ldoBw=
+github.com/Hypnotriod/jpegenc v0.0.0-20231201145319-d79a112cd742/go.mod h1:+ROY6of3k86vKz/wmlpGMavEAtvN6RrOPCrFeFQ0BmE=
+github.com/Hypnotriod/jpegenc v0.1.0 h1:QQV/3p+ZwWeDuCSowlq3/OUiKUCgacx6MV9Is9sSfFw=
+github.com/Hypnotriod/jpegenc v0.1.0/go.mod h1:+ROY6of3k86vKz/wmlpGMavEAtvN6RrOPCrFeFQ0BmE=
