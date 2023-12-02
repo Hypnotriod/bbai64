@@ -100,7 +100,7 @@ func handleMjpegStreamRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseWrite
 }
 
 func makeMjpegMuxer(inputAddr string, outputAddr string) {
-	mux := muxer.NewMuxer[Chunk](CHUNKS_BUFFER_SIZE)
+	mux := muxer.NewMuxer[Chunk](CHUNKS_BUFFER_SIZE - 1)
 	go mux.Run()
 	go serveTcpSocket(mux, inputAddr)
 	http.HandleFunc(outputAddr, handleMjpegStreamRequest(mux))

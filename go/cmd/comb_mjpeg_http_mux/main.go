@@ -13,18 +13,18 @@ import (
 )
 
 const SERVER_ADDRESS = ":1337"
-const BUFFERED_FRAMES_COUNT = 8
+const BUFFERED_FRAMES_COUNT = 16
 const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
 const CAMERA_WIDTH = 1920
 const CAMERA_HEIGHT = 1080
-const RESCALE_WIDTH = 1280
-const RESCALE_HEIGHT = 720
+const RESCALE_WIDTH = 640  //1280
+const RESCALE_HEIGHT = 360 //720
 
 type PixelsRGB16 []byte
 
 var jpegParams = jpegenc.EncodeParams{
-	QualityFactor: jpegenc.QualityFactorBest,
+	QualityFactor: jpegenc.QualityFactorHigh,
 	PixelType:     jpegenc.PixelTypeRGB565,
 	Subsample:     jpegenc.Subsample444,
 }
@@ -143,8 +143,8 @@ func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[PixelsRGB
 }
 
 func makeStereoCameraMuxer(inputAddrL string, inputAddrR string, outputAddr string) {
-	muxL := muxer.NewMuxer[PixelsRGB16](BUFFERED_FRAMES_COUNT)
-	muxR := muxer.NewMuxer[PixelsRGB16](BUFFERED_FRAMES_COUNT)
+	muxL := muxer.NewMuxer[PixelsRGB16](BUFFERED_FRAMES_COUNT - 1)
+	muxR := muxer.NewMuxer[PixelsRGB16](BUFFERED_FRAMES_COUNT - 1)
 	go muxL.Run()
 	go muxR.Run()
 	go serveTcpRgb16StreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxL, inputAddrL)
