@@ -5,6 +5,7 @@ import (
 	"bbai64/pwm"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -23,18 +24,23 @@ var upgrader = websocket.Upgrader{
 
 var servoSteering = pwm.NewPWM(pwm.Bus0, pwm.ChannelA)
 var servoDrivetrain = pwm.NewPWM(pwm.Bus0, pwm.ChannelB)
+var wsMutex sync.Mutex
 
 func checkOrigin(r *http.Request) bool {
 	return true
 }
 
 func serveWSRequest(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Print("Serve ws request upgrade error: ", err)
+	if !wsMutex.TryLock() {
+		log.Print("Websocket multiple connections are not allowed with ", r.Host)
 		return
 	}
-	// todo: resolve multiple connections
+	defer wsMutex.Unlock()
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Print("Websocket upgrade error: ", err)
+		return
+	}
 	log.Print("Websocket connection established with ", r.Host)
 	defer conn.Close()
 	for {
@@ -50,6 +56,7 @@ func serveWSRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		processCommand(cmd)
 	}
+	log.Print("Websocket connection terminated with ", r.Host)
 }
 
 func processCommand(cmd *command.Command) {
