@@ -12,7 +12,7 @@ import (
 
 const SERVER_ADDRESS = ":1337"
 
-var upgrader = websocket.Upgrader{
+var wsUpgrader = websocket.Upgrader{
 	ReadBufferSize:  2048,
 	WriteBufferSize: 2048,
 	CheckOrigin:     checkOrigin,
@@ -30,7 +30,7 @@ func serveWSRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer wsMutex.Unlock()
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := wsUpgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("Websocket upgrade error: ", err)
 		return
