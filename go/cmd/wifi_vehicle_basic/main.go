@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -38,6 +39,7 @@ func serveWSRequest(w http.ResponseWriter, r *http.Request) {
 	log.Print("Websocket connection established with ", r.Host)
 	defer conn.Close()
 	for {
+		conn.SetReadDeadline(time.Now().Add(time.Second))
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Print("Websocket read error: ", err)
@@ -50,6 +52,7 @@ func serveWSRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		vehicle.ProcessCommand(cmd)
 	}
+	vehicle.Reset()
 	log.Print("Websocket connection terminated with ", r.Host)
 }
 

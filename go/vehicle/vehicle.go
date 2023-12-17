@@ -9,13 +9,21 @@ import (
 
 const SERVO_PWM_PERIOD = 20 * time.Millisecond
 const SERVO_PWM_DUTY_CYCLE_MIDDLE = 1500000 * time.Nanosecond
-const SERVO_PWM_DUTY_CYCLE_RANGE = 400000 * time.Nanosecond
+const SERVO_PWM_DUTY_CYCLE_RANGE = 320000 * time.Nanosecond
 
 var servoSteering = pwm.NewPWM(pwm.Bus0, pwm.ChannelA)
 var servoDrivetrain = pwm.NewPWM(pwm.Bus0, pwm.ChannelB)
 
+var steeringPrev float64
+var drivetrainPrev float64
+
 func Initialize() {
 	initServos()
+}
+
+func Reset() {
+	servoSteering.DutyCycle(SERVO_PWM_DUTY_CYCLE_MIDDLE)
+	servoDrivetrain.DutyCycle(SERVO_PWM_DUTY_CYCLE_MIDDLE)
 }
 
 func initServos() {
@@ -69,7 +77,13 @@ func setServoValues(values []float64) {
 		return
 	}
 	steering := normalize(values[0])
+	if steeringPrev != steering {
+		steeringPrev = steering
+		servoSteering.DutyCycle(SERVO_PWM_DUTY_CYCLE_MIDDLE + time.Duration(steering*float64(SERVO_PWM_DUTY_CYCLE_RANGE)))
+	}
 	drivetrain := normalize(values[1])
-	servoSteering.DutyCycle(SERVO_PWM_DUTY_CYCLE_MIDDLE + time.Duration(steering*float64(SERVO_PWM_DUTY_CYCLE_RANGE)))
-	servoDrivetrain.DutyCycle(SERVO_PWM_DUTY_CYCLE_MIDDLE + time.Duration(drivetrain*float64(SERVO_PWM_DUTY_CYCLE_RANGE)))
+	if drivetrainPrev != drivetrain {
+		drivetrainPrev = drivetrain
+		servoDrivetrain.DutyCycle(SERVO_PWM_DUTY_CYCLE_MIDDLE + time.Duration(drivetrain*float64(SERVO_PWM_DUTY_CYCLE_RANGE)))
+	}
 }

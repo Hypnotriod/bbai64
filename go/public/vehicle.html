@@ -32,8 +32,6 @@
 
         let webSocket = null;
         let gamepadIndex = null;
-        let steeringPrev = 0;
-        let drivetrainPrev = 0;
 
         window.addEventListener("gamepadconnected", (e) => {
             gamepadIndex = e.gamepad.index;
@@ -75,30 +73,26 @@
 
 
         function update() {
-            if (gamepadIndex === null || webSocket === null) {
-                window.requestAnimationFrame(update);
-                return;
+            let steering = 0;
+            let drivetrain = 0;
+            if (gamepadIndex !== null) {
+                const gamepad = navigator.getGamepads()[gamepadIndex];
+                // Left Stick
+                steering = gamepad.axes[0];
+                // L2 * -1 + R2
+                drivetrain = (-gamepad.buttons[6].value) + gamepad.buttons[7].value;
             }
-
-            const gamepad = navigator.getGamepads()[gamepadIndex];
-            // Left Stick
-            const steering = gamepad.axes[0];
-            // L2 * -1 + R2
-            const drivetrain = (-gamepad.buttons[6].value) + gamepad.buttons[7].value;
-            if (steeringPrev !== steering || drivetrainPrev != drivetrain) {
-                steeringPrev = steering
-                drivetrainPrev = drivetrain
+            if (webSocket !== null) {
                 const command = {
                     type: "setServoValues",
                     values: [steering, drivetrain],
                 }
                 webSocket.send(JSON.stringify(command));
             }
-            window.requestAnimationFrame(update);
         }
 
         initWebsocket();
-        update();
+        setInterval(update, 20)
     </script>
 </head>
 
