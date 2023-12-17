@@ -1,0 +1,111 @@
+<html>
+
+<head>
+    <title>Vehicle Basic</title>
+    <style>
+        body,
+        div,
+        img {
+            outline: none;
+            margin: 0;
+            padding: 0;
+            background-color: black;
+        }
+
+        img {
+            width: 100%;
+            height: auto;
+        }
+
+        #container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 100vh;
+        }
+    </style>
+    <script defer>
+        const SERVER_WS_URL
+            = (window.location.protocol === "https:" ? "wss:" : "ws:")
+            + `//${window.location.hostname}:${window.location.port}/ws`;
+
+        let webSocket = null;
+        let gamepadIndex = null;
+        let steeringPrev = 0;
+        let drivetrainPrev = 0;
+
+        window.addEventListener("gamepadconnected", (e) => {
+            gamepadIndex = e.gamepad.index;
+        });
+
+        window.addEventListener("gamepaddisconnected", (e) => {
+            if (e.gamepad.index === gamepadIndex) {
+                gamepadIndex = null;
+            }
+        });
+
+        function initWebsocket() {
+            try {
+                webSocket = new WebSocket(SERVER_WS_URL);
+                webSocket.onopen = onWebSocketOpen;
+                webSocket.onclose = onWebSocketClose;
+                webSocket.onmessage = onWebSocketMessage;
+            } catch (e) {
+                console.log("WebSocket error:", e);
+            }
+        }
+
+        function onWebSocketOpen(e) {
+            console.log("WebSocket connection established.");
+        }
+
+        function onWebSocketClose(e) {
+            console.log("WebSocket connection closed.");
+            webSocket = null;
+        }
+
+        function onWebSocketMessage(e) {
+            console.log("WebSocket message: " + e.data);
+        }
+
+        function onWebSocketError(e) {
+            console.log("Websocket error:", e);
+        }
+
+
+        function update() {
+            if (gamepadIndex === null || webSocket === null) {
+                window.requestAnimationFrame(update);
+                return;
+            }
+
+            const gamepad = navigator.getGamepads()[gamepadIndex];
+            // Left Stick
+            const steering = gamepad.axes[0];
+            // L2 * -1 + R2
+            const drivetrain = (-gamepad.buttons[6].value) + gamepad.buttons[7].value;
+            if (steeringPrev !== steering || drivetrainPrev != drivetrain) {
+                steeringPrev = steering
+                drivetrainPrev = drivetrain
+                const command = {
+                    type: "setServoValues",
+                    values: [steering, drivetrain],
+                }
+                webSocket.send(JSON.stringify(command));
+            }
+            window.requestAnimationFrame(update);
+        }
+
+        initWebsocket();
+        update();
+    </script>
+</head>
+
+<body>
+    <!-- <div id="container">
+        <img src="/mjpeg_stream"/>
+    </div> -->
+</body>
+
+</html>

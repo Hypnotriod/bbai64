@@ -1,10 +1,6 @@
-github.com/Hypnotriod/jpegenc v0.0.0-20231130184854-9353e1e54983 h1:ORnuEwT/YLeHHQtsP0uwa5z33j74/vjLrf6l65L1tug=
-github.com/Hypnotriod/jpegenc v0.0.0-20231130184854-9353e1e54983/go.mod h1:+ROY6of3k86vKz/wmlpGMavEAtvN6RrOPCrFeFQ0BmE=
-github.com/Hypnotriod/jpegenc v0.0.0-20231201145319-d79a112cd742 h1:aSnnf9g7s+FHg2qqdvAMwOFQPpqCWqfnScaU+3ldoBw=
-github.com/Hypnotriod/jpegenc v0.0.0-20231201145319-d79a112cd742/go.mod h1:+ROY6of3k86vKz/wmlpGMavEAtvN6RrOPCrFeFQ0BmE=
-github.com/Hypnotriod/jpegenc v0.1.0 h1:QQV/3p+ZwWeDuCSowlq3/OUiKUCgacx6MV9Is9sSfFw=
-github.com/Hypnotriod/jpegenc v0.1.0/go.mod h1:+ROY6of3k86vKz/wmlpGMavEAtvN6RrOPCrFeFQ0BmE=
-github.com/Hypnotriod/jpegenc v0.1.1 h1:4YJh6k0KXLvAQaYzvrOChtGmgXnH9QWVDeZkWosI5+4=
-github.com/Hypnotriod/jpegenc v0.1.1/go.mod h1:+ROY6of3k86vKz/wmlpGMavEAtvN6RrOPCrFeFQ0BmE=
 github.com/Hypnotriod/jpegenc v0.1.2 h1:+h9YWol+rP/oYOtZ3gv0gLWCEJ+/dveLvtivXStREKI=
 github.com/Hypnotriod/jpegenc v0.1.2/go.mod h1:+ROY6of3k86vKz/wmlpGMavEAtvN6RrOPCrFeFQ0BmE=
+github.com/gorilla/websocket v1.5.1 h1:gmztn0JnHVt9JZquRuzLw3g4wouNVzKL15iLr/zn/QY=
+github.com/gorilla/websocket v1.5.1/go.mod h1:x3kM2JMyaluk02fnUJpQuwD2dCS5NDG2ZHL0uE0tcaY=
+golang.org/x/net v0.17.0 h1:pVaXccu2ozPjCXewfr1S7xza/zcXTity9cCdXQYSjIM=
+golang.org/x/net v0.17.0/go.mod h1:NxSsAGuq816PNPmqtQdLE42eU2Fs7NoRIZrHJAlaCOE=

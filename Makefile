@@ -10,3 +10,9 @@ build-comb-mjpeg-http-mux:
 
 run-comb-mjpeg-http-mux:
 	cd bin && sudo ./comb-mjpeg-http-mux
+
+build-wifi-vehicle:
+	cd go/ && go build -o ../bin/wifi-vehicle cmd/wifi_vehicle_basic/main.go && cp -r public/ ../bin/
+
+run-wifi-vehicle:
+	cd bin && sudo ./wifi-vehicle
