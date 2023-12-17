@@ -1,8 +1,8 @@
 package main
 
 import (
-	"bbai64/command"
 	"bbai64/vehicle"
+	"encoding/json"
 	"log"
 	"net/http"
 	"sync"
@@ -38,6 +38,7 @@ func serveWSRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Print("Websocket connection established with ", r.Host)
 	defer conn.Close()
+	vehicleState := &vehicle.State{}
 	for {
 		conn.SetReadDeadline(time.Now().Add(time.Second))
 		_, message, err := conn.ReadMessage()
@@ -45,12 +46,12 @@ func serveWSRequest(w http.ResponseWriter, r *http.Request) {
 			log.Print("Websocket read error: ", err)
 			break
 		}
-		cmd, err := command.Unmarshal(message)
+		err = json.Unmarshal(message, vehicleState)
 		if err != nil {
 			log.Print("Websocket command format error: ", err)
 			break
 		}
-		vehicle.ProcessCommand(cmd)
+		vehicle.UpdateWithState(vehicleState)
 	}
 	vehicle.Reset()
 	log.Print("Websocket connection terminated with ", r.Host)

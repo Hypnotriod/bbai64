@@ -71,7 +71,6 @@
             console.log("Websocket error:", e);
         }
 
-
         function update() {
             let steering = 0;
             let drivetrain = 0;
@@ -83,11 +82,10 @@
                 drivetrain = (-gamepad.buttons[6].value) + gamepad.buttons[7].value;
             }
             if (webSocket !== null) {
-                const command = {
-                    type: "setServoValues",
-                    values: [steering, drivetrain],
+                const vehicleState = {
+                    servoValues: [steering, drivetrain],
                 }
-                webSocket.send(JSON.stringify(command));
+                webSocket.send(JSON.stringify(vehicleState));
             }
         }
 

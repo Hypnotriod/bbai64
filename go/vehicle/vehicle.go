@@ -1,11 +1,18 @@
 package vehicle
 
 import (
-	"bbai64/command"
 	"bbai64/pwm"
 	"log"
 	"time"
+
+	jsoniter "github.com/json-iterator/go"
 )
+
+var json jsoniter.API = jsoniter.ConfigCompatibleWithStandardLibrary
+
+type State struct {
+	ServoValues []float64 `json:"servoValues"`
+}
 
 const SERVO_PWM_PERIOD = 20 * time.Millisecond
 const SERVO_PWM_DUTY_CYCLE_MIDDLE = 1500000 * time.Nanosecond
@@ -54,11 +61,8 @@ func initServos() {
 	}
 }
 
-func ProcessCommand(cmd *command.Command) {
-	switch cmd.Type {
-	case command.SetServoValues:
-		setServoValues(cmd.Values)
-	}
+func UpdateWithState(status *State) {
+	setServoValues(status.ServoValues)
 }
 
 func normalize(value float64) float64 {
