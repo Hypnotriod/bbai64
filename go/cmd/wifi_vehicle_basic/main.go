@@ -19,8 +19,8 @@ import (
 var json jsoniter.API = jsoniter.ConfigCompatibleWithStandardLibrary
 
 const SERVER_ADDRESS = ":1337"
-const CHUNKS_BUFFER_SIZE = 1024
-const CHUNK_SIZE = 4096
+const MJPEG_STREAM_CHUNKS_BUFFER_LENGTH = 1024
+const MJPEG_STREAM_CHUNK_SIZE = 4096
 const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
 const CAMERA_WIDTH = 1920
@@ -30,7 +30,7 @@ const RESCALE_HEIGHT = 720
 const JPEG_QUALITY = 50
 
 type Chunk struct {
-	Data [CHUNK_SIZE]byte
+	Data [MJPEG_STREAM_CHUNK_SIZE]byte
 	Size int
 }
 
@@ -46,7 +46,7 @@ func checkOrigin(r *http.Request) bool {
 	return true
 }
 
-func serveWSRequest(w http.ResponseWriter, r *http.Request) {
+func serveVehicleControlWSRequest(w http.ResponseWriter, r *http.Request) {
 	if !wsMutex.TryLock() {
 		log.Print("Websocket multiple connections are not allowed with ", r.Host)
 		return
@@ -78,7 +78,7 @@ func serveWSRequest(w http.ResponseWriter, r *http.Request) {
 	log.Print("Websocket connection terminated with ", r.Host)
 }
 
-func serveTcpSocket(mux *muxer.Muxer[Chunk], address string) {
+func serveMjpegStreamTcpSocket(mux *muxer.Muxer[Chunk], address string) {
 	soc, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
@@ -89,25 +89,25 @@ func serveTcpSocket(mux *muxer.Muxer[Chunk], address string) {
 		if err != nil {
 			log.Fatal("Cannot accept socket connection at ", address, " : ", err)
 		}
-		serveTcpSocketConnection(conn, mux, address)
+		serveMjpegStreamTcpSocketConnection(conn, mux, address)
 		conn.Close()
 	}
 }
 
-func serveTcpSocketConnection(conn net.Conn, mux *muxer.Muxer[Chunk], address string) {
+func serveMjpegStreamTcpSocketConnection(conn net.Conn, mux *muxer.Muxer[Chunk], address string) {
 	log.Print("Accepted input stream at ", address)
 	var buffIndex int32
-	buffer := [CHUNKS_BUFFER_SIZE]Chunk{}
+	buffer := [MJPEG_STREAM_CHUNKS_BUFFER_LENGTH]Chunk{}
 	reader := bufio.NewReader(conn)
 	for {
 		chunk := &buffer[buffIndex]
-		buffIndex = (buffIndex + 1) % CHUNKS_BUFFER_SIZE
+		buffIndex = (buffIndex + 1) % MJPEG_STREAM_CHUNKS_BUFFER_LENGTH
 		size, err := reader.Read(chunk.Data[:])
 		if err != nil {
 			if err == io.EOF {
 				log.Print("Socket connection closed at ", address)
 			} else {
-				log.Print("Socket read error ", err)
+				log.Print("Socket read error: ", err)
 			}
 			break
 		}
@@ -141,7 +141,7 @@ func handleMjpegStreamRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseWrite
 			}
 			_, err := rw.Write(chunk.Data[:chunk.Size])
 			if err != nil {
-				log.Print("Cannot write response to ", req.RemoteAddr)
+				log.Print("Cannot write response to ", req.RemoteAddr, " : ", err)
 				break
 			}
 		}
@@ -151,9 +151,9 @@ func handleMjpegStreamRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseWrite
 }
 
 func makeMjpegMuxer(inputAddr string, outputAddr string) {
-	mux := muxer.NewMuxer[Chunk](CHUNKS_BUFFER_SIZE - 1)
+	mux := muxer.NewMuxer[Chunk](MJPEG_STREAM_CHUNKS_BUFFER_LENGTH - 1)
 	go mux.Run()
-	go serveTcpSocket(mux, inputAddr)
+	go serveMjpegStreamTcpSocket(mux, inputAddr)
 	http.HandleFunc(outputAddr, handleMjpegStreamRequest(mux))
 }
 
@@ -163,7 +163,7 @@ func main() {
 	go gstpipeline.LauchImx219CsiCameraMjpegStream(
 		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
 
-	http.HandleFunc("/ws", serveWSRequest)
+	http.HandleFunc("/ws", serveVehicleControlWSRequest)
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 	http.ListenAndServe(SERVER_ADDRESS, nil)
 }
