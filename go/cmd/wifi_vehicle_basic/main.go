@@ -5,6 +5,7 @@ import (
 	"bbai64/muxer"
 	"bbai64/vehicle"
 	"bufio"
+	"errors"
 	"io"
 	"log"
 	"net"
@@ -165,5 +166,7 @@ func main() {
 
 	http.HandleFunc("/ws", serveVehicleControlWSRequest)
 	http.Handle("/", http.FileServer(http.Dir("./public")))
-	http.ListenAndServe(SERVER_ADDRESS, nil)
+	if err := http.ListenAndServe(SERVER_ADDRESS, nil); !errors.Is(err, http.ErrServerClosed) {
+		log.Fatal("Unable to start HTTP server: ", err)
+	}
 }
