@@ -12,26 +12,56 @@
             background-color: black;
         }
 
-        img {
-            width: 100%;
-            height: auto;
+        #stream {
+            pointer-events: none;
+            overflow: hidden;
+            height: 100vh;
+            width: auto;
         }
 
         #container {
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
             text-align: center;
             min-height: 100vh;
         }
+
+        #status {
+            overflow: hidden;
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            text-shadow:
+                -1px 0px 0px black,
+                1px 0px 0px black,
+                0px -1px 0px black,
+                0px 1px 0px black;
+            color: white;
+            font-family: "Roboto", "Comic Sans", sans-serif;
+            font-size: 12px;
+        }
     </style>
+</head>
+
+<body>
+    <div id="container">
+        <img id="stream" src="/mjpeg_stream" />
+    </div>
+    <span id="status"></span>
+
     <script defer>
         const SERVER_WS_URL
             = (window.location.protocol === "https:" ? "wss:" : "ws:")
             + `//${window.location.hostname}:${window.location.port}/ws`;
 
+        const stream = document.getElementById("stream");
+        const status = document.getElementById("status");
+
         let webSocket = null;
         let gamepadIndex = null;
+        let steeringCenter = 0;
 
         window.addEventListener("gamepadconnected", (e) => {
             gamepadIndex = e.gamepad.index;
@@ -43,24 +73,42 @@
             }
         });
 
-        function initWebsocket() {
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+
+        function initWebSocket() {
             try {
                 webSocket = new WebSocket(SERVER_WS_URL);
                 webSocket.onopen = onWebSocketOpen;
                 webSocket.onclose = onWebSocketClose;
                 webSocket.onmessage = onWebSocketMessage;
             } catch (e) {
-                console.log("WebSocket error:", e);
+                console.log("WebSocket connection error:", e);
+                webSocket = null;
+                setTimeout(initWebSocket, 5000);
             }
         }
 
         function onWebSocketOpen(e) {
             console.log("WebSocket connection established.");
+            reconnectMjpegStream();
+        }
+
+        function reconnectMjpegStream() {
+            const src = stream.src;
+            stream.src = "";
+            stream.src = src;
         }
 
         function onWebSocketClose(e) {
             console.log("WebSocket connection closed.");
             webSocket = null;
+            setTimeout(initWebSocket, 1000);
         }
 
         function onWebSocketMessage(e) {
@@ -72,32 +120,33 @@
         }
 
         function update() {
-            let steering = 0;
+            let steering = steeringCenter;
             let drivetrain = 0;
             if (gamepadIndex !== null) {
                 const gamepad = navigator.getGamepads()[gamepadIndex];
-                // Left Stick
-                steering = gamepad.axes[0];
-                // L2 * -1 + R2
-                drivetrain = (-gamepad.buttons[6].value) + gamepad.buttons[7].value;
+                steeringCenter -= gamepad.buttons[14].pressed ? 0.0005 : 0; // Left arrow
+                steeringCenter += gamepad.buttons[15].pressed ? 0.0005 : 0; // Right arrow
+                steering += gamepad.axes[0]; // Left Stick
+                drivetrain = (-gamepad.buttons[6].value) + gamepad.buttons[7].value; // L2 * -1 + R2
             }
-            if (webSocket !== null) {
+            if (webSocket !== null && webSocket.readyState === WebSocket.OPEN) {
                 const vehicleState = {
                     servoValues: [steering, drivetrain],
                 }
                 webSocket.send(JSON.stringify(vehicleState));
             }
+            status.innerHTML =
+                `Gamepad: ${gamepadIndex !== null ? "connected" : "disconnected"}<br>
+                Vehicle control: ${webSocket !== null ? "connected" : "disconnected"}<br>
+                Steering center: ${steeringCenter.toFixed(3)}<br>
+                Steering: ${steering.toFixed(3)}<br>
+                Drivetrain: ${drivetrain.toFixed(3)}<br>`;
         }
 
-        initWebsocket();
-        setInterval(update, 20)
+        document.body.addEventListener('click', toggleFullScreen);
+        initWebSocket();
+        setInterval(update, 20) // 20 ms pwm period
     </script>
-</head>
-
-<body>
-    <!-- <div id="container">
-        <img src="/mjpeg_stream"/>
-    </div> -->
 </body>
 
 </html>

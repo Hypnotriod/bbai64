@@ -4,18 +4,14 @@ import (
 	"bbai64/pwm"
 	"log"
 	"time"
-
-	jsoniter "github.com/json-iterator/go"
 )
-
-var json jsoniter.API = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type State struct {
 	ServoValues []float64 `json:"servoValues"`
 }
 
-const SERVO_PWM_PERIOD = 20 * time.Millisecond
-const SERVO_PWM_DUTY_CYCLE_MIDDLE = 1500000 * time.Nanosecond
+const PWM_PERIOD = 20 * time.Millisecond
+const PWM_DUTY_CYCLE_MIDDLE = 1500000 * time.Nanosecond
 const SERVO_PWM_DUTY_CYCLE_RANGE = 320000 * time.Nanosecond
 
 var servoSteering = pwm.NewPWM(pwm.Bus0, pwm.ChannelA)
@@ -29,15 +25,15 @@ func Initialize() {
 }
 
 func Reset() {
-	servoSteering.DutyCycle(SERVO_PWM_DUTY_CYCLE_MIDDLE)
-	servoDrivetrain.DutyCycle(SERVO_PWM_DUTY_CYCLE_MIDDLE)
+	servoSteering.DutyCycle(PWM_DUTY_CYCLE_MIDDLE)
+	servoDrivetrain.DutyCycle(PWM_DUTY_CYCLE_MIDDLE)
 }
 
 func initServos() {
-	if err := servoSteering.Period(SERVO_PWM_PERIOD); err != nil {
+	if err := servoSteering.Period(PWM_PERIOD); err != nil {
 		log.Fatal("Could not set Steering pwm period")
 	}
-	if err := servoSteering.DutyCycle(SERVO_PWM_DUTY_CYCLE_MIDDLE); err != nil {
+	if err := servoSteering.DutyCycle(PWM_DUTY_CYCLE_MIDDLE); err != nil {
 		log.Fatal("Could not set Steering pwm duty cycle")
 	}
 	if err := servoSteering.Polarity(pwm.PolarityInversed); err != nil {
@@ -47,10 +43,10 @@ func initServos() {
 		log.Fatal("Could not enable Steering pwm")
 	}
 
-	if err := servoDrivetrain.Period(SERVO_PWM_PERIOD); err != nil {
+	if err := servoDrivetrain.Period(PWM_PERIOD); err != nil {
 		log.Fatal("Could not set Drivetrain pwm period")
 	}
-	if err := servoDrivetrain.DutyCycle(SERVO_PWM_DUTY_CYCLE_MIDDLE); err != nil {
+	if err := servoDrivetrain.DutyCycle(PWM_DUTY_CYCLE_MIDDLE); err != nil {
 		log.Fatal("Could not set Drivetrain pwm duty cycle")
 	}
 	if err := servoDrivetrain.Polarity(pwm.PolarityInversed); err != nil {
@@ -83,11 +79,11 @@ func setServoValues(values []float64) {
 	steering := normalize(values[0])
 	if steeringPrev != steering {
 		steeringPrev = steering
-		servoSteering.DutyCycle(SERVO_PWM_DUTY_CYCLE_MIDDLE + time.Duration(steering*float64(SERVO_PWM_DUTY_CYCLE_RANGE)))
+		servoSteering.DutyCycle(PWM_DUTY_CYCLE_MIDDLE + time.Duration(steering*float64(SERVO_PWM_DUTY_CYCLE_RANGE)))
 	}
 	drivetrain := normalize(values[1])
 	if drivetrainPrev != drivetrain {
 		drivetrainPrev = drivetrain
-		servoDrivetrain.DutyCycle(SERVO_PWM_DUTY_CYCLE_MIDDLE + time.Duration(drivetrain*float64(SERVO_PWM_DUTY_CYCLE_RANGE)))
+		servoDrivetrain.DutyCycle(PWM_DUTY_CYCLE_MIDDLE + time.Duration(drivetrain*float64(SERVO_PWM_DUTY_CYCLE_RANGE)))
 	}
 }
