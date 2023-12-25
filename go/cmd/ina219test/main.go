@@ -37,7 +37,7 @@ func main() {
 
 		// assume that 4.1 is the maximum voltage 18650 Li-Ion battery can be charged to
 		// and 3.3 is the absolute minimum voltage 18650 Li-Ion battery can be discharged to
-		percents := ((busVoltage / 3) - 3.3) / 0.7 * 100
+		percents := ((busVoltage / 3) - 3.3) / 0.75 * 100
 		if percents > 100 {
 			percents = 100
 		}
