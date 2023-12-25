@@ -4,23 +4,15 @@ import "bbai64/i2c"
 
 // based on: https://www.waveshare.com/wiki/UPS_Module_3S
 
+type Register uint8
+
 const (
-	// Config Register (R/W)
-	_REG_CONFIG uint8 = 0x00
-	// SHUNT VOLTAGE REGISTER (R)
-	_REG_SHUNTVOLTAGE uint8 = 0x01
-
-	// BUS VOLTAGE REGISTER (R)
-	_REG_BUSVOLTAGE uint8 = 0x02
-
-	// POWER REGISTER (R)
-	_REG_POWER uint8 = 0x03
-
-	// CURRENT REGISTER (R)
-	_REG_CURRENT uint8 = 0x04
-
-	// CALIBRATION REGISTER (R/W)
-	_REG_CALIBRATION uint8 = 0x05
+	REG_CONFIG       Register = 0x00
+	REG_SHUNTVOLTAGE Register = 0x01
+	REG_BUSVOLTAGE   Register = 0x02
+	REG_POWER        Register = 0x03
+	REG_CURRENT      Register = 0x04
+	REG_CALIBRATION  Register = 0x05
 )
 
 type BusVoltageRange uint16
@@ -71,32 +63,24 @@ const (
 const ADDRESS_DEFAULT uint8 = 0x41
 
 type INA219 struct {
-	bus                  *i2c.Bus
-	address              uint8
-	bus_voltage_range    BusVoltageRange
-	gain                 Gain
-	bus_adc_resolution   ADCResolution
-	shunt_adc_resolution ADCResolution
-	mode                 Mode
-	config               uint16
-	_cal_value           uint16
-	_current_lsb         float32
-	_power_lsb           float32
+	bus              *i2c.Bus
+	address          uint8
+	calibrationValue uint16
+	currentLSB       float32
+	powerLSB         float32
 }
 
-func New(bus *i2c.Bus, address uint8) (*INA219, error) {
-	ina219 := &INA219{
+func New(bus *i2c.Bus, address uint8) *INA219 {
+	return &INA219{
 		bus:     bus,
 		address: address,
 	}
-	err := ina219.setCalibration32Volts2Amps()
-	return ina219, err
 }
 
 // Configures to INA219 to be able to measure up to 32V and 2A of current.
 // Counter overflow occurs at 3.2A.
 // These calculations assume a 0.1 shunt ohm resistor is present
-func (i *INA219) setCalibration32Volts2Amps() error {
+func (i *INA219) SetCalibration32Volts2Amps() error {
 	// By default we use a pretty huge range for the input voltage,
 	// which probably isn't the most appropriate choice for system
 	// that don't use a lot of power.  But all of the calculations
@@ -124,18 +108,18 @@ func (i *INA219) setCalibration32Volts2Amps() error {
 	// 4. Choose an LSB between the min and max values
 	//    (Preferrably a roundish number close to MinLSB)
 	// CurrentLSB = 0.0001 (100uA per bit)
-	i._current_lsb = 0.1 // Current LSB = 100uA per bit
+	i.currentLSB = 0.1 // Current LSB = 100uA per bit
 
 	// 5. Compute the calibration register
 	// Cal = trunc (0.04096 / (Current_LSB * RSHUNT))
 	// Cal = 4096 (0x1000)
 
-	i._cal_value = 4096
+	i.calibrationValue = 4096
 
 	// 6. Calculate the power LSB
 	// PowerLSB = 20 * CurrentLSB
 	// PowerLSB = 0.002 (2mW per bit)
-	i._power_lsb = 0.002 // Power LSB = 2mW per bit
+	i.powerLSB = 0.002 // Power LSB = 2mW per bit
 
 	// 7. Compute the maximum current and shunt voltage values before overflow
 	//
@@ -163,44 +147,40 @@ func (i *INA219) setCalibration32Volts2Amps() error {
 	// MaximumPower = 102.4W
 
 	// Set Calibration register to 'Cal' calculated above
-	if err := i.bus.WriteWord(i.address, _REG_CALIBRATION, i._cal_value); err != nil {
+	if err := i.bus.WriteWord(i.address, uint8(REG_CALIBRATION), i.calibrationValue); err != nil {
 		return err
 	}
 
 	// Set Config register to take into account the settings above
-	i.bus_voltage_range = RANGE_32V
-	i.gain = DIV_8_320MV
-	i.bus_adc_resolution = ADCRES_12BIT_32S
-	i.shunt_adc_resolution = ADCRES_12BIT_32S
-	i.mode = SANDBVOLT_CONTINUOUS
-	i.config = uint16(i.bus_voltage_range<<13) |
-		uint16(i.gain<<11) |
-		uint16(i.bus_adc_resolution<<7) |
-		uint16(i.shunt_adc_resolution<<3) |
-		uint16(i.mode)
-	return i.bus.WriteWord(i.address, _REG_CONFIG, i.config)
+	busVoltageRange := RANGE_32V
+	gain := DIV_8_320MV
+	busADCResolution := ADCRES_12BIT_32S
+	shuntADCResolution := ADCRES_12BIT_32S
+	mode := SANDBVOLT_CONTINUOUS
+	config := uint16(busVoltageRange<<13) |
+		uint16(gain<<11) |
+		uint16(busADCResolution<<7) |
+		uint16(shuntADCResolution<<3) |
+		uint16(mode)
+	return i.bus.WriteWord(i.address, uint8(REG_CONFIG), config)
 }
 
 func (i *INA219) ReadShuntVoltage() (float32, error) {
-	if err := i.bus.WriteWord(i.address, _REG_CALIBRATION, i._cal_value); err != nil {
+	if err := i.bus.WriteWord(i.address, uint8(REG_CALIBRATION), i.calibrationValue); err != nil {
 		return 0, err
 	}
-	value, err := i.bus.ReadWord(i.address, _REG_SHUNTVOLTAGE)
+	value, err := i.bus.ReadWord(i.address, uint8(REG_SHUNTVOLTAGE))
 	if err != nil {
 		return 0, err
-	}
-	if value > 32767 {
-		value -= 65535
 	}
 	return float32(value) * 0.00001, nil
 }
 
 func (i *INA219) ReadBusVoltage() (float32, error) {
-	if err := i.bus.WriteWord(i.address, _REG_CALIBRATION, i._cal_value); err != nil {
+	if err := i.bus.WriteWord(i.address, uint8(REG_CALIBRATION), i.calibrationValue); err != nil {
 		return 0, err
 	}
-	i.bus.ReadWord(i.address, _REG_BUSVOLTAGE)
-	value, err := i.bus.ReadWord(i.address, _REG_BUSVOLTAGE)
+	value, err := i.bus.ReadWord(i.address, uint8(REG_BUSVOLTAGE))
 	if err != nil {
 		return 0, err
 	}
@@ -208,23 +188,17 @@ func (i *INA219) ReadBusVoltage() (float32, error) {
 }
 
 func (i *INA219) ReadCurrent() (float32, error) {
-	value, err := i.bus.ReadWord(i.address, _REG_CURRENT)
+	value, err := i.bus.ReadWord(i.address, uint8(REG_CURRENT))
 	if err != nil {
 		return 0, err
 	}
-	if value > 32767 {
-		value -= 65535
-	}
-	return float32(value) * i._current_lsb * 0.001, nil
+	return float32(value) * i.currentLSB * 0.001, nil
 }
 
 func (i *INA219) ReadPower() (float32, error) {
-	value, err := i.bus.ReadWord(i.address, _REG_POWER)
+	value, err := i.bus.ReadWord(i.address, uint8(REG_POWER))
 	if err != nil {
 		return 0, err
 	}
-	if value > 32767 {
-		value -= 65535
-	}
-	return float32(value) * i._current_lsb, nil
+	return float32(value) * i.currentLSB, nil
 }
