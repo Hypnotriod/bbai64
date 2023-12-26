@@ -32,12 +32,19 @@ func main() {
 		}
 		log.Printf("3S: %.3f V", busVoltage)
 		log.Printf("1S: %.3f V", busVoltage/3)
-		log.Printf("Current: %.3f A", current)
+		log.Printf("Current: %.3f A", -current)
 		log.Printf("Power: %.3f W", power)
 
-		// assume that 4.1 is the maximum voltage 18650 Li-Ion battery can be charged to
-		// and 3.3 is the absolute minimum voltage 18650 Li-Ion battery can be discharged to
-		percents := ((busVoltage / 3) - 3.3) / 0.75 * 100
+		// Assume that 4V is the maximum voltage 18650 Li-Ion battery shows under the load,
+		// 4.1V is the maximum voltage 18650 Li-Ion battery can be charged to
+		// and 3.5V is the minimum voltage 18650 Li-Ion battery can be discharged to
+		var percents float64
+		if current < 0 { // Battery provides power
+			percents = ((busVoltage / 3) - 3.5) / 0.5 * 100
+		} else { // Battery is charging
+			percents = ((busVoltage / 3) - 3.5) / 0.6 * 100
+		}
+
 		if percents > 100 {
 			percents = 100
 		}
