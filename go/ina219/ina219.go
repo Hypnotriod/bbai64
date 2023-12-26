@@ -7,12 +7,12 @@ import "bbai64/i2c"
 type Register uint8
 
 const (
-	REG_CONFIG       Register = 0x00
-	REG_SHUNTVOLTAGE Register = 0x01
-	REG_BUSVOLTAGE   Register = 0x02
-	REG_POWER        Register = 0x03
-	REG_CURRENT      Register = 0x04
-	REG_CALIBRATION  Register = 0x05
+	REG_CONFIG        Register = 0x00
+	REG_SHUNT_VOLTAGE Register = 0x01
+	REG_BUS_VOLTAGE   Register = 0x02
+	REG_POWER         Register = 0x03
+	REG_CURRENT       Register = 0x04
+	REG_CALIBRATION   Register = 0x05
 )
 
 type BusVoltageRange uint16
@@ -54,7 +54,7 @@ const (
 	SVOLT_TRIGGERED      Mode = 0x01 // shunt voltage triggered
 	BVOLT_TRIGGERED      Mode = 0x02 // bus voltage triggered
 	SANDBVOLT_TRIGGERED  Mode = 0x03 // shunt and bus voltage triggered
-	ADCOFF               Mode = 0x04 // ADC off
+	ADC_OFF              Mode = 0x04 // ADC off
 	SVOLT_CONTINUOUS     Mode = 0x05 // shunt voltage continuous
 	BVOLT_CONTINUOUS     Mode = 0x06 // bus voltage continuous
 	SANDBVOLT_CONTINUOUS Mode = 0x07 // shunt and bus voltage continuous
@@ -104,7 +104,7 @@ func (i *INA219) writeConfig(
 }
 
 func (i *INA219) ReadShuntVoltage() (float64, error) {
-	value, err := i.bus.ReadWord(i.address, uint8(REG_SHUNTVOLTAGE))
+	value, err := i.bus.ReadWord(i.address, uint8(REG_SHUNT_VOLTAGE))
 	if err != nil {
 		return 0, err
 	}
@@ -113,7 +113,7 @@ func (i *INA219) ReadShuntVoltage() (float64, error) {
 }
 
 func (i *INA219) ReadBusVoltage() (float64, error) {
-	value, err := i.bus.ReadWord(i.address, uint8(REG_BUSVOLTAGE))
+	value, err := i.bus.ReadWord(i.address, uint8(REG_BUS_VOLTAGE))
 	if err != nil {
 		return 0, err
 	}

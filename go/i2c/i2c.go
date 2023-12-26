@@ -9,21 +9,21 @@ import (
 	"unsafe"
 )
 
-type Device int
+type BusNumber int
 
 const (
-	Device1 Device = 1
-	Device2 Device = 2
-	Device3 Device = 3
-	Device4 Device = 4
+	Bus1 BusNumber = 1
+	Bus2 BusNumber = 2
+	Bus3 BusNumber = 3
+	Bus4 BusNumber = 4
 )
 
 type Bus struct {
 	f *os.File
 }
 
-func Open(device Device) (c *Bus, err error) {
-	path := fmt.Sprintf("/dev/bone/i2c/%d", device)
+func Open(busNumber BusNumber) (c *Bus, err error) {
+	path := fmt.Sprintf("/dev/bone/i2c/%d", busNumber)
 	f, err := os.OpenFile(path, syscall.O_RDWR, 0666)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (b *Bus) ReadByte(address uint8, offset uint8) (uint8, error) {
 	return buf[0], nil
 }
 
-func (c *Bus) ReadWord(address uint8, offset uint8) (uint16, error) {
+func (b *Bus) ReadWord(address uint8, offset uint8) (uint16, error) {
 	buf := []uint8{0, 0}
 	msg := []i2c_msg{
 		{
@@ -74,7 +74,7 @@ func (c *Bus) ReadWord(address uint8, offset uint8) (uint16, error) {
 			buf:   uintptr(unsafe.Pointer(&buf[0])),
 		},
 	}
-	err := transfer(c.f, &msg[0], len(msg))
+	err := transfer(b.f, &msg[0], len(msg))
 	if err != nil {
 		return 0, err
 	}
@@ -82,8 +82,8 @@ func (c *Bus) ReadWord(address uint8, offset uint8) (uint16, error) {
 	return word, err
 }
 
-func (c *Bus) WriteByte(address uint8, offset uint8, b uint8) error {
-	buf := []uint8{offset, b}
+func (b *Bus) WriteByte(address uint8, offset uint8, data uint8) error {
+	buf := []uint8{offset, data}
 	msg := []i2c_msg{
 		{
 			addr:  uint16(address),
@@ -92,11 +92,11 @@ func (c *Bus) WriteByte(address uint8, offset uint8, b uint8) error {
 			buf:   uintptr(unsafe.Pointer(&buf[0])),
 		},
 	}
-	return transfer(c.f, &msg[0], len(msg))
+	return transfer(b.f, &msg[0], len(msg))
 }
 
-func (c *Bus) WriteWord(address uint8, offset uint8, w uint16) error {
-	buf := []uint8{offset, uint8((w >> 8)), uint8(w)}
+func (b *Bus) WriteWord(address uint8, offset uint8, data uint16) error {
+	buf := []uint8{offset, uint8((data >> 8)), uint8(data)}
 	msg := []i2c_msg{
 		{
 			addr:  uint16(address),
@@ -105,7 +105,7 @@ func (c *Bus) WriteWord(address uint8, offset uint8, w uint16) error {
 			buf:   uintptr(unsafe.Pointer(&buf[0])),
 		},
 	}
-	return transfer(c.f, &msg[0], len(msg))
+	return transfer(b.f, &msg[0], len(msg))
 }
 
 const (

@@ -8,9 +8,9 @@ import (
 )
 
 func main() {
-	bus, err := i2c.Open(i2c.Device1)
+	bus, err := i2c.Open(i2c.Bus1)
 	if err != nil {
-		log.Fatal("Can not open i2c device 1")
+		log.Fatal("Can not open i2c bus 1")
 	}
 	defer bus.Close()
 	ina219 := ina219.New(bus, ina219.ADDRESS_DEFAULT)
