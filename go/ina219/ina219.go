@@ -103,21 +103,12 @@ func (i *INA219) writeConfig(
 	return i.bus.WriteWord(i.address, uint8(REG_CONFIG), config)
 }
 
-func absWordValue(word uint16) float64 {
-	value := int64(word)
-	if value > 32767 {
-		value -= 65535
-		value *= -1
-	}
-	return float64(value)
-}
-
 func (i *INA219) ReadShuntVoltage() (float64, error) {
 	value, err := i.bus.ReadWord(i.address, uint8(REG_SHUNTVOLTAGE))
 	if err != nil {
 		return 0, err
 	}
-	result := absWordValue(value) * 0.01 / 1000
+	result := float64(int16(value)) * 0.01 / 1000
 	return result, nil
 }
 
@@ -135,7 +126,7 @@ func (i *INA219) ReadCurrent() (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	result := absWordValue(value) * i.currentLSB / 1000
+	result := float64(int16(value)) * i.currentLSB / 1000
 	return result, nil
 }
 
@@ -144,6 +135,6 @@ func (i *INA219) ReadPower() (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	result := absWordValue(value) * i.powerLSB / 1000
+	result := float64(int16(value)) * i.powerLSB / 1000
 	return result, nil
 }
