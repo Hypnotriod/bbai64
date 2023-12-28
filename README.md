@@ -1,6 +1,12 @@
 # bbai64
 Some random stuff I found related to the BeagleBone AI-64 platform
 
+# P8 P9 headers periphery mapping
+[https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec)
+* [I2C](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#I2C)
+* [PWM](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#PWM)
+* [SPI](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#SPI)
+
 # imaging.zip, dri.zip
 Taken from [TI's PROCESSOR-SDK-J721E](https://www.ti.com/tool/PROCESSOR-SDK-J721E)  
 ```
