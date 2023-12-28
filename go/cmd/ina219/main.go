@@ -22,6 +22,10 @@ func main() {
 		if err != nil {
 			log.Fatal("Can not read bus voltage")
 		}
+		shuntVoltage, err := ina219.ReadShuntVoltage()
+		if err != nil {
+			log.Fatal("Can not read shunt voltage")
+		}
 		current, err := ina219.ReadCurrent()
 		if err != nil {
 			log.Fatal("Can not read current")
@@ -30,20 +34,17 @@ func main() {
 		if err != nil {
 			log.Fatal("Can not read power")
 		}
-		log.Printf("3S: %.3f V", busVoltage)
-		log.Printf("1S: %.3f V", busVoltage/3)
-		log.Printf("Current: %.3f A", -current)
+		batteryVoltage := busVoltage - shuntVoltage
+		log.Printf("Shunt: %.3f V", shuntVoltage)
+		log.Printf("Bus: %.3f V", busVoltage)
+		log.Printf("3S: %.3f V", batteryVoltage)
+		log.Printf("1S: %.3f V", batteryVoltage/3)
+		log.Printf("Current: %.3f A", current)
 		log.Printf("Power: %.3f W", power)
 
-		// Assume that 4V is the maximum voltage 18650 Li-Ion battery shows under the load,
-		// 4.1V is the maximum voltage 18650 Li-Ion battery can be charged to
+		// Assume that 4.0V is the maximum voltage 18650 Li-Ion battery can be charged to
 		// and 3.5V is the minimum voltage 18650 Li-Ion battery can be discharged to
-		var percents float64
-		if current < 0 { // Battery provides power
-			percents = ((busVoltage / 3) - 3.5) / 0.5 * 100
-		} else { // Battery is charging
-			percents = ((busVoltage / 3) - 3.5) / 0.6 * 100
-		}
+		percents := ((batteryVoltage / 3) - 3.5) / 0.5 * 100
 
 		if percents > 100 {
 			percents = 100

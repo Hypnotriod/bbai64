@@ -8,12 +8,15 @@ import (
 	"time"
 )
 
+// negative ShuntVolate and Current means the battery is discharging
 type UpsModuleStatus struct {
-	BusVoltage     float64
-	CellVoltage    float64
-	Current        float64 // negative current means the battery is discharging
-	Power          float64
-	ChargePercents float64
+	BusVoltage     float64 `json:"busVoltage"`
+	ShuntVolate    float64 `json:"shuntVolate"`
+	BatteryVoltage float64 `json:"batteryVoltage"`
+	CellVoltage    float64 `json:"cellVoltage"`
+	Current        float64 `json:"current"`
+	Power          float64 `json:"power"`
+	ChargePercents float64 `json:"chargePercents"`
 }
 
 type UpsModule3S struct {
@@ -42,10 +45,17 @@ func (u *UpsModule3S) Run(refreshPeriod time.Duration) {
 	}
 
 	var busVoltage float64
+	var shuntVoltage float64
+	var batteryVoltage float64
 	var current float64
 	var power float64
 	var chargePercents float64
 	for {
+		shuntVoltage, err = ina219.ReadShuntVoltage()
+		if err != nil {
+			log.Fatal("Failed to read shunt voltage")
+			goto skip
+		}
 		busVoltage, err = ina219.ReadBusVoltage()
 		if err != nil {
 			log.Print("Failed to read bus voltage")
@@ -61,19 +71,17 @@ func (u *UpsModule3S) Run(refreshPeriod time.Duration) {
 			log.Print("Failed to read power")
 			goto skip
 		}
-		// Assume that 4V is the maximum voltage 18650 Li-Ion battery shows under the load,
-		// 4.1V is the maximum voltage 18650 Li-Ion battery can be charged to
+		batteryVoltage = busVoltage - shuntVoltage
+		// Assume that 4.0V is the maximum voltage 18650 Li-Ion battery can be charged to
 		// and 3.5V is the minimum voltage 18650 Li-Ion battery can be discharged to
-		if current < 0 { // Battery provides power
-			chargePercents = ((busVoltage / 3) - 3.5) / 0.5 * 100
-		} else { // Battery is charging
-			chargePercents = ((busVoltage / 3) - 3.5) / 0.6 * 100
-		}
+		chargePercents = ((batteryVoltage / 3) - 3.5) / 0.5 * 100
 		chargePercents = max(min(chargePercents, 0), 100)
 
 		u.mu.Lock()
 		u.status.BusVoltage = busVoltage
-		u.status.CellVoltage = busVoltage / 3
+		u.status.ShuntVolate = shuntVoltage
+		u.status.BatteryVoltage = batteryVoltage
+		u.status.CellVoltage = batteryVoltage / 3
 		u.status.Current = current
 		u.status.Power = power
 		u.status.ChargePercents = chargePercents
