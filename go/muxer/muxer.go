@@ -1,5 +1,7 @@
 package muxer
 
+import "sync"
+
 type Client[T any] struct {
 	muxer   *Muxer[T]
 	Receive chan *T
@@ -25,10 +27,13 @@ func (c *Client[T]) Close() {
 }
 
 type Muxer[T any] struct {
+	mu        sync.Mutex
+	isRunning bool
 	clients   map[*Client[T]]bool
 	add       chan *Client[T]
 	remove    chan *Client[T]
-	Broadcast chan *T
+	broadcast chan *T
+	stop      chan bool
 }
 
 func NewMuxer[T any](buffSize int) *Muxer[T] {
@@ -36,13 +41,31 @@ func NewMuxer[T any](buffSize int) *Muxer[T] {
 		clients:   make(map[*Client[T]]bool),
 		add:       make(chan *Client[T]),
 		remove:    make(chan *Client[T]),
-		Broadcast: make(chan *T, buffSize),
+		broadcast: make(chan *T, buffSize),
 	}
 }
 
+func (m *Muxer[T]) Broadcast(data *T) bool {
+	m.mu.Lock()
+	if !m.isRunning {
+		m.mu.Unlock()
+		return false
+	}
+	m.broadcast <- data
+	m.mu.Unlock()
+	return true
+}
+
 func (m *Muxer[T]) Run() {
+	m.isRunning = true
 	for {
 		select {
+		case <-m.stop:
+			for client := range m.clients {
+				close(client.Receive)
+			}
+			clear(m.clients)
+			break
 		case client := <-m.add:
 			m.clients[client] = true
 		case client := <-m.remove:
@@ -50,10 +73,17 @@ func (m *Muxer[T]) Run() {
 				delete(m.clients, client)
 				close(client.Receive)
 			}
-		case chunk := <-m.Broadcast:
+		case chunk := <-m.broadcast:
 			for client := range m.clients {
 				client.Receive <- chunk
 			}
 		}
 	}
+}
+
+func (m *Muxer[T]) Stop() {
+	m.mu.Lock()
+	m.isRunning = false
+	m.stop <- true
+	m.mu.Unlock()
 }

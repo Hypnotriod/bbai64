@@ -68,7 +68,9 @@ func serveTcpRgb16StreamSocketConnection(conn net.Conn, width int, height int, m
 			}
 			break
 		}
-		mux.Broadcast <- &frame
+		if !mux.Broadcast(&frame) {
+			break
+		}
 	}
 }
 

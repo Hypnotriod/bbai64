@@ -113,7 +113,9 @@ func serveMjpegStreamTcpSocketConnection(conn net.Conn, mux *muxer.Muxer[Chunk],
 			break
 		}
 		chunk.Size = size
-		mux.Broadcast <- chunk
+		if !mux.Broadcast(chunk) {
+			break
+		}
 	}
 }
 
@@ -151,16 +153,18 @@ func handleMjpegStreamHttpRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseW
 	}
 }
 
-func makeMjpegMuxer(inputAddr string, outputAddr string) {
+func makeMjpegMuxer(inputAddr string, outputAddr string) *muxer.Muxer[Chunk] {
 	mux := muxer.NewMuxer[Chunk](MJPEG_STREAM_CHUNKS_BUFFER_LENGTH - 1)
 	go mux.Run()
 	go serveMjpegStreamTcpSocket(mux, inputAddr)
 	http.HandleFunc(outputAddr, handleMjpegStreamHttpRequest(mux))
+	return mux
 }
 
 func main() {
 	vehicle.Initialize()
-	makeMjpegMuxer(":9990", "/mjpeg_stream")
+	mux := makeMjpegMuxer(":9990", "/mjpeg_stream")
+	defer mux.Stop()
 	go gstpipeline.LauchImx219CsiCameraMjpegStream(
 		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
 

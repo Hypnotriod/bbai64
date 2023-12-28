@@ -61,7 +61,9 @@ func serveTcpSocketConnection(conn net.Conn, mux *muxer.Muxer[Chunk], address st
 			break
 		}
 		chunk.Size = size
-		mux.Broadcast <- chunk
+		if !mux.Broadcast(chunk) {
+			break
+		}
 	}
 }
 
