@@ -79,7 +79,7 @@ func (u *UpsModule3S) Run(refreshPeriod time.Duration) {
 
 		batteryVoltage = busVoltage - shuntVoltage + math.Abs(current)*(LIION_CELL_INTERNAL_RESISTANCE*3)
 		chargePercents = ((batteryVoltage / 3) - LIION_CELL_VOLTAGE_MIN) / (LIION_CELL_VOLTAGE_MAX - LIION_CELL_VOLTAGE_MIN) * 100
-		chargePercents = max(min(chargePercents, 0), 100)
+		chargePercents = min(max(chargePercents, 0), 100)
 
 		u.mu.Lock()
 		u.status.BusVoltage = busVoltage

@@ -61,6 +61,7 @@
         const stream = document.getElementById("stream");
         const status = document.getElementById("status");
 
+        let wakeLock = null;
         let webSocket = null;
         let gamepadIndex = null;
         let steeringCenter = 0;
@@ -86,11 +87,21 @@
             }
         });
 
-        function toggleFullScreen() {
+        async function toggleFullScreenWithWakeLock() {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
+                try {
+                    await document.documentElement.requestFullscreen();
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (err) {
+                }
             } else if (document.exitFullscreen) {
-                document.exitFullscreen();
+                try {
+                    await document.exitFullscreen();
+                    if (!wakeLock) { return; }
+                    await wakeLock.release();
+                    wakeLock = null;
+                } catch (err) {
+                }
             }
         }
 
@@ -150,17 +161,17 @@
             }
             status.innerHTML =
                 `Gamepad: ${gamepadIndex !== null ? "connected" : "disconnected"}<br>
-                Vehicle control: ${webSocket !== null ? "connected" : "disconnected"}<br>
+                Vehicle control: ${webSocket !== null && webSocket.readyState === WebSocket.OPEN ? "connected" : "disconnected"}<br>
                 Steering center: ${steeringCenter.toFixed(3)}<br>
                 Steering: ${steering.toFixed(3)}<br>
                 Throttle: ${throttle.toFixed(3)}<br>
-                Battery Voltage: ${systemStatus.battery.batteryVoltage.toFixed(3)}
+                Battery Voltage: ${systemStatus.battery.batteryVoltage.toFixed(3)}<br>
                 Cell Voltage: ${systemStatus.battery.cellVoltage.toFixed(3)}<br>
                 Current: ${systemStatus.battery.current.toFixed(3)}<br>
                 Charge: ${Math.round(systemStatus.battery.chargePercents)}%<br>`;
         }
 
-        document.body.addEventListener('click', toggleFullScreen);
+        document.body.addEventListener('click', toggleFullScreenWithWakeLock);
         initWebSocket();
         setInterval(update, 20) // 20 ms pwm period
     </script>
