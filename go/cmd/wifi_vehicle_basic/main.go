@@ -2,7 +2,9 @@ package main
 
 import (
 	"bbai64/gstpipeline"
+	"bbai64/i2c"
 	"bbai64/muxer"
+	"bbai64/ups"
 	"bbai64/vehicle"
 	"bufio"
 	"errors"
@@ -41,6 +43,11 @@ var wsUpgrader = websocket.Upgrader{
 	CheckOrigin:     checkOrigin,
 }
 
+type SystemStatus struct {
+	Battery ups.UpsModuleStatus `json:"battery"`
+}
+
+var upsModule *ups.UpsModule3S
 var wsMutex sync.Mutex
 
 func checkOrigin(r *http.Request) bool {
@@ -61,6 +68,7 @@ func serveVehicleControlWSRequest(w http.ResponseWriter, r *http.Request) {
 	log.Print("Websocket connection established with ", r.Host)
 	defer conn.Close()
 	vehicleState := &vehicle.State{}
+	systemStatus := &SystemStatus{}
 	for {
 		conn.SetReadDeadline(time.Now().Add(CONNECTION_TIMEOUT))
 		_, message, err := conn.ReadMessage()
@@ -74,6 +82,13 @@ func serveVehicleControlWSRequest(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		vehicle.UpdateWithState(vehicleState)
+		systemStatus.Battery = upsModule.Status()
+		message, _ = json.Marshal(systemStatus)
+		err = conn.WriteMessage(websocket.TextMessage, message)
+		if err != nil {
+			log.Print("Websocket write error: ", err)
+			break
+		}
 	}
 	vehicle.Reset()
 	log.Print("Websocket connection terminated with ", r.Host)
@@ -162,6 +177,10 @@ func makeMjpegMuxer(inputAddr string, outputAddr string) *muxer.Muxer[Chunk] {
 }
 
 func main() {
+	upsModule = ups.NewUpsModule3S(i2c.Bus1)
+	go upsModule.Run(time.Second)
+	defer upsModule.Stop()
+
 	vehicle.Initialize()
 	mux := makeMjpegMuxer(":9990", "/mjpeg_stream")
 	defer mux.Stop()

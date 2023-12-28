@@ -64,6 +64,17 @@
         let webSocket = null;
         let gamepadIndex = null;
         let steeringCenter = 0;
+        let systemStatus = {
+            battery: {
+                busVoltage: 0,
+                shuntVolate: 0,
+                batteryVoltage: 0,
+                cellVoltage: 0,
+                current: 0,
+                power: 0,
+                chargePercents: 0,
+            }
+        }
 
         window.addEventListener("gamepadconnected", (e) => {
             gamepadIndex = e.gamepad.index;
@@ -114,7 +125,7 @@
         }
 
         function onWebSocketMessage(e) {
-            console.log("WebSocket message: " + e.data);
+            systemStatus = JSON.parse(e.data);
         }
 
         function onWebSocketError(e) {
@@ -142,7 +153,10 @@
                 Vehicle control: ${webSocket !== null ? "connected" : "disconnected"}<br>
                 Steering center: ${steeringCenter.toFixed(3)}<br>
                 Steering: ${steering.toFixed(3)}<br>
-                Throttle: ${throttle.toFixed(3)}<br>`;
+                Throttle: ${throttle.toFixed(3)}<br>
+                Battery Voltage: ${systemStatus.battery.batteryVoltage.toFixed(3)}
+                Cell Voltage: ${systemStatus.battery.cellVoltage.toFixed(3)}<br>
+                Charge: ${systemStatus.battery.chargePercents.toFixed(0)}<br>`;
         }
 
         document.body.addEventListener('click', toggleFullScreen);
