@@ -156,7 +156,7 @@
                 Throttle: ${throttle.toFixed(3)}<br>
                 Battery Voltage: ${systemStatus.battery.batteryVoltage.toFixed(3)}
                 Cell Voltage: ${systemStatus.battery.cellVoltage.toFixed(3)}<br>
-                Charge: ${systemStatus.battery.chargePercents.toFixed(0)}<br>`;
+                Charge: ${Math.round(systemStatus.battery.chargePercents)}%<br>`;
         }
 
         document.body.addEventListener('click', toggleFullScreen);

@@ -4,11 +4,16 @@ import (
 	"bbai64/i2c"
 	"bbai64/ina219"
 	"log"
+	"math"
 	"sync"
 	"time"
 )
 
-// negative ShuntVolate and Current means the battery is discharging
+const LIION_CELL_INTERNAL_RESISTANCE float64 = 0.05
+const LIION_CELL_VOLTAGE_MAX float64 = 4.1
+const LIION_CELL_VOLTAGE_MIN float64 = 3.5
+
+// Negative ShuntVolate and Current means the battery is discharging
 type UpsModuleStatus struct {
 	BusVoltage     float64 `json:"busVoltage"`
 	ShuntVolate    float64 `json:"shuntVolate"`
@@ -71,10 +76,9 @@ func (u *UpsModule3S) Run(refreshPeriod time.Duration) {
 			log.Print("Failed to read power")
 			goto skip
 		}
-		batteryVoltage = busVoltage - shuntVoltage
-		// Assume that 4.0V is the maximum voltage 18650 Li-Ion battery can be charged to
-		// and 3.5V is the minimum voltage 18650 Li-Ion battery can be discharged to
-		chargePercents = ((batteryVoltage / 3) - 3.5) / 0.5 * 100
+
+		batteryVoltage = busVoltage - shuntVoltage + math.Abs(current)*(LIION_CELL_INTERNAL_RESISTANCE*3)
+		chargePercents = ((batteryVoltage / 3) - LIION_CELL_VOLTAGE_MIN) / (LIION_CELL_VOLTAGE_MAX - LIION_CELL_VOLTAGE_MIN) * 100
 		chargePercents = max(min(chargePercents, 0), 100)
 
 		u.mu.Lock()

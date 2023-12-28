@@ -4,6 +4,7 @@ import (
 	"bbai64/i2c"
 	"bbai64/ina219"
 	"log"
+	"math"
 	"time"
 )
 
@@ -34,7 +35,8 @@ func main() {
 		if err != nil {
 			log.Fatal("Can not read power")
 		}
-		batteryVoltage := busVoltage - shuntVoltage
+		// Assume that ≈50mOhm is the internal resistance of 18650 Li-Ion cell
+		batteryVoltage := busVoltage - shuntVoltage + math.Abs(current)*(0.05*3)
 		log.Printf("Shunt: %.3f V", shuntVoltage)
 		log.Printf("Bus: %.3f V", busVoltage)
 		log.Printf("3S: %.3f V", batteryVoltage)
@@ -42,9 +44,9 @@ func main() {
 		log.Printf("Current: %.3f A", current)
 		log.Printf("Power: %.3f W", power)
 
-		// Assume that 4.0V is the maximum voltage 18650 Li-Ion battery can be charged to
-		// and 3.5V is the minimum voltage 18650 Li-Ion battery can be discharged to
-		percents := ((batteryVoltage / 3) - 3.5) / 0.5 * 100
+		// Assume that 4.1V is the maximum voltage 18650 Li-Ion cell can be charged to
+		// and 3.5V is the minimum voltage 18650 Li-Ion cell can be discharged to
+		percents := ((batteryVoltage / 3) - 3.5) / 0.6 * 100
 
 		if percents > 100 {
 			percents = 100
