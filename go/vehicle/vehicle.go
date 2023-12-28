@@ -15,10 +15,10 @@ const PWM_DUTY_CYCLE_MIDDLE = 1500000 * time.Nanosecond
 const SERVO_PWM_DUTY_CYCLE_RANGE = 320000 * time.Nanosecond
 
 var servoSteering = pwm.NewPWM(pwm.Bus0, pwm.ChannelA)
-var servoDrivetrain = pwm.NewPWM(pwm.Bus0, pwm.ChannelB)
+var servoThrottle = pwm.NewPWM(pwm.Bus0, pwm.ChannelB)
 
 var steeringPrev float64
-var drivetrainPrev float64
+var throttlePrev float64
 
 func Initialize() {
 	initServos()
@@ -26,7 +26,7 @@ func Initialize() {
 
 func Reset() {
 	servoSteering.DutyCycle(PWM_DUTY_CYCLE_MIDDLE)
-	servoDrivetrain.DutyCycle(PWM_DUTY_CYCLE_MIDDLE)
+	servoThrottle.DutyCycle(PWM_DUTY_CYCLE_MIDDLE)
 }
 
 func initServos() {
@@ -43,17 +43,17 @@ func initServos() {
 		log.Fatal("Could not enable Steering pwm")
 	}
 
-	if err := servoDrivetrain.Period(PWM_PERIOD); err != nil {
-		log.Fatal("Could not set Drivetrain pwm period")
+	if err := servoThrottle.Period(PWM_PERIOD); err != nil {
+		log.Fatal("Could not set Throttle pwm period")
 	}
-	if err := servoDrivetrain.DutyCycle(PWM_DUTY_CYCLE_MIDDLE); err != nil {
-		log.Fatal("Could not set Drivetrain pwm duty cycle")
+	if err := servoThrottle.DutyCycle(PWM_DUTY_CYCLE_MIDDLE); err != nil {
+		log.Fatal("Could not set Throttle pwm duty cycle")
 	}
-	if err := servoDrivetrain.Polarity(pwm.PolarityInversed); err != nil {
-		log.Fatal("Could not set Drivetrain pwm polarity")
+	if err := servoThrottle.Polarity(pwm.PolarityInversed); err != nil {
+		log.Fatal("Could not set Throttle pwm polarity")
 	}
-	if err := servoDrivetrain.Enable(); err != nil {
-		log.Fatal("Could not enable Drivetrain pwm")
+	if err := servoThrottle.Enable(); err != nil {
+		log.Fatal("Could not enable Throttle pwm")
 	}
 }
 
@@ -81,9 +81,9 @@ func setServoValues(values []float64) {
 		steeringPrev = steering
 		servoSteering.DutyCycle(PWM_DUTY_CYCLE_MIDDLE + time.Duration(steering*float64(SERVO_PWM_DUTY_CYCLE_RANGE)))
 	}
-	drivetrain := normalize(values[1])
-	if drivetrainPrev != drivetrain {
-		drivetrainPrev = drivetrain
-		servoDrivetrain.DutyCycle(PWM_DUTY_CYCLE_MIDDLE + time.Duration(drivetrain*float64(SERVO_PWM_DUTY_CYCLE_RANGE)))
+	throttle := normalize(values[1])
+	if throttlePrev != throttle {
+		throttlePrev = throttle
+		servoThrottle.DutyCycle(PWM_DUTY_CYCLE_MIDDLE + time.Duration(throttle*float64(SERVO_PWM_DUTY_CYCLE_RANGE)))
 	}
 }
