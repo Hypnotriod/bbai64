@@ -147,8 +147,6 @@ func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[PixelsRGB
 func makeStereoCameraMuxer(inputAddrL string, inputAddrR string, outputAddr string) {
 	muxL := muxer.NewMuxer[PixelsRGB16](BUFFERED_FRAMES_COUNT - 1)
 	muxR := muxer.NewMuxer[PixelsRGB16](BUFFERED_FRAMES_COUNT - 1)
-	go muxL.Run()
-	go muxR.Run()
 	go serveTcpRgb16StreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxL, inputAddrL)
 	go serveTcpRgb16StreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxR, inputAddrR)
 	http.HandleFunc(outputAddr, handleMjpegStreamRequest(RESCALE_WIDTH, RESCALE_HEIGHT*2, muxL, muxR))

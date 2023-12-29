@@ -37,13 +37,15 @@ type Muxer[T any] struct {
 }
 
 func NewMuxer[T any](buffSize int) *Muxer[T] {
-	return &Muxer[T]{
+	mux := &Muxer[T]{
 		clients:   make(map[*Client[T]]bool),
 		add:       make(chan *Client[T]),
 		remove:    make(chan *Client[T]),
 		broadcast: make(chan *T, buffSize),
 		stop:      make(chan bool),
 	}
+	go mux.run()
+	return mux
 }
 
 func (m *Muxer[T]) Broadcast(data *T) bool {
@@ -57,7 +59,7 @@ func (m *Muxer[T]) Broadcast(data *T) bool {
 	return true
 }
 
-func (m *Muxer[T]) Run() {
+func (m *Muxer[T]) run() {
 	m.isRunning = true
 	for {
 		select {
