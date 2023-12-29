@@ -4,7 +4,6 @@ import (
 	"bbai64/i2c"
 	"bbai64/ina219"
 	"log"
-	"math"
 	"sync"
 	"time"
 )
@@ -77,7 +76,7 @@ func (u *UpsModule3S) Run(refreshPeriod time.Duration) {
 			goto skip
 		}
 
-		batteryVoltage = busVoltage - shuntVoltage + math.Abs(current)*(LIION_CELL_INTERNAL_RESISTANCE*3)
+		batteryVoltage = busVoltage - shuntVoltage - current*(LIION_CELL_INTERNAL_RESISTANCE*3)
 		chargePercents = ((batteryVoltage / 3) - LIION_CELL_VOLTAGE_MIN) / (LIION_CELL_VOLTAGE_MAX - LIION_CELL_VOLTAGE_MIN) * 100
 		chargePercents = min(max(chargePercents, 0), 100)
 

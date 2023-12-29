@@ -4,7 +4,6 @@ import (
 	"bbai64/i2c"
 	"bbai64/ina219"
 	"log"
-	"math"
 	"time"
 )
 
@@ -36,7 +35,7 @@ func main() {
 			log.Fatal("Can not read power")
 		}
 		// Assume that ≈50mOhm is the internal resistance of 18650 Li-Ion cell
-		batteryVoltage := busVoltage - shuntVoltage + math.Abs(current)*(0.05*3)
+		batteryVoltage := busVoltage - shuntVoltage - current*(0.05*3)
 		log.Printf("Shunt: %.3f V", shuntVoltage)
 		log.Printf("Bus: %.3f V", busVoltage)
 		log.Printf("3S: %.3f V", batteryVoltage)
