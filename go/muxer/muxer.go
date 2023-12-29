@@ -42,6 +42,7 @@ func NewMuxer[T any](buffSize int) *Muxer[T] {
 		add:       make(chan *Client[T]),
 		remove:    make(chan *Client[T]),
 		broadcast: make(chan *T, buffSize),
+		stop:      make(chan bool),
 	}
 }
 
