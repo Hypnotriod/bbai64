@@ -1,7 +1,5 @@
 package i2c
 
-// original: https://gist.github.com/tetsu-koba/33b339d26ac9c730fb09773acf39eac5#file-i2c-go
-
 import (
 	"os"
 )
