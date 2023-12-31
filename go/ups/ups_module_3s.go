@@ -57,7 +57,7 @@ func (u *UpsModule3S) Run(refreshPeriod time.Duration) {
 	for {
 		shuntVoltage, err = ina219.ReadShuntVoltage()
 		if err != nil {
-			log.Fatal("Failed to read shunt voltage")
+			log.Print("Failed to read shunt voltage")
 			goto skip
 		}
 		busVoltage, err = ina219.ReadBusVoltage()
