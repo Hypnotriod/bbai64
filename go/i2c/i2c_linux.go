@@ -10,6 +10,25 @@ import (
 	"unsafe"
 )
 
+const (
+	I2C_RDWR                = 0x0707
+	I2C_RDRW_IOCTL_MAX_MSGS = 42
+	I2C_M_RD                = 0x0001
+)
+
+type i2cMessage struct {
+	addr      uint16
+	flags     uint16
+	len       uint16
+	__padding uint16
+	buf       uintptr
+}
+
+type i2cRdWrIoctlData struct {
+	msgs  uintptr
+	nmsgs uint32
+}
+
 func Open(busNumber BusNumber) (c *Bus, err error) {
 	path := fmt.Sprintf(DevicePath, busNumber)
 	f, err := os.OpenFile(path, syscall.O_RDWR, 0666)
@@ -25,7 +44,7 @@ func (b *Bus) Close() (err error) {
 
 func (b *Bus) ReadByte(address uint8, offset uint8) (uint8, error) {
 	buf := []uint8{0}
-	msg := []i2c_msg{
+	msg := []i2cMessage{
 		{
 			addr:  uint16(address),
 			flags: 0,
@@ -34,7 +53,7 @@ func (b *Bus) ReadByte(address uint8, offset uint8) (uint8, error) {
 		},
 		{
 			addr:  uint16(address),
-			flags: uint16(_I2C_M_RD),
+			flags: uint16(I2C_M_RD),
 			len:   uint16(len(buf)),
 			buf:   uintptr(unsafe.Pointer(&buf[0])),
 		},
@@ -48,7 +67,7 @@ func (b *Bus) ReadByte(address uint8, offset uint8) (uint8, error) {
 
 func (b *Bus) ReadWord(address uint8, offset uint8) (uint16, error) {
 	buf := []uint8{0, 0}
-	msg := []i2c_msg{
+	msg := []i2cMessage{
 		{
 			addr:  uint16(address),
 			flags: 0,
@@ -57,7 +76,7 @@ func (b *Bus) ReadWord(address uint8, offset uint8) (uint16, error) {
 		},
 		{
 			addr:  uint16(address),
-			flags: uint16(_I2C_M_RD),
+			flags: uint16(I2C_M_RD),
 			len:   uint16(len(buf)),
 			buf:   uintptr(unsafe.Pointer(&buf[0])),
 		},
@@ -72,7 +91,7 @@ func (b *Bus) ReadWord(address uint8, offset uint8) (uint16, error) {
 
 func (b *Bus) WriteByte(address uint8, offset uint8, data uint8) error {
 	buf := []uint8{offset, data}
-	msg := []i2c_msg{
+	msg := []i2cMessage{
 		{
 			addr:  uint16(address),
 			flags: 0,
@@ -85,7 +104,7 @@ func (b *Bus) WriteByte(address uint8, offset uint8, data uint8) error {
 
 func (b *Bus) WriteWord(address uint8, offset uint8, data uint16) error {
 	buf := []uint8{offset, uint8((data >> 8)), uint8(data)}
-	msg := []i2c_msg{
+	msg := []i2cMessage{
 		{
 			addr:  uint16(address),
 			flags: 0,
@@ -96,27 +115,8 @@ func (b *Bus) WriteWord(address uint8, offset uint8, data uint16) error {
 	return transfer(b.f, &msg[0], len(msg))
 }
 
-const (
-	_I2C_RDWR                = 0x0707
-	_I2C_RDRW_IOCTL_MAX_MSGS = 42
-	_I2C_M_RD                = 0x0001
-)
-
-type i2c_msg struct {
-	addr      uint16
-	flags     uint16
-	len       uint16
-	__padding uint16
-	buf       uintptr
-}
-
-type i2c_rdwr_ioctl_data struct {
-	msgs  uintptr
-	nmsgs uint32
-}
-
-func transfer(f *os.File, msgs *i2c_msg, n int) (err error) {
-	data := i2c_rdwr_ioctl_data{
+func transfer(f *os.File, msgs *i2cMessage, n int) (err error) {
+	data := i2cRdWrIoctlData{
 		msgs:  uintptr(unsafe.Pointer(msgs)),
 		nmsgs: uint32(n),
 	}
@@ -124,7 +124,7 @@ func transfer(f *os.File, msgs *i2c_msg, n int) (err error) {
 	_, _, errno := syscall.Syscall(
 		syscall.SYS_IOCTL,
 		uintptr(f.Fd()),
-		uintptr(_I2C_RDWR),
+		uintptr(I2C_RDWR),
 		uintptr(unsafe.Pointer(&data)),
 	)
 	if errno != 0 {
