@@ -61,27 +61,17 @@ func UpdateWithState(status *State) {
 	setServoValues(status.ServoValues)
 }
 
-func normalize(value float64) float64 {
-	if value < -1 {
-		return -1
-	}
-	if value > 1 {
-		return 1
-	}
-	return value
-}
-
 func setServoValues(values []float64) {
 	if len(values) != 2 {
 		log.Print("Servo values are invalid")
 		return
 	}
-	steering := normalize(values[0])
+	steering := min(max(values[0], -1), 1)
 	if steeringPrev != steering {
 		steeringPrev = steering
 		servoSteering.DutyCycle(PWM_DUTY_CYCLE_MIDDLE + time.Duration(steering*float64(SERVO_PWM_DUTY_CYCLE_RANGE)))
 	}
-	throttle := normalize(values[1])
+	throttle := min(max(values[1], -1), 1)
 	if throttlePrev != throttle {
 		throttlePrev = throttle
 		servoThrottle.DutyCycle(PWM_DUTY_CYCLE_MIDDLE + time.Duration(throttle*float64(SERVO_PWM_DUTY_CYCLE_RANGE)))
