@@ -167,6 +167,8 @@
                 }
             }
             if (webSocket !== null && webSocket.readyState === WebSocket.OPEN) {
+                steering = Math.round(steering * 1000) / 1000;
+                throttle = Math.round(throttle * 1000) / 1000;
                 const vehicleState = {
                     servoValues: [steering, throttle],
                 }
