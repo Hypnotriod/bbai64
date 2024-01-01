@@ -150,7 +150,7 @@
                 const gamepad = navigator.getGamepads()[gamepadIndex];
                 let breakInput;
                 let throttleInput;
-                if (gamepad.axes.length === 10) { // Thrustmaster Wheel controller
+                if (gamepad.id.toLocaleLowerCase().includes("product: b669")) { // Thrustmaster TX Wheel controller
                     steeringCenter -= gamepad.buttons[4].pressed ? 0.0005 : 0; // A button
                     steeringCenter += gamepad.buttons[8].pressed ? 0.0005 : 0; // B button
                     steering += gamepad.axes[0]; // Wheel
