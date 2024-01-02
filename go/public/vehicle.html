@@ -58,12 +58,19 @@
             = (window.location.protocol === "https:" ? "wss:" : "ws:")
             + `//${window.location.hostname}:${window.location.port}/ws`;
 
+        const CONTROLLER_TYPE_GAMEPAD = 0;
+        const CONTROLLER_TYPE_THRUSTMASTER_WHEEL = 1;
+
+        const PWM_UPDATE_INTERVAL_MS = 20; // 20 ms is the pwm period
+        const PWM_ADJUST_INCREMENT = 0.0005;
+
         const stream = document.getElementById("stream");
         const status = document.getElementById("status");
 
         let wakeLock = null;
         let webSocket = null;
         let gamepadIndex = null;
+        let controllerType = CONTROLLER_TYPE_GAMEPAD;
         let steeringCenter = 0;
         let systemStatus = {
             battery: {
@@ -79,6 +86,11 @@
 
         window.addEventListener("gamepadconnected", (e) => {
             gamepadIndex = e.gamepad.index;
+            const gamepadId = e.gamepad.id.toLocaleLowerCase();
+            if (gamepadId.includes("product: b669"))
+                controllerType = CONTROLLER_TYPE_THRUSTMASTER_WHEEL;
+            else
+                controllerType = CONTROLLER_TYPE_GAMEPAD;
         });
 
         window.addEventListener("gamepaddisconnected", (e) => {
@@ -150,16 +162,16 @@
                 const gamepad = navigator.getGamepads()[gamepadIndex];
                 let breakInput;
                 let throttleInput;
-                if (gamepad.id.toLocaleLowerCase().includes("product: b669")) { // Thrustmaster TX Wheel controller
-                    steeringCenter -= gamepad.buttons[4].pressed ? 0.0005 : 0; // A button
-                    steeringCenter += gamepad.buttons[8].pressed ? 0.0005 : 0; // B button
+                if (controllerType === CONTROLLER_TYPE_THRUSTMASTER_WHEEL) {
+                    steeringCenter -= gamepad.buttons[4].pressed ? PWM_ADJUST_INCREMENT : 0; // A button
+                    steeringCenter += gamepad.buttons[8].pressed ? PWM_ADJUST_INCREMENT : 0; // B button
                     steering += gamepad.axes[0]; // Wheel
                     let breakInput = (2 - (gamepad.axes[1] + 1)) / 2; // Break pedal
                     let throttleInput = (2 - (gamepad.axes[5] + 1)) / 2; // Throttle pedal
                     throttle = -breakInput + throttleInput;
                 } else {
-                    steeringCenter -= gamepad.buttons[14].pressed ? 0.0005 : 0; // Left arrow
-                    steeringCenter += gamepad.buttons[15].pressed ? 0.0005 : 0; // Right arrow
+                    steeringCenter -= gamepad.buttons[14].pressed ? PWM_ADJUST_INCREMENT : 0; // Left arrow
+                    steeringCenter += gamepad.buttons[15].pressed ? PWM_ADJUST_INCREMENT : 0; // Right arrow
                     steering += gamepad.axes[0]; // Left Stick
                     let breakInput = gamepad.buttons[6].value; // L2
                     let throttleInput = gamepad.buttons[7].value; // R2
@@ -171,7 +183,7 @@
                 throttle = Math.round(throttle * 1000) / 1000;
                 const vehicleState = {
                     servoValues: [steering, throttle],
-                }
+                };
                 webSocket.send(JSON.stringify(vehicleState));
             }
             status.innerHTML =
@@ -188,7 +200,7 @@
 
         document.body.addEventListener('click', toggleFullScreenWithWakeLock);
         initWebSocket();
-        setInterval(update, 20) // 20 ms pwm period
+        setInterval(update, PWM_UPDATE_INTERVAL_MS);
     </script>
 </body>
 
