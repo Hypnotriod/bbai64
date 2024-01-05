@@ -84,6 +84,11 @@ func Rescale(width uint, height uint) string {
 		width, height)
 }
 
+func TiOvxMultiscaler(width uint, height uint) string {
+	return fmt.Sprintf(" ! tiovxmultiscaler ! video/x-raw, width=%d, height=%d",
+		width, height)
+}
+
 func JpegEncode(quality uint) string {
 	return fmt.Sprintf(" ! jpegenc quality=%d", quality)
 }

@@ -16,8 +16,7 @@ func LauchImx219CsiCameraMjpegStream(index uint, width uint, height uint, rWidth
 		"bash", "-c", GStreamerLaunch()+
 			CsiCameraV4l2Source(index)+
 			CsiCameraConfig(index, IMX219, width, height)+
-			DecodeBin()+
-			Rescale(rWidth, rHeight)+
+			TiOvxMultiscaler(rWidth, rHeight)+
 			JpegEncode(quality)+
 			MjpegTcpStreamLocalhost(boundary, port),
 	)

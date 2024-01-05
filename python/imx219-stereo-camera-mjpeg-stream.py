@@ -155,7 +155,7 @@ class StereoCameraApp(object):
         os.system(f"media-ctl -d {media_dev} --set-v4l2 '\"{dev_name}\":0[fmt:SRGGB8_1X8/{CAMERA_WIDTH}x{CAMERA_HEIGHT}]'")
         cmd = f"gst-launch-1.0 v4l2src device={device} ! video/x-bayer, width={CAMERA_WIDTH}, height={CAMERA_HEIGHT}, format=rggb ! tiovxisp sink_0::device={subdev} sensor-name={SENSOR_NAME} dcc-isp-file={SENSOR_ISP_DRIVERS_PATH}dcc_viss_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin sink_0::dcc-2a-file={SENSOR_ISP_DRIVERS_PATH}dcc_2a_{CAMERA_WIDTH}x{CAMERA_HEIGHT}.bin format-msb=7"
         if DO_RESCALE:
-            cmd += f" ! decodebin ! videoscale method=0 add-borders=false ! video/x-raw,width={RESCALE_WIDTH},height={RESCALE_HEIGHT}"
+            cmd += f" ! tiovxmultiscaler ! video/x-raw, width={RESCALE_WIDTH}, height={RESCALE_HEIGHT}"
         cmd += f" ! jpegenc quality={JPEG_QUALITY} ! multipartmux boundary=frameboundary ! tcpclientsink host=127.0.0.1 port={port}"
         for line in self.execute(cmd):
             print(line, end="")
