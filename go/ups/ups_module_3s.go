@@ -54,6 +54,8 @@ func (u *UpsModule3S) Run(refreshPeriod time.Duration) {
 	var current float64
 	var power float64
 	var chargePercents float64
+	ticker := time.NewTicker(refreshPeriod)
+	defer ticker.Stop()
 	for {
 		shuntVoltage, err = ina219.ReadShuntVoltage()
 		if err != nil {
@@ -94,7 +96,7 @@ func (u *UpsModule3S) Run(refreshPeriod time.Duration) {
 		select {
 		case <-u.stop:
 			break
-		case <-time.After(refreshPeriod):
+		case <-ticker.C:
 		}
 	}
 }
