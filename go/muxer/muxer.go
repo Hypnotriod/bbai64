@@ -7,15 +7,6 @@ type Client[T any] struct {
 	Receive chan *T
 }
 
-func NewClient[T any](mux *Muxer[T]) *Client[T] {
-	c := &Client[T]{
-		muxer:   mux,
-		Receive: make(chan *T),
-	}
-	c.muxer.add <- c
-	return c
-}
-
 func (c *Client[T]) Close() {
 	for {
 		select {
@@ -37,15 +28,22 @@ type Muxer[T any] struct {
 }
 
 func NewMuxer[T any](buffSize int) *Muxer[T] {
-	mux := &Muxer[T]{
+	return &Muxer[T]{
 		clients:   make(map[*Client[T]]bool),
 		add:       make(chan *Client[T]),
 		remove:    make(chan *Client[T]),
 		broadcast: make(chan *T, buffSize),
 		stop:      make(chan bool),
 	}
-	go mux.run()
-	return mux
+}
+
+func (m *Muxer[T]) NewClient() *Client[T] {
+	c := &Client[T]{
+		muxer:   m,
+		Receive: make(chan *T),
+	}
+	c.muxer.add <- c
+	return c
 }
 
 func (m *Muxer[T]) Broadcast(data *T) bool {
@@ -59,8 +57,14 @@ func (m *Muxer[T]) Broadcast(data *T) bool {
 	return true
 }
 
-func (m *Muxer[T]) run() {
+func (m *Muxer[T]) Run() {
+	m.mu.Lock()
+	if m.isRunning {
+		m.mu.Unlock()
+		return
+	}
 	m.isRunning = true
+	m.mu.Unlock()
 	for {
 		select {
 		case <-m.stop:

@@ -80,9 +80,9 @@ func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[PixelsRGB
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		boundary := "\r\n--" + MJPEG_FRAME_BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n"
 
-		clientL := muxer.NewClient(muxL)
+		clientL := muxL.NewClient()
 		defer clientL.Close()
-		clientR := muxer.NewClient(muxR)
+		clientR := muxR.NewClient()
 		defer clientR.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
@@ -146,7 +146,9 @@ func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[PixelsRGB
 
 func makeStereoCameraMuxer(inputAddrL string, inputAddrR string, outputAddr string) {
 	muxL := muxer.NewMuxer[PixelsRGB16](BUFFERED_FRAMES_COUNT - 1)
+	go muxL.Run()
 	muxR := muxer.NewMuxer[PixelsRGB16](BUFFERED_FRAMES_COUNT - 1)
+	go muxR.Run()
 	go serveTcpRgb16StreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxL, inputAddrL)
 	go serveTcpRgb16StreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxR, inputAddrR)
 	http.HandleFunc(outputAddr, handleMjpegStreamRequest(RESCALE_WIDTH, RESCALE_HEIGHT*2, muxL, muxR))
