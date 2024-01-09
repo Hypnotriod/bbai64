@@ -45,7 +45,7 @@ func (u *UpsModule3S) Run(refreshPeriod time.Duration) {
 
 	ina219 := ina219.New(bus, ina219.ADDRESS_DEFAULT)
 	if err := ina219.SetCalibration32Volts2Amps(); err != nil {
-		log.Fatal("Could not initialize ina219")
+		log.Fatal("Could not initialize ina219: ", err)
 	}
 
 	var busVoltage float64
