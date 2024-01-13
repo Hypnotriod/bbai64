@@ -25,11 +25,12 @@ const CAMERA_WIDTH = 1920
 const CAMERA_HEIGHT = 1080
 const RESCALE_WIDTH = 128  // 640
 const RESCALE_HEIGHT = 128 // 360
+const CHANNELS_NUM = 3
 
 type PixelsRGB []byte
 
 var inputTensor *tf.Tensor
-var tensorInputFlat *[1 * RESCALE_WIDTH * RESCALE_HEIGHT * 3]float32
+var tensorInputFlat *[1 * RESCALE_WIDTH * RESCALE_HEIGHT * CHANNELS_NUM]float32
 var model *tg.Model
 var labels []string
 
@@ -60,7 +61,7 @@ func serveTcpStreamSocketConnection(conn net.Conn, width int, height int, mux *m
 
 	buffer := [BUFFERED_FRAMES_COUNT]PixelsRGB{}
 	for i := range buffer {
-		buffer[i] = make(PixelsRGB, width*height*3)
+		buffer[i] = make(PixelsRGB, width*height*CHANNELS_NUM)
 	}
 
 	var buffIndex int32
@@ -143,9 +144,17 @@ func makeCameraMuxer(inputAddr string, outputAddr string) *muxer.Muxer[PixelsRGB
 	return mux
 }
 
+/*
+// This function is not a part of the tensorflow/go api, so modification of the tensor.go file required.
+// For now can't see any other solution how to feed input tensor from golang side without overhead.
+func (t *Tensor) RawData() []byte {
+	return tensorData(t.c)
+}
+*/
+
 func initModel() {
-	inputTensor, _ = tf.NewTensor([1][RESCALE_WIDTH][RESCALE_HEIGHT][3]float32{})
-	tensorInputFlat = (*[1 * RESCALE_WIDTH * RESCALE_HEIGHT * 3]float32)(unsafe.Pointer(&inputTensor.RawData()[0]))
+	inputTensor, _ = tf.NewTensor([1][RESCALE_WIDTH][RESCALE_HEIGHT][CHANNELS_NUM]float32{})
+	tensorInputFlat = (*[1 * RESCALE_WIDTH * RESCALE_HEIGHT * CHANNELS_NUM]float32)(unsafe.Pointer(&inputTensor.RawData()[0]))
 
 	model = tg.LoadModel("model/mobilenet_v2", []string{"serve"}, nil)
 	labelsRaw, _ := os.ReadFile("model/mobilenet_v2/labels.txt")
@@ -186,7 +195,7 @@ func predict() {
 
 func feedFrame(frame []byte) {
 	// fmt.Println("b", frame[0], "g", frame[1], "r", frame[2])
-	for i := 0; i < len(tensorInputFlat); i += 3 {
+	for i := 0; i < len(tensorInputFlat); i += CHANNELS_NUM {
 		tensorInputFlat[i+2] = float32(frame[i+2]) / 255.0
 		tensorInputFlat[i+1] = float32(frame[i+1]) / 255.0
 		tensorInputFlat[i] = float32(frame[i]) / 255.0
