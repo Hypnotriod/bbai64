@@ -172,7 +172,7 @@
                 } else {
                     steeringCenter -= gamepad.buttons[14].pressed ? PWM_ADJUST_INCREMENT : 0; // Left arrow
                     steeringCenter += gamepad.buttons[15].pressed ? PWM_ADJUST_INCREMENT : 0; // Right arrow
-                    steering += gamepad.axes[0]; // Left Stick
+                    steering += gamepad.axes[0] * Math.abs(gamepad.axes[0]); // Left Stick
                     let breakInput = gamepad.buttons[6].value; // L2
                     let throttleInput = gamepad.buttons[7].value; // R2
                     throttle = -breakInput + (throttleInput * throttleInput);
