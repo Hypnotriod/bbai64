@@ -97,6 +97,14 @@ func VideoConvertRgba() string {
 	return " ! videoconvert ! video/x-raw, format=RGBA"
 }
 
+func VideoConvertRgb() string {
+	return " ! videoconvert ! video/x-raw, format=RGB"
+}
+
+func VideoConvertBgr() string {
+	return " ! videoconvert ! video/x-raw, format=BGR"
+}
+
 func VideoConvertRgb16() string {
 	return " ! videoconvert ! video/x-raw, format=RGB16"
 }

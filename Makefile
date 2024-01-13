@@ -16,3 +16,9 @@ build-wifi-vehicle:
 
 run-wifi-vehicle:
 	cd bin && sudo ./wifi-vehicle
+
+build-image-recognition:
+	cd go/ && go build -o ../bin/image-recognition cmd/image_recognition/main.go && rsync -cr model/ ../bin/model/
+
+run-image-recognition:
+	cd bin && sudo ./image-recognition

@@ -78,3 +78,26 @@ func LauchImx219CsiCameraRgb16Stream(index uint, width uint, height uint, rWidth
 		log.Fatal("Cannot start GStreamer pipeline: ", err)
 	}
 }
+
+func LauchImx219CsiCameraBgrStream(index uint, width uint, height uint, rWidth uint, rHeight uint, port uint) {
+	cmdSetup := exec.Command(
+		"bash", "-c", CsiCameraSetup(IMX219, index, width, height),
+	)
+	if err := cmdSetup.Run(); err != nil {
+		log.Fatal("Cannot setup CSI Camera: ", err)
+	}
+	log.Print(strings.Join(cmdSetup.Args, " "))
+	cmd := exec.Command(
+		"bash", "-c", GStreamerLaunch()+
+			CsiCameraV4l2Source(index)+
+			CsiCameraConfig(index, IMX219, width, height)+
+			DecodeBin()+
+			Rescale(rWidth, rHeight)+
+			VideoConvertBgr()+
+			TcpStreamLocalhost(port),
+	)
+	log.Print(strings.Join(cmd.Args, " "))
+	if err := cmd.Run(); err != nil {
+		log.Fatal("Cannot start GStreamer pipeline: ", err)
+	}
+}
