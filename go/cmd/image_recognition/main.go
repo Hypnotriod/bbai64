@@ -18,7 +18,7 @@ import (
 )
 
 const SERVER_ADDRESS = ":1337"
-const BUFFERED_FRAMES_COUNT = 16
+const BUFFERED_FRAMES_COUNT = 32
 const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
 const CAMERA_WIDTH = 1920
@@ -95,7 +95,7 @@ func handleMjpegStreamRequest(width int, height int, mux *muxer.Muxer[PixelsRGB]
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		boundary := "\r\n--" + MJPEG_FRAME_BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n"
 
-		client := mux.NewClient()
+		client := mux.NewClient(0)
 		defer client.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
@@ -141,7 +141,7 @@ func handleMjpegStreamRequest(width int, height int, mux *muxer.Muxer[PixelsRGB]
 }
 
 func makeCameraMuxer(inputAddr string, outputAddr string) *muxer.Muxer[PixelsRGB] {
-	mux := muxer.NewMuxer[PixelsRGB](BUFFERED_FRAMES_COUNT - 1)
+	mux := muxer.NewMuxer[PixelsRGB](BUFFERED_FRAMES_COUNT + PREDICT_EACH_FRAME - 1)
 	go mux.Run()
 	go serveTcpStreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, mux, inputAddr)
 	http.HandleFunc(outputAddr, handleMjpegStreamRequest(RESCALE_WIDTH, RESCALE_HEIGHT, mux))
@@ -216,7 +216,7 @@ func feedFrame(frame []byte) {
 }
 
 func processFrames(mux *muxer.Muxer[PixelsRGB]) {
-	client := mux.NewClient()
+	client := mux.NewClient(PREDICT_EACH_FRAME - 1)
 	defer client.Close()
 	for {
 		for i := 0; i < PREDICT_EACH_FRAME-1; i++ { // skip frames

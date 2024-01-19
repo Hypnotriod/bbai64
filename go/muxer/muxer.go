@@ -37,10 +37,10 @@ func NewMuxer[T any](buffSize int) *Muxer[T] {
 	}
 }
 
-func (m *Muxer[T]) NewClient() *Client[T] {
+func (m *Muxer[T]) NewClient(buffSize int) *Client[T] {
 	c := &Client[T]{
 		muxer:   m,
-		Receive: make(chan *T),
+		Receive: make(chan *T, buffSize),
 	}
 	c.muxer.add <- c
 	return c

@@ -80,9 +80,9 @@ func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[PixelsRGB
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		boundary := "\r\n--" + MJPEG_FRAME_BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n"
 
-		clientL := muxL.NewClient()
+		clientL := muxL.NewClient(0)
 		defer clientL.Close()
-		clientR := muxR.NewClient()
+		clientR := muxR.NewClient(0)
 		defer clientR.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
