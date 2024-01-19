@@ -43,8 +43,7 @@ Add `disabled=1` to `/etc/wpa_supplicant/wpa_supplicant-wlan0.conf`
 ```
 disabled=1
 ```
-Add to `/etc/rc.local`
+Enable hostapd
 ```
-# start wi-fi ap
-service hostapd restart
+sudo systemctl enable --now hostapd
 ```
