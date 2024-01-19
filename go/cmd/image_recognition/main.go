@@ -149,7 +149,8 @@ func makeCameraMuxer(inputAddr string, outputAddr string) *muxer.Muxer[PixelsRGB
 }
 
 func initModel() {
-	inputTensor, err := tf.NewTensor([1][TENSOR_WIDTH][TENSOR_HEIGHT][CHANNELS_NUM]float32{})
+	var err error
+	inputTensor, err = tf.NewTensor([1][TENSOR_WIDTH][TENSOR_HEIGHT][CHANNELS_NUM]float32{})
 	if err != nil {
 		log.Fatal("Cannot create input tensor : ", err)
 	}
