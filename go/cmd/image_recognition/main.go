@@ -23,14 +23,18 @@ const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
 const CAMERA_WIDTH = 1920
 const CAMERA_HEIGHT = 1080
-const RESCALE_WIDTH = 128  // 640
-const RESCALE_HEIGHT = 128 // 360
+const RESCALE_WIDTH = 228  // 50 + 128 + 50
+const RESCALE_HEIGHT = 128 // 128
+const TENSOR_WIDTH = 128
+const TENSOR_HEIGHT = 128
 const CHANNELS_NUM = 3
+const TOP_PREDICTIONS_NUM = 5
+const PREDICT_EACH_FRAME = 5
 
 type PixelsRGB []byte
 
 var inputTensor *tf.Tensor
-var tensorInputFlat *[1 * RESCALE_WIDTH * RESCALE_HEIGHT * CHANNELS_NUM]float32
+var tensorInputFlat *[1 * TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM]float32
 var model *tg.Model
 var labels []string
 
@@ -144,37 +148,39 @@ func makeCameraMuxer(inputAddr string, outputAddr string) *muxer.Muxer[PixelsRGB
 	return mux
 }
 
-/*
-// This function is not a part of the tensorflow/go api, so modification of the tensor.go file required.
-// For now can't see any other solution how to feed input tensor from golang side without overhead.
-func (t *Tensor) RawData() []byte {
-	return tensorData(t.c)
-}
-*/
-
 func initModel() {
-	inputTensor, _ = tf.NewTensor([1][RESCALE_WIDTH][RESCALE_HEIGHT][CHANNELS_NUM]float32{})
-	tensorInputFlat = (*[1 * RESCALE_WIDTH * RESCALE_HEIGHT * CHANNELS_NUM]float32)(unsafe.Pointer(&inputTensor.RawData()[0]))
+	inputTensor, err := tf.NewTensor([1][TENSOR_WIDTH][TENSOR_HEIGHT][CHANNELS_NUM]float32{})
+	if err != nil {
+		log.Fatal("Cannot create input tensor : ", err)
+	}
+	tensorInputFlat = (*[1 * TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM]float32)(unsafe.Pointer(&inputTensor.TensorData()[0]))
 
 	model = tg.LoadModel("model/mobilenet_v2", []string{"serve"}, nil)
-	labelsRaw, _ := os.ReadFile("model/mobilenet_v2/labels.txt")
+	labelsRaw, err := os.ReadFile("model/mobilenet_v2/labels.txt")
+	if err != nil {
+		log.Fatal("Cannot read model labels: ", err)
+	}
 	labels = strings.Split(string(labelsRaw), "\n")
 
-	predict()
+	predict(false) // make first prediction beforehand to trigger model lazy loading
 }
 
-func predict() {
+func predict(printPredictions bool) {
 	startTime := time.Now()
 	results := model.Exec([]tf.Output{
 		model.Op("StatefulPartitionedCall", 0),
 	}, map[tf.Output]*tf.Tensor{
 		model.Op("serving_default_inputs", 0): inputTensor,
 	})
+	if printPredictions {
+		predictions := results[0].Value().([][]float32)[0]
+		printTopPredictions(TOP_PREDICTIONS_NUM, predictions, time.Since(startTime))
+	}
+}
 
-	predictions := results[0].Value().([][]float32)[0]
-
-	var topPredictions [5]float32
-	var topLabels [5]string
+func printTopPredictions(num int, predictions []float32, timeTaken time.Duration) {
+	var topPredictions []float32 = make([]float32, num)
+	var topLabels []string = make([]string, num)
 	for i, label := range labels {
 	jloop:
 		for j := 0; j < len(topPredictions); j++ {
@@ -190,15 +196,21 @@ func predict() {
 			break jloop
 		}
 	}
-	log.Println(topLabels, time.Since(startTime))
+	log.Println(topLabels, timeTaken)
 }
 
 func feedFrame(frame []byte) {
-	// fmt.Println("b", frame[0], "g", frame[1], "r", frame[2])
-	for i := 0; i < len(tensorInputFlat); i += CHANNELS_NUM {
-		tensorInputFlat[i+2] = float32(frame[i+2]) / 255.0
-		tensorInputFlat[i+1] = float32(frame[i+1]) / 255.0
-		tensorInputFlat[i] = float32(frame[i]) / 255.0
+	var i int = 0
+	var n int = (RESCALE_WIDTH - TENSOR_WIDTH) / 2 * CHANNELS_NUM
+	for i < len(tensorInputFlat) {
+		for w := 0; w < TENSOR_WIDTH; w++ {
+			tensorInputFlat[i] = float32(frame[n+2]) / 255.0
+			tensorInputFlat[i+1] = float32(frame[n+1]) / 255.0
+			tensorInputFlat[i+2] = float32(frame[n]) / 255.0
+			n += CHANNELS_NUM
+			i += CHANNELS_NUM
+		}
+		n += (RESCALE_WIDTH - TENSOR_WIDTH) * CHANNELS_NUM // skip front and back portion
 	}
 }
 
@@ -206,18 +218,17 @@ func processFrames(mux *muxer.Muxer[PixelsRGB]) {
 	client := mux.NewClient()
 	defer client.Close()
 	for {
-		for i := 0; i < 5; i++ { // skip frames
+		for i := 0; i < PREDICT_EACH_FRAME-1; i++ { // skip frames
 			if _, ok := <-client.Receive; !ok {
 				return
 			}
 		}
-		if frame := <-client.Receive; frame != nil {
-			frame := <-client.Receive
-			feedFrame(*frame)
-			predict()
-		} else {
+		frame, ok := <-client.Receive
+		if !ok {
 			return
 		}
+		feedFrame(*frame)
+		predict(true)
 	}
 }
 
