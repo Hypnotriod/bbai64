@@ -38,7 +38,8 @@ sudo service hostapd restart
 ```
 sudo service hostapd stop
 ```
-* Start AP on startup  
+* Start AP on startup
+
 Add `disabled=1` to `/etc/wpa_supplicant/wpa_supplicant-wlan0.conf`
 ```
 disabled=1
