@@ -39,9 +39,9 @@ var model *tg.Model
 var labels []string
 
 var jpegParams = jpegenc.EncodeParams{
-	QualityFactor: jpegenc.QualityFactorHigh,
+	QualityFactor: jpegenc.QualityFactorBest,
 	PixelType:     jpegenc.PixelTypeRGB888,
-	Subsample:     jpegenc.Subsample424,
+	Subsample:     jpegenc.Subsample444,
 }
 
 func serveTcpStreamSocket(width int, height int, mux *muxer.Muxer[PixelsRGB], address string) {
