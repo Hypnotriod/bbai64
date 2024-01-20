@@ -1,11 +1,27 @@
 # bbai64
-Some random stuff I found related to the BeagleBone AI-64 platform
+Small projects and experiments with the BeagleBone AI-64 platform (mostly written in Go).
 
 # P8 P9 headers periphery mapping
 [https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec)
 * [I2C](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#I2C)
 * [PWM](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#PWM)
 * [SPI](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#SPI)
+
+# Go installation  
+[Latest Go toolchain builds](https://go.dev/dl/) 
+```
+wget https://go.dev/dl/go1.21.6.linux-arm64.tar.gz
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf go1.21.6.linux-arm64.tar.gz
+```
+Update `~/.bashrc` with
+```
+export PATH=$PATH:/usr/local/go/bin
+```
+Apply changes with
+```
+source ~/.bashrc
+```
 
 # imaging.zip, dri.zip
 Taken from [TI's PROCESSOR-SDK-J721E](https://www.ti.com/tool/PROCESSOR-SDK-J721E)  
@@ -17,12 +33,25 @@ wget https://github.com/Hypnotriod/bbai64/raw/master/dri.zip
 sudo unzip dri.zip -d /usr/lib/
 ```
 
+# libtensorflow 2.4.1 for linux arm64
+```
+wget https://github.com/kesuskim/libtensorflow-2.4.1-linux-arm64/raw/master/libtensorflow.tar.gz
+sudo tar -C /usr/local -xvf libtensorflow.tar.gz
+sudo ldconfig
+```
+
 # wifi vehicle hardware
 * 2 channels RC car platform with steering servo and ESC (Electronic Speed Control)
 * 3.3v to 5-6v PWM signal conversion circuit
 * Arducam IMX219 sensor based Camera Module with 15-pin to 22-pin FPC (Flexible Printed Circuit) cable
 * Waveshare UPS Module 3S for BBAI64 powering and power monitoring
 * Gamepad for use as the car controller on the web page
+
+# Build and run go apps with make example
+```
+make build-wifi-vehicle
+make run-wifi-vehicle
+```
 
 # imx219-stereo-camera-mjpeg-stream.py
 BeagleBone AI-64 MJPEG stream of Waveshare IMX219-83 Stereo Camera with GStreamer example
