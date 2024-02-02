@@ -17,6 +17,12 @@ build-wifi-vehicle:
 run-wifi-vehicle:
 	cd bin && sudo ./wifi-vehicle
 
+build-wifi-two-wheeled:
+	cd go/ && go build -o ../bin/two-wheeled cmd/wifi_two_wheeled_basic/main.go && rsync -cr public/ ../bin/public/
+
+run-two-wheeled:
+	cd bin && sudo ./two-wheeled
+
 build-image-recognition:
 	cd go/ && go build -o ../bin/image-recognition cmd/image_recognition/main.go && rsync -cr model/ ../bin/model/
 

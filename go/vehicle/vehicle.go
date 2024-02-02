@@ -7,7 +7,7 @@ import (
 )
 
 type State struct {
-	ServoValues []float64 `json:"servoValues"`
+	Inputs []float64 `json:"inputs"`
 }
 
 const PWM_PERIOD = 20 * time.Millisecond
@@ -33,7 +33,7 @@ func initServos() {
 	if err := servoSteering.Period(PWM_PERIOD); err != nil {
 		log.Fatal("Could not set Steering pwm period")
 	}
-	if err := servoSteering.DutyCycle(PWM_DUTY_CYCLE_MIDDLE); err != nil {
+	if err := servoSteering.DutyCycle(0); err != nil {
 		log.Fatal("Could not set Steering pwm duty cycle")
 	}
 	if err := servoSteering.Polarity(pwm.PolarityInversed); err != nil {
@@ -42,11 +42,14 @@ func initServos() {
 	if err := servoSteering.Enable(); err != nil {
 		log.Fatal("Could not enable Steering pwm")
 	}
+	if err := servoSteering.DutyCycle(PWM_DUTY_CYCLE_MIDDLE); err != nil {
+		log.Fatal("Could not set Steering pwm duty cycle")
+	}
 
 	if err := servoThrottle.Period(PWM_PERIOD); err != nil {
 		log.Fatal("Could not set Throttle pwm period")
 	}
-	if err := servoThrottle.DutyCycle(PWM_DUTY_CYCLE_MIDDLE); err != nil {
+	if err := servoThrottle.DutyCycle(0); err != nil {
 		log.Fatal("Could not set Throttle pwm duty cycle")
 	}
 	if err := servoThrottle.Polarity(pwm.PolarityInversed); err != nil {
@@ -55,10 +58,13 @@ func initServos() {
 	if err := servoThrottle.Enable(); err != nil {
 		log.Fatal("Could not enable Throttle pwm")
 	}
+	if err := servoThrottle.DutyCycle(PWM_DUTY_CYCLE_MIDDLE); err != nil {
+		log.Fatal("Could not set Throttle pwm duty cycle")
+	}
 }
 
 func UpdateWithState(status *State) {
-	setServoValues(status.ServoValues)
+	setServoValues(status.Inputs)
 }
 
 func setServoValues(values []float64) {

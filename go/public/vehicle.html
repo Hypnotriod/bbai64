@@ -185,7 +185,7 @@
                 steering = Math.round(steering * 1000) / 1000;
                 throttle = Math.round(throttle * throttleMax * 1000) / 1000;
                 const vehicleState = {
-                    servoValues: [steering, throttle],
+                    inputs: [steering, throttle],
                 };
                 webSocket.send(JSON.stringify(vehicleState));
             }
