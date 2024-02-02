@@ -97,28 +97,28 @@ func setWheelsValues(values []float64) {
 	}
 	steering := min(max(values[0], -1), 1)
 	throttle := min(max(values[1], -1), 1)
-	leftSpeed := min(max(-steering+throttle, -1), 1)
-	rightSpeed := min(max(steering+throttle, -1), 1)
+	leftSpeed := min(max(steering+throttle, -1), 1)
+	rightSpeed := min(max(-steering+throttle, -1), 1)
 
 	if leftSpeedPrev != leftSpeed {
 		leftSpeedPrev = leftSpeed
 		if leftSpeed >= 0 {
 			wheelLeftBackward.DutyCycle(0)
-			wheelLeftForward.DutyCycle(PWM_DUTY_CYCLE_MAX * time.Duration(leftSpeed))
+			wheelLeftForward.DutyCycle(time.Duration(leftSpeed * float64(PWM_DUTY_CYCLE_MAX)))
 		} else {
 			wheelLeftForward.DutyCycle(0)
-			wheelLeftBackward.DutyCycle(PWM_DUTY_CYCLE_MAX * time.Duration(-leftSpeed))
+			wheelLeftBackward.DutyCycle(time.Duration(-leftSpeed * float64(PWM_DUTY_CYCLE_MAX)))
 		}
 	}
 
 	if rightSpeedPrev != rightSpeed {
 		rightSpeedPrev = rightSpeed
-		if leftSpeed >= 0 {
+		if rightSpeed >= 0 {
 			wheelRightBackward.DutyCycle(0)
-			wheelRightForward.DutyCycle(PWM_DUTY_CYCLE_MAX * time.Duration(rightSpeed))
+			wheelRightForward.DutyCycle(time.Duration(rightSpeed * float64(PWM_DUTY_CYCLE_MAX)))
 		} else {
 			wheelRightForward.DutyCycle(0)
-			wheelRightBackward.DutyCycle(PWM_DUTY_CYCLE_MAX * time.Duration(-rightSpeed))
+			wheelRightBackward.DutyCycle(time.Duration(-rightSpeed * float64(PWM_DUTY_CYCLE_MAX)))
 		}
 	}
 }
