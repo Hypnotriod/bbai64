@@ -161,23 +161,23 @@
             let throttle = 0;
             if (gamepadIndex !== null) {
                 const gamepad = navigator.getGamepads()[gamepadIndex];
-                let breakInput;
-                let throttleInput;
+                const buttons = gamepad.buttons;
+                const axes = gamepad.axes;
                 if (controllerType === CONTROLLER_TYPE_THRUSTMASTER_WHEEL) {
-                    steeringCenter -= gamepad.buttons[4].pressed ? PWM_ADJUST_INCREMENT : 0; // A button
-                    steeringCenter += gamepad.buttons[8].pressed ? PWM_ADJUST_INCREMENT : 0; // B button
-                    steering += gamepad.axes[0]; // Wheel
-                    let breakInput = (2 - (gamepad.axes[1] + 1)) / 2; // Break pedal
-                    let throttleInput = (2 - (gamepad.axes[5] + 1)) / 2; // Throttle pedal
+                    steeringCenter -= buttons[4].pressed ? PWM_ADJUST_INCREMENT : 0; // A button
+                    steeringCenter += buttons[8].pressed ? PWM_ADJUST_INCREMENT : 0; // B button
+                    steering += axes[0]; // Wheel
+                    const breakInput = (2 - (axes[1] + 1)) / 2; // Break pedal
+                    const throttleInput = (2 - (axes[5] + 1)) / 2; // Throttle pedal
                     throttle = -breakInput + throttleInput;
                 } else {
-                    throttleMax += gamepad.buttons[12].pressed ? PWM_ADJUST_INCREMENT : 0; // Up arrow
-                    throttleMax -= gamepad.buttons[13].pressed ? PWM_ADJUST_INCREMENT : 0; // Down arrow
-                    steeringCenter -= gamepad.buttons[14].pressed ? PWM_ADJUST_INCREMENT : 0; // Left arrow
-                    steeringCenter += gamepad.buttons[15].pressed ? PWM_ADJUST_INCREMENT : 0; // Right arrow
-                    steering += gamepad.axes[0]; // Left Stick
-                    let breakInput = gamepad.buttons[6].value; // L2
-                    let throttleInput = gamepad.buttons[7].value; // R2
+                    throttleMax += buttons[12].pressed ? PWM_ADJUST_INCREMENT : 0; // Up arrow
+                    throttleMax -= buttons[13].pressed ? PWM_ADJUST_INCREMENT : 0; // Down arrow
+                    steeringCenter -= buttons[14].pressed ? PWM_ADJUST_INCREMENT : 0; // Left arrow
+                    steeringCenter += buttons[15].pressed ? PWM_ADJUST_INCREMENT : 0; // Right arrow
+                    steering += axes[0]; // Left Stick
+                    const breakInput = buttons[6].value; // L2
+                    const throttleInput = buttons[7].value; // R2
                     throttle = -breakInput + (throttleInput * throttleInput);
                 }
             }
