@@ -108,9 +108,9 @@ func handleMjpegStreamRequest(width int, height int, mux *muxer.Muxer[PixelsRGB]
 			case <-timer.C:
 				log.Print("Lost stream for ", req.RemoteAddr)
 				return
-			case frame, ok = <-client.Receive:
-				for ok && len(client.Receive) != 0 {
-					frame, ok = <-client.Receive
+			case frame, ok = <-client.C:
+				for ok && len(client.C) != 0 {
+					frame, ok = <-client.C
 				}
 			}
 			if !ok {
@@ -220,11 +220,11 @@ func processFrames(mux *muxer.Muxer[PixelsRGB]) {
 	defer client.Close()
 	for {
 		for i := 0; i < PREDICT_EACH_FRAME-1; i++ { // skip frames
-			if _, ok := <-client.Receive; !ok {
+			if _, ok := <-client.C; !ok {
 				return
 			}
 		}
-		frame, ok := <-client.Receive
+		frame, ok := <-client.C
 		if !ok {
 			return
 		}

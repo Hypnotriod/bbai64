@@ -3,14 +3,14 @@ package muxer
 import "sync"
 
 type Client[T any] struct {
-	muxer   *Muxer[T]
-	Receive chan *T
+	muxer *Muxer[T]
+	C     chan *T
 }
 
 func (c *Client[T]) Close() {
 	for {
 		select {
-		case <-c.Receive:
+		case <-c.C:
 		case c.muxer.remove <- c:
 			return
 		}
@@ -39,8 +39,8 @@ func NewMuxer[T any](buffSize int) *Muxer[T] {
 
 func (m *Muxer[T]) NewClient(buffSize int) *Client[T] {
 	c := &Client[T]{
-		muxer:   m,
-		Receive: make(chan *T, buffSize),
+		muxer: m,
+		C:     make(chan *T, buffSize),
 	}
 	c.muxer.add <- c
 	return c
@@ -69,7 +69,7 @@ func (m *Muxer[T]) Run() {
 		select {
 		case <-m.stop:
 			for client := range m.clients {
-				close(client.Receive)
+				close(client.C)
 			}
 			clear(m.clients)
 			break
@@ -78,11 +78,11 @@ func (m *Muxer[T]) Run() {
 		case client := <-m.remove:
 			if _, ok := m.clients[client]; ok {
 				delete(m.clients, client)
-				close(client.Receive)
+				close(client.C)
 			}
 		case chunk := <-m.broadcast:
 			for client := range m.clients {
-				client.Receive <- chunk
+				client.C <- chunk
 			}
 		}
 	}

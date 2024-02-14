@@ -84,7 +84,7 @@ func handleMjpegStreamRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseWrite
 			case <-timer.C:
 				log.Print("Lost stream for ", req.RemoteAddr)
 				return
-			case chunk, ok = <-client.Receive:
+			case chunk, ok = <-client.C:
 			}
 			timer.Reset(CONNECTION_TIMEOUT)
 			if !ok {
