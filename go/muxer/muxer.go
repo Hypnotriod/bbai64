@@ -88,9 +88,14 @@ func (m *Muxer[T]) Run() {
 	}
 }
 
-func (m *Muxer[T]) Stop() {
+func (m *Muxer[T]) Stop() bool {
 	m.mu.Lock()
+	if !m.isRunning {
+		m.mu.Unlock()
+		return false
+	}
 	m.isRunning = false
 	m.stop <- true
 	m.mu.Unlock()
+	return true
 }
