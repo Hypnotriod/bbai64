@@ -12,10 +12,10 @@ const LIION_CELL_INTERNAL_RESISTANCE float64 = 0.05
 const LIION_CELL_VOLTAGE_MAX float64 = 4.1
 const LIION_CELL_VOLTAGE_MIN float64 = 3.5
 
-// Negative ShuntVolate and Current means the battery is discharging
+// Negative ShuntVoltage and Current means the battery is discharging
 type UpsModuleStatus struct {
 	BusVoltage     float64 `json:"busVoltage"`
-	ShuntVolate    float64 `json:"shuntVolate"`
+	ShuntVoltage   float64 `json:"shuntVoltage"`
 	BatteryVoltage float64 `json:"batteryVoltage"`
 	CellVoltage    float64 `json:"cellVoltage"`
 	Current        float64 `json:"current"`
@@ -84,7 +84,7 @@ func (u *UpsModule3S) Run(refreshPeriod time.Duration) {
 
 		u.mu.Lock()
 		u.status.BusVoltage = busVoltage
-		u.status.ShuntVolate = shuntVoltage
+		u.status.ShuntVoltage = shuntVoltage
 		u.status.BatteryVoltage = batteryVoltage
 		u.status.CellVoltage = batteryVoltage / 3
 		u.status.Current = current
