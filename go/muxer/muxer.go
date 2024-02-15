@@ -4,7 +4,8 @@ import "sync"
 
 type Client[T any] struct {
 	muxer *Muxer[T]
-	C     chan *T
+	input chan<- *T
+	C     <-chan *T
 }
 
 func (c *Client[T]) Close() {
@@ -38,9 +39,11 @@ func NewMuxer[T any](buffSize int) *Muxer[T] {
 }
 
 func (m *Muxer[T]) NewClient(buffSize int) *Client[T] {
+	ch := make(chan *T, buffSize)
 	c := &Client[T]{
 		muxer: m,
-		C:     make(chan *T, buffSize),
+		input: ch,
+		C:     ch,
 	}
 	c.muxer.add <- c
 	return c
@@ -69,7 +72,7 @@ func (m *Muxer[T]) Run() {
 		select {
 		case <-m.stop:
 			for client := range m.clients {
-				close(client.C)
+				close(client.input)
 			}
 			clear(m.clients)
 			break
@@ -78,11 +81,11 @@ func (m *Muxer[T]) Run() {
 		case client := <-m.remove:
 			if _, ok := m.clients[client]; ok {
 				delete(m.clients, client)
-				close(client.C)
+				close(client.input)
 			}
 		case chunk := <-m.broadcast:
 			for client := range m.clients {
-				client.C <- chunk
+				client.input <- chunk
 			}
 		}
 	}
