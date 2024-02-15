@@ -11,7 +11,10 @@ type Client[T any] struct {
 func (c *Client[T]) Close() {
 	for {
 		select {
-		case <-c.C:
+		case _, ok := <-c.C:
+			if !ok {
+				return
+			}
 		case c.muxer.remove <- c:
 			return
 		}
