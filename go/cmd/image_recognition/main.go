@@ -3,6 +3,7 @@ package main
 import (
 	"bbai64/gstpipeline"
 	"bbai64/muxer"
+	"bufio"
 	"io"
 	"log"
 	"net"
@@ -19,12 +20,19 @@ import (
 
 const SERVER_ADDRESS = ":1337"
 const BUFFERED_FRAMES_COUNT = 32
+const CHUNKS_BUFFER_SIZE = 1024
+const CHUNK_SIZE = 4096
+const MJPEG_STREAM_CHUNKS_BUFFER_LENGTH = 1024
+const MJPEG_STREAM_CHUNK_SIZE = 4096
 const MJPEG_FRAME_BOUNDARY = "frameboundary"
+const JPEG_QUALITY = 50
 const CONNECTION_TIMEOUT = 1 * time.Second
 const CAMERA_WIDTH = 1920
 const CAMERA_HEIGHT = 1080
-const RESCALE_WIDTH = 228  // 50 + 128 + 50
-const RESCALE_HEIGHT = 128 // 128
+const RESCALE_VISUALIZATION_WIDTH = 1280
+const RESCALE_VISUALIZATION_HEIGHT = 720
+const RESCALE_ANALYTICS_WIDTH = 320
+const RESCALE_ANALYTICS_HEIGHT = 180
 const TENSOR_WIDTH = 128
 const TENSOR_HEIGHT = 128
 const CHANNELS_NUM = 3
@@ -32,6 +40,11 @@ const TOP_PREDICTIONS_NUM = 5
 const PREDICT_EACH_FRAME = 5
 
 type PixelsRGB []byte
+
+type Chunk struct {
+	Data [CHUNK_SIZE]byte
+	Size int
+}
 
 var inputTensor *tf.Tensor
 var tensorInputFlat *[1 * TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM]float32
@@ -44,7 +57,7 @@ var jpegParams = jpegenc.EncodeParams{
 	Subsample:     jpegenc.Subsample444,
 }
 
-func serveTcpStreamSocket(width int, height int, mux *muxer.Muxer[PixelsRGB], address string) {
+func serveAnalyticsStreamTcpSocket(width int, height int, mux *muxer.Muxer[PixelsRGB], address string) {
 	soc, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
@@ -55,12 +68,12 @@ func serveTcpStreamSocket(width int, height int, mux *muxer.Muxer[PixelsRGB], ad
 		if err != nil {
 			log.Fatal("Cannot accept socket connection at ", address, " : ", err)
 		}
-		serveTcpStreamSocketConnection(conn, width, height, mux, address)
+		serveAnalyticsStreamTcpSocketConnection(conn, width, height, mux, address)
 		conn.Close()
 	}
 }
 
-func serveTcpStreamSocketConnection(conn net.Conn, width int, height int, mux *muxer.Muxer[PixelsRGB], address string) {
+func serveAnalyticsStreamTcpSocketConnection(conn net.Conn, width int, height int, mux *muxer.Muxer[PixelsRGB], address string) {
 	log.Print("Accepted input stream at ", address)
 
 	buffer := [BUFFERED_FRAMES_COUNT]PixelsRGB{}
@@ -89,7 +102,81 @@ func serveTcpStreamSocketConnection(conn net.Conn, width int, height int, mux *m
 	}
 }
 
-func handleMjpegStreamRequest(width int, height int, mux *muxer.Muxer[PixelsRGB]) func(w http.ResponseWriter, req *http.Request) {
+func serveVisualizationMjpegStreamTcpSocket(mux *muxer.Muxer[Chunk], address string) {
+	soc, err := net.Listen("tcp", address)
+	if err != nil {
+		log.Fatal("Cannot open socket at ", address, " : ", err)
+	}
+	for {
+		log.Print("Waiting for input stream at ", address)
+		conn, err := soc.Accept()
+		if err != nil {
+			log.Fatal("Cannot accept socket connection at ", address, " : ", err)
+		}
+		serveVisualizationMjpegStreamTcpSocketConnection(conn, mux, address)
+		conn.Close()
+	}
+}
+
+func serveVisualizationMjpegStreamTcpSocketConnection(conn net.Conn, mux *muxer.Muxer[Chunk], address string) {
+	log.Print("Accepted input stream at ", address)
+	var buffIndex int32
+	buffer := [MJPEG_STREAM_CHUNKS_BUFFER_LENGTH]Chunk{}
+	reader := bufio.NewReader(conn)
+	for {
+		chunk := &buffer[buffIndex]
+		buffIndex = (buffIndex + 1) % MJPEG_STREAM_CHUNKS_BUFFER_LENGTH
+		size, err := reader.Read(chunk.Data[:])
+		if err != nil {
+			if err == io.EOF {
+				log.Print("Socket connection closed at ", address)
+			} else {
+				log.Print("Socket read error: ", err)
+			}
+			break
+		}
+		chunk.Size = size
+		if !mux.Broadcast(chunk) {
+			break
+		}
+	}
+}
+
+func handleVisualizationMjpegStreamRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseWriter, req *http.Request) {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		log.Print("HTTP Connection established with ", req.RemoteAddr)
+		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
+
+		client := mux.NewClient(0)
+		defer client.Close()
+		timer := time.NewTimer(CONNECTION_TIMEOUT)
+		defer timer.Stop()
+
+		var chunk *Chunk
+		var ok bool
+		for {
+			select {
+			case <-timer.C:
+				log.Print("Lost stream for ", req.RemoteAddr)
+				return
+			case chunk, ok = <-client.C:
+			}
+			timer.Reset(CONNECTION_TIMEOUT)
+			if !ok {
+				break
+			}
+			_, err := rw.Write(chunk.Data[:chunk.Size])
+			if err != nil {
+				log.Print("Cannot write response to ", req.RemoteAddr)
+				break
+			}
+		}
+
+		log.Print("HTTP Connection closed with ", req.RemoteAddr)
+	}
+}
+
+func handleAnalyticsMjpegStreamRequest(width int, height int, mux *muxer.Muxer[PixelsRGB]) func(w http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
@@ -140,11 +227,19 @@ func handleMjpegStreamRequest(width int, height int, mux *muxer.Muxer[PixelsRGB]
 	}
 }
 
-func makeCameraMuxer(inputAddr string, outputAddr string) *muxer.Muxer[PixelsRGB] {
+func makeVisualizationMjpegMuxer(inputAddr string, outputAddr string) *muxer.Muxer[Chunk] {
+	mux := muxer.NewMuxer[Chunk](CHUNKS_BUFFER_SIZE - 1)
+	go mux.Run()
+	go serveVisualizationMjpegStreamTcpSocket(mux, inputAddr)
+	http.HandleFunc(outputAddr, handleVisualizationMjpegStreamRequest(mux))
+	return mux
+}
+
+func makeAnalyticsCameraMuxer(inputAddr string, outputAddr string) *muxer.Muxer[PixelsRGB] {
 	mux := muxer.NewMuxer[PixelsRGB](BUFFERED_FRAMES_COUNT + PREDICT_EACH_FRAME - 1)
 	go mux.Run()
-	go serveTcpStreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, mux, inputAddr)
-	http.HandleFunc(outputAddr, handleMjpegStreamRequest(RESCALE_WIDTH, RESCALE_HEIGHT, mux))
+	go serveAnalyticsStreamTcpSocket(TENSOR_WIDTH, TENSOR_HEIGHT, mux, inputAddr)
+	http.HandleFunc(outputAddr, handleAnalyticsMjpegStreamRequest(TENSOR_WIDTH, TENSOR_HEIGHT, mux))
 	return mux
 }
 
@@ -201,17 +296,8 @@ func printTopPredictions(num int, predictions []float32, timeTaken time.Duration
 }
 
 func feedFrame(frame []byte) {
-	var i int = 0
-	var n int = (RESCALE_WIDTH - TENSOR_WIDTH) / 2 * CHANNELS_NUM
-	for i < len(tensorInputFlat) {
-		for w := 0; w < TENSOR_WIDTH; w++ {
-			tensorInputFlat[i] = float32(frame[n+2]) / 255.0
-			tensorInputFlat[i+1] = float32(frame[n+1]) / 255.0
-			tensorInputFlat[i+2] = float32(frame[n]) / 255.0
-			n += CHANNELS_NUM
-			i += CHANNELS_NUM
-		}
-		n += (RESCALE_WIDTH - TENSOR_WIDTH) * CHANNELS_NUM // skip front and back portion
+	for i := 0; i < len(tensorInputFlat); i++ {
+		tensorInputFlat[i] = float32(frame[i]) / 255.0
 	}
 }
 
@@ -236,12 +322,24 @@ func processFrames(mux *muxer.Muxer[PixelsRGB]) {
 func main() {
 	initModel()
 
-	mux := makeCameraMuxer(":9990", "/mjpeg_stream")
-	defer mux.Stop()
+	muxAnalytics := makeAnalyticsCameraMuxer(":9990", "/mjpeg_stream1")
+	defer muxAnalytics.Stop()
 
-	go gstpipeline.LauchImx219CsiCameraBgrStream(
-		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, 9990)
-	go processFrames(mux)
+	muxVisualization := makeVisualizationMjpegMuxer(":9991", "/mjpeg_stream2")
+	defer muxVisualization.Stop()
+
+	go gstpipeline.LauchImx219CsiCameraAnalyticsRgbStream1VisualizationMjpegStream2(
+		0, CAMERA_WIDTH, CAMERA_HEIGHT,
+		RESCALE_ANALYTICS_WIDTH, RESCALE_ANALYTICS_HEIGHT,
+		RESCALE_ANALYTICS_WIDTH-TENSOR_WIDTH, RESCALE_ANALYTICS_HEIGHT-TENSOR_HEIGHT,
+		9990,
+		RESCALE_VISUALIZATION_WIDTH, RESCALE_VISUALIZATION_HEIGHT,
+		JPEG_QUALITY,
+		MJPEG_FRAME_BOUNDARY,
+		9991)
+	go processFrames(muxAnalytics)
+
+	http.Handle("/", http.FileServer(http.Dir("./public")))
 
 	http.ListenAndServe(SERVER_ADDRESS, nil)
 }

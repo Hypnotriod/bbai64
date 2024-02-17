@@ -109,7 +109,8 @@ func LauchImx219CsiCameraAnalyticsRgbStream1VisualizationMjpegStream2(
 	c1Width uint, c1Height uint,
 	port1 uint,
 	r2Width uint, r2Height uint,
-	quality uint, boundary string,
+	quality uint,
+	boundary string,
 	port2 uint) {
 	cmdSetup := exec.Command(
 		"bash", "-c", CsiCameraSetup(IMX219, index, width, height),
