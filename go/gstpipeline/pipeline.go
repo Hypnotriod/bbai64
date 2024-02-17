@@ -46,7 +46,7 @@ func LauchImx219CsiStereoCameraMjpegStream(width uint, height uint, rWidth uint,
 				CsiCameraConfig(1, IMX219, width, height),
 			)+
 			DecodeBin()+
-			Rescale(rWidth, rHeight)+
+			VideoScale(rWidth, rHeight)+
 			JpegEncode(quality)+
 			MjpegTcpStreamLocalhost(boundary, port),
 	)
@@ -69,7 +69,7 @@ func LauchImx219CsiCameraRgb16Stream(index uint, width uint, height uint, rWidth
 			CsiCameraV4l2Source(index)+
 			CsiCameraConfig(index, IMX219, width, height)+
 			DecodeBin()+
-			Rescale(rWidth, rHeight)+
+			VideoScale(rWidth, rHeight)+
 			VideoConvertRgb16()+
 			TcpStreamLocalhost(port),
 	)
@@ -92,9 +92,46 @@ func LauchImx219CsiCameraBgrStream(index uint, width uint, height uint, rWidth u
 			CsiCameraV4l2Source(index)+
 			CsiCameraConfig(index, IMX219, width, height)+
 			DecodeBin()+
-			Rescale(rWidth, rHeight)+
+			VideoScale(rWidth, rHeight)+
 			VideoConvertBgr()+
 			TcpStreamLocalhost(port),
+	)
+	log.Print(strings.Join(cmd.Args, " "))
+	if err := cmd.Run(); err != nil {
+		log.Fatal("Cannot start GStreamer pipeline: ", err)
+	}
+}
+
+func LauchImx219CsiCameraAnalyticsRgbStream1VisualizationMjpegStream2(
+	index uint,
+	width uint, height uint,
+	r1Width uint, r1Height uint,
+	c1Width uint, c1Height uint,
+	port1 uint,
+	r2Width uint, r2Height uint,
+	quality uint, boundary string,
+	port2 uint) {
+	cmdSetup := exec.Command(
+		"bash", "-c", CsiCameraSetup(IMX219, index, width, height),
+	)
+	if err := cmdSetup.Run(); err != nil {
+		log.Fatal("Cannot setup CSI Camera: ", err)
+	}
+	log.Print(strings.Join(cmdSetup.Args, " "))
+	cmd := exec.Command(
+		"bash", "-c", GStreamerLaunch()+
+			CsiCameraV4l2Source(index)+
+			CsiCameraConfig(index, IMX219, width, height)+
+			TiOvxMultiscaler(r2Width, r2Height)+
+			TiOvxMultiscalerSplit2(
+				r1Width, r1Height,
+				TiOvxDlColorConvertRgb()+
+					VideoBox(c1Width/2, c1Width/2, c1Height/2, c1Height/2)+
+					TcpStreamLocalhost(port1),
+				r2Width, r2Height,
+				JpegEncode(quality)+
+					MjpegTcpStreamLocalhost(boundary, port2),
+			),
 	)
 	log.Print(strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {

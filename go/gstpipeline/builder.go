@@ -70,7 +70,7 @@ func GlStereoMix(leftSource string, rightSource string, leftConfig string, right
 		leftSource, rightSource, leftConfig, rightConfig)
 }
 
-func TestSource(width uint, height uint) string {
+func VideoTestSource(width uint, height uint) string {
 	return fmt.Sprintf(" videotestsrc ! video/x-raw, width=%d, height=%d",
 		width, height)
 }
@@ -79,7 +79,7 @@ func DecodeBin() string {
 	return " ! decodebin"
 }
 
-func Rescale(width uint, height uint) string {
+func VideoScale(width uint, height uint) string {
 	return fmt.Sprintf(" ! videoscale method=0 add-borders=false ! video/x-raw, width=%d, height=%d",
 		width, height)
 }
@@ -89,8 +89,17 @@ func TiOvxMultiscaler(width uint, height uint) string {
 		width, height)
 }
 
+func TiOvxMultiscalerSplit2(width1 uint, height1 uint, pipeline1 string, width2 uint, height2 uint, pipeline2 string) string {
+	return fmt.Sprintf(" ! tiovxmultiscaler name=split split. ! queue ! video/x-raw, width=%d, height=%d%s split. ! queue ! video/x-raw, width=%d, height=%d%s",
+		width1, height1, pipeline1, width2, height2, pipeline2)
+}
+
 func JpegEncode(quality uint) string {
 	return fmt.Sprintf(" ! jpegenc quality=%d", quality)
+}
+
+func VideoBox(left uint, right uint, top uint, bottom uint) string {
+	return fmt.Sprintf(" ! videobox left=%d right=%d top=%d bottom=%d", left, right, top, bottom)
 }
 
 func VideoConvertRgba() string {
@@ -107,6 +116,10 @@ func VideoConvertBgr() string {
 
 func VideoConvertRgb16() string {
 	return " ! videoconvert ! video/x-raw, format=RGB16"
+}
+
+func TiOvxDlColorConvertRgb() string {
+	return " ! tiovxdlcolorconvert out-pool-size=4 ! video/x-raw, format=RGB"
 }
 
 func MjpegTcpStreamLocalhost(boundary string, port uint) string {
