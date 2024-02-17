@@ -102,6 +102,17 @@ func VideoBox(left uint, right uint, top uint, bottom uint) string {
 	return fmt.Sprintf(" ! videobox left=%d right=%d top=%d bottom=%d", left, right, top, bottom)
 }
 
+type Median uint
+
+const (
+	Median5 Median = 5
+	Median9 Median = 9
+)
+
+func VideoMedian(filterSize Median) string {
+	return fmt.Sprintf(" ! videomedian filtersize=%d", filterSize)
+}
+
 func VideoConvertRgba() string {
 	return " ! videoconvert ! video/x-raw, format=RGBA"
 }
@@ -116,6 +127,14 @@ func VideoConvertBgr() string {
 
 func VideoConvertRgb16() string {
 	return " ! videoconvert ! video/x-raw, format=RGB16"
+}
+
+func VideoConvertYV12() string {
+	return " ! videoconvert ! video/x-raw, format=YV12"
+}
+
+func VideoConvertNV12() string {
+	return " ! videoconvert ! video/x-raw, format=NV12"
 }
 
 func TiOvxDlColorConvertRgb() string {
