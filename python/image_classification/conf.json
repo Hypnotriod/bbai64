@@ -9,7 +9,7 @@
     "learning_rate": 0.001,
     "momentum": 0.9,
     "classes": 3,
-    "validation_split": 0.5,
+    "validation_split": 0.25,
     "batch_size": 15,
     "epochs": 50,
     "epochs_after_unfreeze": 0,

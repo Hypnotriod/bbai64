@@ -10,6 +10,23 @@
 # pip install imageio
 # pip install scikit-image
 
+# the number of images must match the batch_size
+# class folders must be named as 0, 1, 2, 3, ...
+# train_path ->
+#               0 ->
+#                    *.jpg
+#                    *.jpg
+#                    *.jpg
+#               1 ->
+#                    *.jpg
+#                    *.jpg
+#                    *.jpg
+#               2 ->
+#                    *.jpg
+#                    *.jpg
+#                    *.jpg
+#                    ...
+
 from imageio import imread
 from skimage.transform import resize
 import json
@@ -58,20 +75,20 @@ checkpoint_period = config["checkpoint_period"]
 checkpoint_period_after_unfreeze = config["checkpoint_period_after_unfreeze"]
 
 
-def generate_batches(path, batchSize, classes):
-    while True:
-        files = glob.glob(path + '/*/*jpg')
-        for f in range(0, len(files), batchSize):
-            x = []
-            y = []
-            for i in range(f, f+batchSize):
-                if i < len(files):
-                    img = imread(files[i])
-                    img = preprocess_input(img)
-                    img = resize(img, (img_width, img_height))
-                    x.append(img)
-                    y.append(int(files[i].replace('\\', '/').split('/')[1]))
-            yield (np.array(x), to_categorical(y, num_classes=classes))
+def generate_batches(path, batchSize, classes, start, end):
+    x = np.empty((classes*(end-start), img_width, img_height, 3))
+    y = np.empty(classes*(end-start), dtype=int)
+    n = 0
+    files = glob.glob(path + '/*/*jpg')
+    for f in range(0, len(files), batchSize):
+        for i in range(f+start, f+end):
+            if i < len(files):
+                img = imread(files[i])
+                img = preprocess_input(img)
+                x[n] = resize(img, (img_width, img_height))
+                y[n] = int(files[i].replace('\\', '/').split('/')[1])
+                n += 1
+    return (x, to_categorical(y, num_classes=classes))
 
 
 def generate_batches_with_augmentation(train_path, batch_size, validation_split, augmented_data):
@@ -131,29 +148,60 @@ if data_augmentation:
     model.fit(
         generate_batches_with_augmentation(
             train_path, batch_size, validation_split, augmented_data),
-        verbose=1, epochs=epochs, callbacks=[checkpoint])
+        verbose=1,
+        epochs=epochs,
+        callbacks=[checkpoint])
 else:
-    model.fit(generate_batches(train_path, batch_size, classes), epochs=epochs,
-              steps_per_epoch=samples//batch_size, verbose=1, callbacks=[checkpoint])
+    validation_bound = int(batch_size*(1-validation_split))
+    train_data = generate_batches(
+        train_path, batch_size, classes, 0, validation_bound)
+    validation_data = generate_batches(
+        train_path, batch_size, classes, validation_bound, batch_size)
+    model.fit(
+        x=train_data[0],
+        y=train_data[1],
+        epochs=epochs,
+        steps_per_epoch=samples//batch_size,
+        verbose=1,
+        validation_data=validation_data,
+        callbacks=[checkpoint])
 
 if epochs_after_unfreeze > 0:
     print("Unfreezing all layers...")
     for i in range(len(model.layers)):
         model.layers[i].trainable = True
-    model.compile(optimizer=SGD(learning_rate=learning_rate,
-                  momentum=momentum), loss='categorical_crossentropy')
+    model.compile(
+        optimizer=SGD(learning_rate=learning_rate, momentum=momentum),
+        loss='categorical_crossentropy')
 
     print("Start training - phase 2...")
-    checkpoint = ModelCheckpoint("logs/weights.h5", monitor='loss',
-                                 save_best_only=True, period=checkpoint_period_after_unfreeze)
+    checkpoint = ModelCheckpoint(
+        "logs/weights.h5",
+        monitor='loss',
+        save_best_only=True,
+        period=checkpoint_period_after_unfreeze)
+
     if data_augmentation:
         model.fit_generator(
             generate_batches_with_augmentation(
                 train_path, batch_size, validation_split, augmented_data),
-            verbose=1, epochs=epochs, callbacks=[checkpoint])
+            verbose=1,
+            epochs=epochs,
+            callbacks=[checkpoint])
     else:
-        model.fit_generator(generate_batches(train_path, batch_size, classes), epochs=epochs_after_unfreeze,
-                            steps_per_epoch=samples//batch_size, verbose=1, callbacks=[checkpoint])
+        validation_bound = int(batch_size*(1-validation_split))
+        train_data = generate_batches(
+            train_path, batch_size, classes, 0, validation_bound)
+        validation_data = generate_batches(
+            train_path, batch_size, classes, validation_bound, batch_size)
+        model.fit_generator(
+            x=train_data[0],
+            y=train_data[1],
+            epochs=epochs_after_unfreeze,
+            steps_per_epoch=samples//batch_size,
+            verbose=1,
+            validation_data=validation_data,
+            callbacks=[checkpoint])
 
 print("Saving...")
 tf.saved_model.save(model, model_path)
