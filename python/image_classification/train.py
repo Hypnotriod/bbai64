@@ -10,6 +10,7 @@
 # pip install imageio
 # pip install scikit-image
 
+# img_size: 224, 192, 160, 128, 96 (see: https://huggingface.co/models?search=mobilenet_v2)
 # the number of images of each class must match the batch_size
 # class folders must be named as 0, 1, 2, 3, ...
 # train_path ->
@@ -57,8 +58,7 @@ with open("conf.json") as f:
 
 # config variables
 weights = config["weights"]
-img_width = config["img_width"]
-img_height = config["img_height"]
+img_size = config["img_size"]
 learning_rate = config["learning_rate"]
 momentum = config["momentum"]
 train_path = config["train_path"]
@@ -76,7 +76,7 @@ checkpoint_period_after_unfreeze = config["checkpoint_period_after_unfreeze"]
 
 
 def generate_batches(path, batchSize, classes, start, end):
-    x = np.empty((classes*(end-start), img_width, img_height, 3))
+    x = np.empty((classes*(end-start), img_size, img_size, 3))
     y = np.empty(classes*(end-start), dtype=int)
     n = 0
     files = glob.glob(path + "/*/*jpg")
@@ -85,7 +85,7 @@ def generate_batches(path, batchSize, classes, start, end):
             if i < len(files):
                 img = imread(files[i])
                 img = preprocess_input(img)
-                x[n] = resize(img, (img_width, img_height))
+                x[n] = resize(img, (img_size, img_size))
                 y[n] = int(files[i].replace("\\", "/").split("/")[1])
                 n += 1
     return (x, to_categorical(y, num_classes=classes))
@@ -99,7 +99,7 @@ def generate_batches_with_augmentation(train_path, batch_size, validation_split,
         validation_split=validation_split)
     train_generator = train_datagen.flow_from_directory(
         train_path,
-        target_size=(img_width, img_height),
+        target_size=(img_size, img_size),
         batch_size=batch_size,
         save_to_dir=augmented_data)
     return train_generator
@@ -120,7 +120,7 @@ create_folders(model_path, augmented_data)
 
 # create model
 base_model = MobileNetV2(include_top=True, weights=weights,
-                         input_tensor=Input(shape=(img_width, img_height, 3)), input_shape=(img_width, img_height, 3))
+                         input_tensor=Input(shape=(img_size, img_size, 3)), input_shape=(img_size, img_size, 3))
 predictions = Dense(classes, activation="softmax")(
     base_model.layers[-2].output)
 model = Model(inputs=base_model.input, outputs=predictions)
@@ -221,7 +221,7 @@ for folder in folders:
     for file in files:
         img = imread(file)
         img = preprocess_input(img)
-        img = resize(img, (img_width, img_height))
+        img = resize(img, (img_size, img_size))
         x = image.img_to_array(img)
         x = np.expand_dims(x, axis=0)
         y_prob = model.predict(x)
