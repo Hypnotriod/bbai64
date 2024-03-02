@@ -118,7 +118,7 @@ checkpoint = ModelCheckpoint(
 # start time
 start = time.time()
 
-print("Freezing the base layers. Unfreeze the top 1-st layer...")
+print("Freezing the base layers. Unfreeze the last layer...")
 for layer in model.layers[:-1]:
     layer.trainable = False
 model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
