@@ -10,7 +10,7 @@
 # pip install imageio
 # pip install scikit-image
 
-# the number of images must match the batch_size
+# the number of images of each class must match the batch_size
 # class folders must be named as 0, 1, 2, 3, ...
 # train_path ->
 #               0 ->
