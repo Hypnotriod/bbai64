@@ -1,4 +1,0 @@
-Input Image Size : 224x224
-Pretrained Accuracy : 75.212
-Accuracy Unit: Accuracy Top-1%
-Average Inference time: 2.95 ms

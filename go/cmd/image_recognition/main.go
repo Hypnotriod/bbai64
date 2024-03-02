@@ -4,6 +4,7 @@ import (
 	"bbai64/gstpipeline"
 	"bbai64/muxer"
 	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -31,13 +32,13 @@ const CAMERA_WIDTH = 1920
 const CAMERA_HEIGHT = 1080
 const RESCALE_VISUALIZATION_WIDTH = 1280
 const RESCALE_VISUALIZATION_HEIGHT = 720
-const RESCALE_ANALYTICS_WIDTH = 320
-const RESCALE_ANALYTICS_HEIGHT = 180
-const TENSOR_WIDTH = 128
-const TENSOR_HEIGHT = 128
+const RESCALE_ANALYTICS_WIDTH = 426
+const RESCALE_ANALYTICS_HEIGHT = 240
+const TENSOR_WIDTH = 224
+const TENSOR_HEIGHT = 224
 const CHANNELS_NUM = 3
-const TOP_PREDICTIONS_NUM = 5
-const PREDICT_EACH_FRAME = 5
+const TOP_PREDICTIONS_NUM = 3
+const PREDICT_EACH_FRAME = 10
 
 type PixelsRGB []byte
 
@@ -251,8 +252,8 @@ func initModel() {
 	}
 	tensorInputFlat = (*[1 * TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM]float32)(unsafe.Pointer(&inputTensor.TensorData()[0]))
 
-	model = tg.LoadModel("model/mobilenet_v2", []string{"serve"}, nil)
-	labelsRaw, err := os.ReadFile("model/mobilenet_v2/labels.txt")
+	model = tg.LoadModel("model/gopher_tux", []string{"serve"}, nil)
+	labelsRaw, err := os.ReadFile("model/gopher_tux/labels.txt")
 	if err != nil {
 		log.Fatal("Cannot read model labels: ", err)
 	}
@@ -266,7 +267,7 @@ func predict(printPredictions bool) {
 	results := model.Exec([]tf.Output{
 		model.Op("StatefulPartitionedCall", 0),
 	}, map[tf.Output]*tf.Tensor{
-		model.Op("serving_default_inputs", 0): inputTensor,
+		model.Op("serving_default_input_1", 0): inputTensor,
 	})
 	if printPredictions {
 		predictions := results[0].Value().([][]float32)[0]
@@ -292,7 +293,10 @@ func printTopPredictions(num int, predictions []float32, timeTaken time.Duration
 			break jloop
 		}
 	}
-	log.Println(topLabels, timeTaken)
+	for i, label := range topLabels {
+		fmt.Printf("%s: %.2f%%, ", label, topPredictions[i]*100)
+	}
+	fmt.Println(timeTaken)
 }
 
 func feedFrame(frame []byte) {
