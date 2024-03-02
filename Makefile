@@ -28,3 +28,6 @@ build-image-recognition:
 
 run-image-recognition:
 	cd bin && sudo ./image-recognition
+
+run-train-image-classification:
+	cd python/image_classification && python train.py

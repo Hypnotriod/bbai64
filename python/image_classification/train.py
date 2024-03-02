@@ -22,8 +22,8 @@ import warnings
 import tensorflow as tf
 from tensorflow import keras
 from keras.applications.mobilenet_v2 import MobileNetV2
-from keras.models import Model, load_model
-from keras.layers import Dense, GlobalAveragePooling2D, Input
+from keras.models import Model
+from keras.layers import Dense, Input
 from keras.utils import to_categorical
 from keras.optimizers import SGD
 from keras.callbacks import ModelCheckpoint
@@ -118,8 +118,8 @@ checkpoint = ModelCheckpoint(
 # start time
 start = time.time()
 
-print("Freezing the base layers. Unfreeze the top 1 layer...")
-for layer in model.layers[:-1]:  # model.layers[:-3]
+print("Freezing the base layers. Unfreeze the top 1-st layer...")
+for layer in model.layers[:-1]:
     layer.trainable = False
 model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
 
