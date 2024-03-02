@@ -1,3 +1,5 @@
 /bin
 main
 main.exe
+__pycache__
+python/image_classification/logs
