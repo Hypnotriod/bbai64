@@ -24,7 +24,7 @@ run-wifi-two-wheeled:
 	cd bin && sudo ./wifi-two-wheeled
 
 build-image-recognition:
-	cd go/ && go build -o ../bin/image-recognition cmd/image_recognition/main.go && rsync -cr model/ ../bin/model/
+	cd go/ && go build -o ../bin/image-recognition cmd/image_recognition/main.go && rsync -cr model/ ../bin/model/ && rsync -cr public/ ../bin/public/
 
 run-image-recognition:
 	cd bin && sudo ./image-recognition
