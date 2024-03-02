@@ -49,10 +49,10 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.applications.mobilenet_v2 import preprocess_input
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 # load the user configs
-with open('conf.json') as f:
+with open("conf.json") as f:
     config = json.load(f)
 
 # config variables
@@ -79,14 +79,14 @@ def generate_batches(path, batchSize, classes, start, end):
     x = np.empty((classes*(end-start), img_width, img_height, 3))
     y = np.empty(classes*(end-start), dtype=int)
     n = 0
-    files = glob.glob(path + '/*/*jpg')
+    files = glob.glob(path + "/*/*jpg")
     for f in range(0, len(files), batchSize):
         for i in range(f+start, f+end):
             if i < len(files):
                 img = imread(files[i])
                 img = preprocess_input(img)
                 x[n] = resize(img, (img_width, img_height))
-                y[n] = int(files[i].replace('\\', '/').split('/')[1])
+                y[n] = int(files[i].replace("\\", "/").split("/")[1])
                 n += 1
     return (x, to_categorical(y, num_classes=classes))
 
@@ -121,7 +121,7 @@ create_folders(model_path, augmented_data)
 # create model
 base_model = MobileNetV2(include_top=True, weights=weights,
                          input_tensor=Input(shape=(img_width, img_height, 3)), input_shape=(img_width, img_height, 3))
-predictions = Dense(classes, activation='softmax')(
+predictions = Dense(classes, activation="softmax")(
     base_model.layers[-2].output)
 model = Model(inputs=base_model.input, outputs=predictions)
 
@@ -130,7 +130,7 @@ model.summary()
 
 # create callbacks
 checkpoint = ModelCheckpoint(
-    "logs/weights.h5", monitor='loss', save_best_only=True, period=checkpoint_period)
+    "logs/weights.h5", monitor="loss", save_best_only=True, period=checkpoint_period)
 
 # start time
 start = time.time()
@@ -138,10 +138,10 @@ start = time.time()
 print("Freezing the base layers. Unfreeze the last layer...")
 for layer in model.layers[:-1]:
     layer.trainable = False
-model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
+model.compile(optimizer="rmsprop", loss="categorical_crossentropy")
 
 print("Start training...")
-files = glob.glob(train_path + '/*/*jpg')
+files = glob.glob(train_path + "/*/*jpg")
 samples = len(files)
 
 if data_augmentation:
@@ -172,12 +172,12 @@ if epochs_after_unfreeze > 0:
         model.layers[i].trainable = True
     model.compile(
         optimizer=SGD(learning_rate=learning_rate, momentum=momentum),
-        loss='categorical_crossentropy')
+        loss="categorical_crossentropy")
 
     print("Start training - phase 2...")
     checkpoint = ModelCheckpoint(
         "logs/weights.h5",
-        monitor='loss',
+        monitor="loss",
         save_best_only=True,
         period=checkpoint_period_after_unfreeze)
 
