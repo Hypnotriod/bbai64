@@ -7,7 +7,6 @@
 # pip install tensorflow==2.4.1
 # pip install keras==2.4
 # pip install pillow
-# pip install imageio
 # pip install scikit-image
 
 # img_size: 224, 192, 160, 128, 96 (see: https://huggingface.co/models?search=mobilenet_v2)
@@ -28,8 +27,6 @@
 #                    *.jpg
 #                    ...
 
-from imageio import imread
-from skimage.transform import resize
 import json
 import datetime
 import time
@@ -38,6 +35,7 @@ import numpy as np
 import os
 import warnings
 import tensorflow as tf
+from skimage import io, transform
 from tensorflow import keras
 from keras.applications.mobilenet_v2 import MobileNetV2
 from keras.models import Model
@@ -83,9 +81,9 @@ def generate_batches(path, batchSize, classes, start, end):
     for f in range(0, len(files), batchSize):
         for i in range(f+start, f+end):
             if i < len(files):
-                img = imread(files[i])
+                img = io.imread(files[i])
                 img = preprocess_input(img)
-                x[n] = resize(img, (img_size, img_size))
+                x[n] = transform.resize(img, (img_size, img_size))
                 y[n] = int(files[i].replace("\\", "/").split("/")[1])
                 n += 1
     return (x, to_categorical(y, num_classes=classes))
@@ -219,9 +217,9 @@ for folder in folders:
     average_confidence = 0
     files = glob.glob(test_path + "/" + folder + "/*.jpg")
     for file in files:
-        img = imread(file)
+        img = io.imread(file)
         img = preprocess_input(img)
-        img = resize(img, (img_size, img_size))
+        img = transform.resize(img, (img_size, img_size))
         x = image.img_to_array(img)
         x = np.expand_dims(x, axis=0)
         y_prob = model.predict(x)
