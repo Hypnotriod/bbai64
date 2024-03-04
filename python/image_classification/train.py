@@ -176,7 +176,7 @@ predictions = Dense(classes, activation="softmax")(
     base_model.layers[-2].output)
 model = Model(inputs=base_model.input, outputs=predictions)
 
-print("[INFO] successfully loaded base model and model...")
+print("[INFO] Model is successfully loaded and patched...")
 model.summary()
 
 # create callbacks
