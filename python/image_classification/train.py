@@ -73,12 +73,12 @@ checkpoint_period = config["checkpoint_period"]
 checkpoint_period_after_unfreeze = config["checkpoint_period_after_unfreeze"]
 
 
-def generate_batches(path, batchSize, classes, start, end):
+def generate_batches(path, batch_size, classes, start, end):
     x = np.empty((classes*(end-start), img_size, img_size, 3))
     y = np.empty(classes*(end-start), dtype=int)
     n = 0
     files = glob.glob(path + "/*/*jpg")
-    for f in range(0, len(files), batchSize):
+    for f in range(0, len(files), batch_size):
         for i in range(f+start, f+end):
             if i < len(files):
                 img = io.imread(files[i])
