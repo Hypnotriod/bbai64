@@ -1,0 +1,82 @@
+<html>
+
+<head>
+    <title>Vehicle Basic</title>
+    <style>
+        body,
+        div,
+        a,
+        img {
+            outline: none;
+            margin: 0;
+            padding: 0;
+            background-color: black;
+        }
+
+        #stream {
+            pointer-events: none;
+            overflow: hidden;
+            height: 100vh;
+            width: auto;
+        }
+
+        #snapshot {
+            overflow: hidden;
+            height: 35vh;
+            width: auto;
+            position: absolute;
+            left: 5vh;
+            top: 5vh;
+        }
+
+        #container {
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 100vh;
+        }
+
+        #status {
+            overflow: hidden;
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            text-shadow:
+                -1px 0px 0px black,
+                1px 0px 0px black,
+                0px -1px 0px black,
+                0px 1px 0px black;
+            color: white;
+            font-family: "Roboto", "Comic Sans", sans-serif;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <img id="stream" src="/mjpeg_stream2" />
+    </div>
+    <img id="snapshot" src="/mjpeg_stream1" />
+
+    <script defer>
+        let snapshotCounter = 0;
+        document.getElementById('snapshot').onclick = function () {
+            const canvas = document.createElement('canvas');
+            const img = document.getElementById('snapshot');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const link = document.createElement('a');
+            link.download = `snapshot_${snapshotCounter++}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            link.delete;
+        };
+    </script>
+</body>
+
+</html>
