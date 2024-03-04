@@ -9,6 +9,9 @@
 # pip install pillow
 # pip install scikit-image
 
+# CUDA 11.0: https://developer.nvidia.com/cuda-11.0-download-archive
+# cuDNN Library: https://developer.nvidia.com/rdp/cudnn-archive
+
 # img_size: 224, 192, 160, 128, 96 (see: https://huggingface.co/models?search=mobilenet_v2)
 # the number of images of each class must match the batch_size
 # class folders must be named as 0, 1, 2, 3, ...
@@ -49,6 +52,7 @@ from keras.applications.mobilenet_v2 import preprocess_input
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["TF_DISABLE_RZ_CHECK"] = "1"
 
 # load the user configs
 with open("conf.json") as f:
@@ -73,11 +77,11 @@ checkpoint_period = config["checkpoint_period"]
 checkpoint_period_after_unfreeze = config["checkpoint_period_after_unfreeze"]
 
 
-def generate_batches(path, batch_size, classes, start, end):
+def generate_batches(path, start, end):
     x = np.empty((classes*(end-start), img_size, img_size, 3))
     y = np.empty(classes*(end-start), dtype=int)
     n = 0
-    files = glob.glob(path + "/*/*jpg")
+    files = glob.glob(path + "/*/*")
     for f in range(0, len(files), batch_size):
         for i in range(f+start, f+end):
             if i < len(files):
@@ -89,21 +93,21 @@ def generate_batches(path, batch_size, classes, start, end):
     return (x, to_categorical(y, num_classes=classes))
 
 
-def generate_batches_with_augmentation(train_path, batch_size, validation_split, augmented_data):
+def generate_batches_with_augmentation(path):
     train_datagen = ImageDataGenerator(
         shear_range=0.2,
         rotation_range=0.3,
         zoom_range=0.1,
         validation_split=validation_split)
     train_generator = train_datagen.flow_from_directory(
-        train_path,
+        train_path=path,
         target_size=(img_size, img_size),
         batch_size=batch_size,
         save_to_dir=augmented_data)
     return train_generator
 
 
-def create_folders(model_path, augmented_data):
+def create_folders():
     if not os.path.exists(model_path):
         os.mkdir(model_path)
     if not os.path.exists(augmented_data):
@@ -112,9 +116,58 @@ def create_folders(model_path, augmented_data):
         os.mkdir("logs")
 
 
-print("Tensorflow version: "+tf.__version__)
+def train(checkpoint, epochs):
+    if data_augmentation:
+        model.fit(
+            generate_batches_with_augmentation(train_path),
+            verbose=1,
+            epochs=epochs,
+            callbacks=[checkpoint])
+    else:
+        validation_bound = int(batch_size*(1-validation_split))
+        train_data = generate_batches(
+            train_path, 0, validation_bound)
+        validation_data = generate_batches(
+            train_path, validation_bound, batch_size)
+        samples = len(train_data[0]) + len(validation_data[0])
+        model.fit(
+            x=train_data[0],
+            y=train_data[1],
+            epochs=epochs,
+            steps_per_epoch=samples//batch_size,
+            verbose=1,
+            validation_data=validation_data,
+            callbacks=[checkpoint])
 
-create_folders(model_path, augmented_data)
+
+def test():
+    folders = [name for name in os.listdir(
+        test_path) if os.path.isdir(os.path.join(test_path, name))]
+    for folder in folders:
+        success = 0
+        average_confidence = 0
+        files = glob.glob(test_path + "/" + folder + "/*")
+        for file in files:
+            img = io.imread(file)
+            img = preprocess_input(img)
+            img = transform.resize(img, (img_size, img_size))
+            x = image.img_to_array(img)
+            x = np.expand_dims(x, axis=0)
+            y_prob = model.predict(x)
+            y_class = y_prob.argmax(axis=-1)
+            y_class = y_class[0]
+            y_confidence = int(y_prob[0][y_class] * 100)
+            if y_class == int(folder):
+                success += 1
+            average_confidence += y_confidence
+        success = int(100*success/len(files))
+        average_confidence = int(average_confidence / len(files))
+        print("class '{}': success rate = {}% with {}% avg confidence".format(
+            folder, success, average_confidence))
+
+
+print("Tensorflow version: "+tf.__version__)
+create_folders()
 
 # create model
 base_model = MobileNetV2(include_top=True, weights=weights,
@@ -139,30 +192,7 @@ for layer in model.layers[:-1]:
 model.compile(optimizer="rmsprop", loss="categorical_crossentropy")
 
 print("Start training...")
-files = glob.glob(train_path + "/*/*jpg")
-samples = len(files)
-
-if data_augmentation:
-    model.fit(
-        generate_batches_with_augmentation(
-            train_path, batch_size, validation_split, augmented_data),
-        verbose=1,
-        epochs=epochs,
-        callbacks=[checkpoint])
-else:
-    validation_bound = int(batch_size*(1-validation_split))
-    train_data = generate_batches(
-        train_path, batch_size, classes, 0, validation_bound)
-    validation_data = generate_batches(
-        train_path, batch_size, classes, validation_bound, batch_size)
-    model.fit(
-        x=train_data[0],
-        y=train_data[1],
-        epochs=epochs,
-        steps_per_epoch=samples//batch_size,
-        verbose=1,
-        validation_data=validation_data,
-        callbacks=[checkpoint])
+train(checkpoint, epochs)
 
 if epochs_after_unfreeze > 0:
     print("Unfreezing all layers...")
@@ -178,28 +208,7 @@ if epochs_after_unfreeze > 0:
         monitor="loss",
         save_best_only=True,
         period=checkpoint_period_after_unfreeze)
-
-    if data_augmentation:
-        model.fit_generator(
-            generate_batches_with_augmentation(
-                train_path, batch_size, validation_split, augmented_data),
-            verbose=1,
-            epochs=epochs,
-            callbacks=[checkpoint])
-    else:
-        validation_bound = int(batch_size*(1-validation_split))
-        train_data = generate_batches(
-            train_path, batch_size, classes, 0, validation_bound)
-        validation_data = generate_batches(
-            train_path, batch_size, classes, validation_bound, batch_size)
-        model.fit_generator(
-            x=train_data[0],
-            y=train_data[1],
-            epochs=epochs_after_unfreeze,
-            steps_per_epoch=samples//batch_size,
-            verbose=1,
-            validation_data=validation_data,
-            callbacks=[checkpoint])
+    train(checkpoint, epochs_after_unfreeze)
 
 print("Saving...")
 tf.saved_model.save(model, model_path)
@@ -210,26 +219,4 @@ print("[STATUS] end time - {}".format(datetime.datetime.now().strftime("%Y-%m-%d
 print("[STATUS] total duration: {}".format(end - start))
 
 print("Testing...")
-folders = [name for name in os.listdir(
-    test_path) if os.path.isdir(os.path.join(test_path, name))]
-for folder in folders:
-    success = 0
-    average_confidence = 0
-    files = glob.glob(test_path + "/" + folder + "/*.jpg")
-    for file in files:
-        img = io.imread(file)
-        img = preprocess_input(img)
-        img = transform.resize(img, (img_size, img_size))
-        x = image.img_to_array(img)
-        x = np.expand_dims(x, axis=0)
-        y_prob = model.predict(x)
-        y_class = y_prob.argmax(axis=-1)
-        y_class = y_class[0]
-        y_confidence = int(y_prob[0][y_class] * 100)
-        if y_class == int(folder):
-            success += 1
-        average_confidence += y_confidence
-    success = int(100*success/len(files))
-    average_confidence = int(average_confidence / len(files))
-    print("class '{}': success rate = {}% with {}% avg confidence".format(
-        folder, success, average_confidence))
+test()
