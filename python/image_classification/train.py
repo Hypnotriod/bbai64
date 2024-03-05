@@ -71,6 +71,7 @@ epochs = config["epochs"]
 classes = config["classes"]
 augmented_data = config["augmented_data"]
 validation_split = config["validation_split"]
+checkpoint_monitor = config["checkpoint_monitor"]
 data_augmentation = config["data_augmentation"]
 epochs_after_unfreeze = config["epochs_after_unfreeze"]
 checkpoint_period = config["checkpoint_period"]
@@ -181,7 +182,7 @@ model.summary()
 
 # create callbacks
 checkpoint = ModelCheckpoint(
-    "logs/weights.h5", monitor="loss", save_best_only=True, period=checkpoint_period)
+    "logs/weights.h5", monitor=checkpoint_monitor, save_best_only=True, period=checkpoint_period)
 
 # start time
 start = time.time()
@@ -205,7 +206,7 @@ if epochs_after_unfreeze > 0:
     print("Start training - phase 2...")
     checkpoint = ModelCheckpoint(
         "logs/weights.h5",
-        monitor="loss",
+        monitor=checkpoint_monitor,
         save_best_only=True,
         period=checkpoint_period_after_unfreeze)
     train(checkpoint, epochs_after_unfreeze)
