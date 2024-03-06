@@ -1,11 +1,11 @@
-package muxer
+package streamer
 
 import "sync"
 
 type Client[T any] struct {
-	muxer *Muxer[T]
-	input chan<- *T
-	C     <-chan *T
+	streamer *Streamer[T]
+	input    chan<- *T
+	C        <-chan *T
 }
 
 func (c *Client[T]) Close() {
@@ -15,13 +15,13 @@ func (c *Client[T]) Close() {
 			if !ok {
 				return
 			}
-		case c.muxer.remove <- c:
+		case c.streamer.remove <- c:
 			return
 		}
 	}
 }
 
-type Muxer[T any] struct {
+type Streamer[T any] struct {
 	mu        sync.Mutex
 	isRunning bool
 	clients   map[*Client[T]]bool
@@ -31,8 +31,8 @@ type Muxer[T any] struct {
 	stop      chan bool
 }
 
-func NewMuxer[T any](buffSize int) *Muxer[T] {
-	return &Muxer[T]{
+func NewStreamer[T any](buffSize int) *Streamer[T] {
+	return &Streamer[T]{
 		clients:   make(map[*Client[T]]bool),
 		add:       make(chan *Client[T]),
 		remove:    make(chan *Client[T]),
@@ -41,18 +41,18 @@ func NewMuxer[T any](buffSize int) *Muxer[T] {
 	}
 }
 
-func (m *Muxer[T]) NewClient(buffSize int) *Client[T] {
+func (m *Streamer[T]) NewClient(buffSize int) *Client[T] {
 	ch := make(chan *T, buffSize)
 	c := &Client[T]{
-		muxer: m,
-		input: ch,
-		C:     ch,
+		streamer: m,
+		input:    ch,
+		C:        ch,
 	}
-	c.muxer.add <- c
+	c.streamer.add <- c
 	return c
 }
 
-func (m *Muxer[T]) Broadcast(data *T) bool {
+func (m *Streamer[T]) Broadcast(data *T) bool {
 	m.mu.Lock()
 	if !m.isRunning {
 		m.mu.Unlock()
@@ -63,7 +63,7 @@ func (m *Muxer[T]) Broadcast(data *T) bool {
 	return true
 }
 
-func (m *Muxer[T]) Run() {
+func (m *Streamer[T]) Run() {
 	m.mu.Lock()
 	if m.isRunning {
 		m.mu.Unlock()
@@ -94,7 +94,7 @@ func (m *Muxer[T]) Run() {
 	}
 }
 
-func (m *Muxer[T]) Stop() bool {
+func (m *Streamer[T]) Stop() bool {
 	m.mu.Lock()
 	if !m.isRunning {
 		m.mu.Unlock()

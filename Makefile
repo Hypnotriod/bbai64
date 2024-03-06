@@ -1,15 +1,15 @@
 
-build-mjpeg-http-mux:
-	cd go/ && go build -o ../bin/mjpeg-http-mux cmd/mjpeg_http_mux/main.go && rsync -cr public/ ../bin/public/
+build-mjpeg-http-stream:
+	cd go/ && go build -o ../bin/mjpeg-http-stream cmd/mjpeg_http_stream/main.go && rsync -cr public/ ../bin/public/
 
-run-mjpeg-http-mux:
-	cd bin && sudo ./mjpeg-http-mux
+run-mjpeg-http-stream:
+	cd bin && sudo ./mjpeg-http-stream
 
-build-comb-mjpeg-http-mux:
-	cd go/ && go build -o ../bin/comb-mjpeg-http-mux cmd/comb_mjpeg_http_mux/main.go && rsync -cr public/ ../bin/public/
+build-comb-mjpeg-http-stream:
+	cd go/ && go build -o ../bin/comb-mjpeg-http-stream cmd/comb_mjpeg_http_stream/main.go && rsync -cr public/ ../bin/public/
 
-run-comb-mjpeg-http-mux:
-	cd bin && sudo ./comb-mjpeg-http-mux
+run-comb-mjpeg-http-stream:
+	cd bin && sudo ./comb-mjpeg-http-stream
 
 build-wifi-vehicle:
 	cd go/ && go build -o ../bin/wifi-vehicle cmd/wifi_vehicle_basic/main.go && rsync -cr public/ ../bin/public/

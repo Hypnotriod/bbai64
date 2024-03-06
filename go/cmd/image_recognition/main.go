@@ -2,7 +2,7 @@ package main
 
 import (
 	"bbai64/gstpipeline"
-	"bbai64/muxer"
+	"bbai64/streamer"
 	"bufio"
 	"fmt"
 	"io"
@@ -58,7 +58,7 @@ var jpegParams = jpegenc.EncodeParams{
 	Subsample:     jpegenc.Subsample444,
 }
 
-func serveAnalyticsStreamTcpSocket(width int, height int, mux *muxer.Muxer[PixelsRGB], address string) {
+func serveAnalyticsStreamTcpSocket(width int, height int, strmr *streamer.Streamer[PixelsRGB], address string) {
 	soc, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
@@ -69,12 +69,12 @@ func serveAnalyticsStreamTcpSocket(width int, height int, mux *muxer.Muxer[Pixel
 		if err != nil {
 			log.Fatal("Cannot accept socket connection at ", address, " : ", err)
 		}
-		serveAnalyticsStreamTcpSocketConnection(conn, width, height, mux, address)
+		serveAnalyticsStreamTcpSocketConnection(conn, width, height, strmr, address)
 		conn.Close()
 	}
 }
 
-func serveAnalyticsStreamTcpSocketConnection(conn net.Conn, width int, height int, mux *muxer.Muxer[PixelsRGB], address string) {
+func serveAnalyticsStreamTcpSocketConnection(conn net.Conn, width int, height int, strmr *streamer.Streamer[PixelsRGB], address string) {
 	log.Print("Accepted input stream at ", address)
 
 	buffer := [FRAMES_BUFFER_SIZE]PixelsRGB{}
@@ -97,13 +97,13 @@ func serveAnalyticsStreamTcpSocketConnection(conn net.Conn, width int, height in
 			}
 			break
 		}
-		if !mux.Broadcast(&frame) {
+		if !strmr.Broadcast(&frame) {
 			break
 		}
 	}
 }
 
-func serveVisualizationMjpegStreamTcpSocket(mux *muxer.Muxer[Chunk], address string) {
+func serveVisualizationMjpegStreamTcpSocket(strmr *streamer.Streamer[Chunk], address string) {
 	soc, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
@@ -114,12 +114,12 @@ func serveVisualizationMjpegStreamTcpSocket(mux *muxer.Muxer[Chunk], address str
 		if err != nil {
 			log.Fatal("Cannot accept socket connection at ", address, " : ", err)
 		}
-		serveVisualizationMjpegStreamTcpSocketConnection(conn, mux, address)
+		serveVisualizationMjpegStreamTcpSocketConnection(conn, strmr, address)
 		conn.Close()
 	}
 }
 
-func serveVisualizationMjpegStreamTcpSocketConnection(conn net.Conn, mux *muxer.Muxer[Chunk], address string) {
+func serveVisualizationMjpegStreamTcpSocketConnection(conn net.Conn, strmr *streamer.Streamer[Chunk], address string) {
 	log.Print("Accepted input stream at ", address)
 	var buffIndex int32
 	buffer := [MJPEG_STREAM_CHUNKS_BUFFER_LENGTH]Chunk{}
@@ -137,18 +137,18 @@ func serveVisualizationMjpegStreamTcpSocketConnection(conn net.Conn, mux *muxer.
 			break
 		}
 		chunk.Size = size
-		if !mux.Broadcast(chunk) {
+		if !strmr.Broadcast(chunk) {
 			break
 		}
 	}
 }
 
-func handleVisualizationMjpegStreamRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseWriter, req *http.Request) {
+func handleVisualizationMjpegStreamRequest(strmr *streamer.Streamer[Chunk]) func(w http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 
-		client := mux.NewClient(CHUNKS_BUFFER_SIZE/2 - 2)
+		client := strmr.NewClient(CHUNKS_BUFFER_SIZE/2 - 2)
 		defer client.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
@@ -177,13 +177,13 @@ func handleVisualizationMjpegStreamRequest(mux *muxer.Muxer[Chunk]) func(w http.
 	}
 }
 
-func handleAnalyticsMjpegStreamRequest(width int, height int, mux *muxer.Muxer[PixelsRGB]) func(w http.ResponseWriter, req *http.Request) {
+func handleAnalyticsMjpegStreamRequest(width int, height int, strmr *streamer.Streamer[PixelsRGB]) func(w http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		boundary := "\r\n--" + MJPEG_FRAME_BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n"
 
-		client := mux.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
+		client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 		defer client.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
@@ -228,20 +228,20 @@ func handleAnalyticsMjpegStreamRequest(width int, height int, mux *muxer.Muxer[P
 	}
 }
 
-func makeVisualizationMjpegMuxer(inputAddr string, outputAddr string) *muxer.Muxer[Chunk] {
-	mux := muxer.NewMuxer[Chunk](CHUNKS_BUFFER_SIZE/2 - 2)
-	go mux.Run()
-	go serveVisualizationMjpegStreamTcpSocket(mux, inputAddr)
-	http.HandleFunc(outputAddr, handleVisualizationMjpegStreamRequest(mux))
-	return mux
+func makeVisualizationMjpegStreamer(inputAddr string, outputAddr string) *streamer.Streamer[Chunk] {
+	strmr := streamer.NewStreamer[Chunk](CHUNKS_BUFFER_SIZE/2 - 2)
+	go strmr.Run()
+	go serveVisualizationMjpegStreamTcpSocket(strmr, inputAddr)
+	http.HandleFunc(outputAddr, handleVisualizationMjpegStreamRequest(strmr))
+	return strmr
 }
 
-func makeAnalyticsCameraMuxer(inputAddr string, outputAddr string) *muxer.Muxer[PixelsRGB] {
-	mux := muxer.NewMuxer[PixelsRGB](FRAMES_BUFFER_SIZE/2 - 2)
-	go mux.Run()
-	go serveAnalyticsStreamTcpSocket(TENSOR_WIDTH, TENSOR_HEIGHT, mux, inputAddr)
-	http.HandleFunc(outputAddr, handleAnalyticsMjpegStreamRequest(TENSOR_WIDTH, TENSOR_HEIGHT, mux))
-	return mux
+func makeAnalyticsCameraStreamer(inputAddr string, outputAddr string) *streamer.Streamer[PixelsRGB] {
+	strmr := streamer.NewStreamer[PixelsRGB](FRAMES_BUFFER_SIZE/2 - 2)
+	go strmr.Run()
+	go serveAnalyticsStreamTcpSocket(TENSOR_WIDTH, TENSOR_HEIGHT, strmr, inputAddr)
+	http.HandleFunc(outputAddr, handleAnalyticsMjpegStreamRequest(TENSOR_WIDTH, TENSOR_HEIGHT, strmr))
+	return strmr
 }
 
 func initModel() {
@@ -305,8 +305,8 @@ func feedFrame(frame []byte) {
 	}
 }
 
-func processFrames(mux *muxer.Muxer[PixelsRGB]) {
-	client := mux.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
+func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
+	client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 	defer client.Close()
 	for {
 		for i := 0; i < PREDICT_EACH_FRAME-1; i++ { // skip frames
@@ -326,11 +326,11 @@ func processFrames(mux *muxer.Muxer[PixelsRGB]) {
 func main() {
 	initModel()
 
-	muxAnalytics := makeAnalyticsCameraMuxer(":9990", "/mjpeg_stream1")
-	defer muxAnalytics.Stop()
+	strmrAnalytics := makeAnalyticsCameraStreamer(":9990", "/mjpeg_stream1")
+	defer strmrAnalytics.Stop()
 
-	muxVisualization := makeVisualizationMjpegMuxer(":9991", "/mjpeg_stream2")
-	defer muxVisualization.Stop()
+	strmrVisualization := makeVisualizationMjpegStreamer(":9991", "/mjpeg_stream2")
+	defer strmrVisualization.Stop()
 
 	go gstpipeline.LauchImx219CsiCameraAnalyticsRgbStream1VisualizationMjpegStream2(
 		0, CAMERA_WIDTH, CAMERA_HEIGHT,
@@ -341,7 +341,7 @@ func main() {
 		JPEG_QUALITY,
 		MJPEG_FRAME_BOUNDARY,
 		9991)
-	go processFrames(muxAnalytics)
+	go processFrames(strmrAnalytics)
 
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 

@@ -2,7 +2,7 @@ package main
 
 import (
 	"bbai64/gstpipeline"
-	"bbai64/muxer"
+	"bbai64/streamer"
 	"bufio"
 	"io"
 	"log"
@@ -27,7 +27,7 @@ type Chunk struct {
 	Size int
 }
 
-func serveTcpSocket(mux *muxer.Muxer[Chunk], address string) {
+func serveTcpSocket(strmr *streamer.Streamer[Chunk], address string) {
 	soc, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
@@ -38,12 +38,12 @@ func serveTcpSocket(mux *muxer.Muxer[Chunk], address string) {
 		if err != nil {
 			log.Fatal("Cannot accept socket connection at ", address, " : ", err)
 		}
-		serveTcpSocketConnection(conn, mux, address)
+		serveTcpSocketConnection(conn, strmr, address)
 		conn.Close()
 	}
 }
 
-func serveTcpSocketConnection(conn net.Conn, mux *muxer.Muxer[Chunk], address string) {
+func serveTcpSocketConnection(conn net.Conn, strmr *streamer.Streamer[Chunk], address string) {
 	log.Print("Accepted input stream at ", address)
 	var buffIndex int32
 	buffer := [CHUNKS_BUFFER_SIZE]Chunk{}
@@ -61,18 +61,18 @@ func serveTcpSocketConnection(conn net.Conn, mux *muxer.Muxer[Chunk], address st
 			break
 		}
 		chunk.Size = size
-		if !mux.Broadcast(chunk) {
+		if !strmr.Broadcast(chunk) {
 			break
 		}
 	}
 }
 
-func handleMjpegStreamRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseWriter, req *http.Request) {
+func handleMjpegStreamRequest(strmr *streamer.Streamer[Chunk]) func(w http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 
-		client := mux.NewClient(CHUNKS_BUFFER_SIZE/2 - 2)
+		client := strmr.NewClient(CHUNKS_BUFFER_SIZE/2 - 2)
 		defer client.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
@@ -101,17 +101,17 @@ func handleMjpegStreamRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseWrite
 	}
 }
 
-func makeMjpegMuxer(inputAddr string, outputAddr string) {
-	mux := muxer.NewMuxer[Chunk](CHUNKS_BUFFER_SIZE/2 - 2)
-	go mux.Run()
-	go serveTcpSocket(mux, inputAddr)
-	http.HandleFunc(outputAddr, handleMjpegStreamRequest(mux))
+func makeMjpegStreamer(inputAddr string, outputAddr string) {
+	strmr := streamer.NewStreamer[Chunk](CHUNKS_BUFFER_SIZE/2 - 2)
+	go strmr.Run()
+	go serveTcpSocket(strmr, inputAddr)
+	http.HandleFunc(outputAddr, handleMjpegStreamRequest(strmr))
 }
 
 func main() {
 	// open with stereoseparate.html
-	makeMjpegMuxer(":9990", "/mjpeg_stream1")
-	makeMjpegMuxer(":9991", "/mjpeg_stream2")
+	makeMjpegStreamer(":9990", "/mjpeg_stream1")
+	makeMjpegStreamer(":9991", "/mjpeg_stream2")
 	go gstpipeline.LauchImx219CsiCameraMjpegStream(
 		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
 	go gstpipeline.LauchImx219CsiCameraMjpegStream(
@@ -122,7 +122,7 @@ func main() {
 		// MESA-LOADER: failed to open tidss: /lib/aarch64-linux-gnu/libc.so.6: version `GLIBC_2.32'
 		// not found (required by /usr/lib/dri/tidss_dri.so) (search paths /usr/lib/aarch64-linux-gnu/dri:\$${ORIGIN}/dri:/usr/lib/dri, suffix _dri)
 
-		makeMjpegMuxer(":9990", "/mjpeg_stereo_stream")
+		makeMjpegStreamer(":9990", "/mjpeg_stereo_stream")
 		go gstpipeline.LauchImx219CsiStereoCameraMjpegStream(
 			CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
 	*/

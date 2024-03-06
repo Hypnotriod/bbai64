@@ -3,7 +3,7 @@ package main
 import (
 	"bbai64/gstpipeline"
 	"bbai64/i2c"
-	"bbai64/muxer"
+	"bbai64/streamer"
 	"bbai64/twowheeled"
 	"bbai64/ups"
 	"bufio"
@@ -94,7 +94,7 @@ func serveVehicleControlWSRequest(w http.ResponseWriter, r *http.Request) {
 	log.Print("Websocket connection terminated with ", r.Host)
 }
 
-func serveMjpegStreamTcpSocket(mux *muxer.Muxer[Chunk], address string) {
+func serveMjpegStreamTcpSocket(strmr *streamer.Streamer[Chunk], address string) {
 	soc, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
@@ -105,12 +105,12 @@ func serveMjpegStreamTcpSocket(mux *muxer.Muxer[Chunk], address string) {
 		if err != nil {
 			log.Fatal("Cannot accept socket connection at ", address, " : ", err)
 		}
-		serveMjpegStreamTcpSocketConnection(conn, mux, address)
+		serveMjpegStreamTcpSocketConnection(conn, strmr, address)
 		conn.Close()
 	}
 }
 
-func serveMjpegStreamTcpSocketConnection(conn net.Conn, mux *muxer.Muxer[Chunk], address string) {
+func serveMjpegStreamTcpSocketConnection(conn net.Conn, strmr *streamer.Streamer[Chunk], address string) {
 	log.Print("Accepted input stream at ", address)
 	var buffIndex int32
 	buffer := [MJPEG_STREAM_CHUNKS_BUFFER_LENGTH]Chunk{}
@@ -128,18 +128,18 @@ func serveMjpegStreamTcpSocketConnection(conn net.Conn, mux *muxer.Muxer[Chunk],
 			break
 		}
 		chunk.Size = size
-		if !mux.Broadcast(chunk) {
+		if !strmr.Broadcast(chunk) {
 			break
 		}
 	}
 }
 
-func handleMjpegStreamHttpRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseWriter, req *http.Request) {
+func handleMjpegStreamHttpRequest(strmr *streamer.Streamer[Chunk]) func(w http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 
-		client := mux.NewClient(MJPEG_STREAM_CHUNKS_BUFFER_LENGTH/2 - 2)
+		client := strmr.NewClient(MJPEG_STREAM_CHUNKS_BUFFER_LENGTH/2 - 2)
 		defer client.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
@@ -168,12 +168,12 @@ func handleMjpegStreamHttpRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseW
 	}
 }
 
-func makeMjpegMuxer(inputAddr string, outputAddr string) *muxer.Muxer[Chunk] {
-	mux := muxer.NewMuxer[Chunk](MJPEG_STREAM_CHUNKS_BUFFER_LENGTH/2 - 2)
-	go mux.Run()
-	go serveMjpegStreamTcpSocket(mux, inputAddr)
-	http.HandleFunc(outputAddr, handleMjpegStreamHttpRequest(mux))
-	return mux
+func makeMjpegStreamer(inputAddr string, outputAddr string) *streamer.Streamer[Chunk] {
+	strmr := streamer.NewStreamer[Chunk](MJPEG_STREAM_CHUNKS_BUFFER_LENGTH/2 - 2)
+	go strmr.Run()
+	go serveMjpegStreamTcpSocket(strmr, inputAddr)
+	http.HandleFunc(outputAddr, handleMjpegStreamHttpRequest(strmr))
+	return strmr
 }
 
 func main() {
@@ -182,8 +182,8 @@ func main() {
 	defer upsModule.Stop()
 
 	twowheeled.Initialize()
-	mux := makeMjpegMuxer(":9990", "/mjpeg_stream")
-	defer mux.Stop()
+	strmr := makeMjpegStreamer(":9990", "/mjpeg_stream")
+	defer strmr.Stop()
 	go gstpipeline.LauchImx219CsiCameraMjpegStream(
 		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
 

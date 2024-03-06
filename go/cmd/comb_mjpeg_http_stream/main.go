@@ -2,7 +2,7 @@ package main
 
 import (
 	"bbai64/gstpipeline"
-	"bbai64/muxer"
+	"bbai64/streamer"
 	"io"
 	"log"
 	"net"
@@ -29,7 +29,7 @@ var jpegParams = jpegenc.EncodeParams{
 	Subsample:     jpegenc.Subsample444,
 }
 
-func serveTcpRgb16StreamSocket(width int, height int, mux *muxer.Muxer[PixelsRGB16], address string) {
+func serveTcpRgb16StreamSocket(width int, height int, strmr *streamer.Streamer[PixelsRGB16], address string) {
 	soc, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
@@ -40,12 +40,12 @@ func serveTcpRgb16StreamSocket(width int, height int, mux *muxer.Muxer[PixelsRGB
 		if err != nil {
 			log.Fatal("Cannot accept socket connection at ", address, " : ", err)
 		}
-		serveTcpRgb16StreamSocketConnection(conn, width, height, mux, address)
+		serveTcpRgb16StreamSocketConnection(conn, width, height, strmr, address)
 		conn.Close()
 	}
 }
 
-func serveTcpRgb16StreamSocketConnection(conn net.Conn, width int, height int, mux *muxer.Muxer[PixelsRGB16], address string) {
+func serveTcpRgb16StreamSocketConnection(conn net.Conn, width int, height int, strmr *streamer.Streamer[PixelsRGB16], address string) {
 	log.Print("Accepted input stream at ", address)
 
 	buffer := [FRAMES_BUFFER_SIZE]PixelsRGB16{}
@@ -68,21 +68,21 @@ func serveTcpRgb16StreamSocketConnection(conn net.Conn, width int, height int, m
 			}
 			break
 		}
-		if !mux.Broadcast(&frame) {
+		if !strmr.Broadcast(&frame) {
 			break
 		}
 	}
 }
 
-func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[PixelsRGB16], muxR *muxer.Muxer[PixelsRGB16]) func(w http.ResponseWriter, req *http.Request) {
+func handleMjpegStreamRequest(width int, height int, strmrL *streamer.Streamer[PixelsRGB16], strmrR *streamer.Streamer[PixelsRGB16]) func(w http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		boundary := "\r\n--" + MJPEG_FRAME_BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n"
 
-		clientL := muxL.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
+		clientL := strmrL.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 		defer clientL.Close()
-		clientR := muxR.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
+		clientR := strmrR.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 		defer clientR.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
@@ -144,19 +144,19 @@ func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[PixelsRGB
 	}
 }
 
-func makeStereoCameraMuxer(inputAddrL string, inputAddrR string, outputAddr string) {
-	muxL := muxer.NewMuxer[PixelsRGB16](FRAMES_BUFFER_SIZE/2 - 2)
-	go muxL.Run()
-	muxR := muxer.NewMuxer[PixelsRGB16](FRAMES_BUFFER_SIZE/2 - 2)
-	go muxR.Run()
-	go serveTcpRgb16StreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxL, inputAddrL)
-	go serveTcpRgb16StreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxR, inputAddrR)
-	http.HandleFunc(outputAddr, handleMjpegStreamRequest(RESCALE_WIDTH, RESCALE_HEIGHT*2, muxL, muxR))
+func makeStereoCameraStreamer(inputAddrL string, inputAddrR string, outputAddr string) {
+	strmrL := streamer.NewStreamer[PixelsRGB16](FRAMES_BUFFER_SIZE/2 - 2)
+	go strmrL.Run()
+	strmrR := streamer.NewStreamer[PixelsRGB16](FRAMES_BUFFER_SIZE/2 - 2)
+	go strmrR.Run()
+	go serveTcpRgb16StreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, strmrL, inputAddrL)
+	go serveTcpRgb16StreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, strmrR, inputAddrR)
+	http.HandleFunc(outputAddr, handleMjpegStreamRequest(RESCALE_WIDTH, RESCALE_HEIGHT*2, strmrL, strmrR))
 }
 
 func main() {
 	// open with stereocomb.html
-	makeStereoCameraMuxer(":9990", ":9991", "/mjpeg_stream")
+	makeStereoCameraStreamer(":9990", ":9991", "/mjpeg_stream")
 	// gst-launch-1.0 videotestsrc ! video/x-raw, width=640, height=480, format=NV12 ! videoconvert ! video/x-raw, format=RGB16 ! tcpclientsink host=127.0.0.1 port=9990
 	go gstpipeline.LauchImx219CsiCameraRgb16Stream(
 		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, 9990)
