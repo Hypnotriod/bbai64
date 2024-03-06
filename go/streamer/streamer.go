@@ -41,10 +41,10 @@ func NewStreamer[T any](buffSize int) *Streamer[T] {
 	}
 }
 
-func (m *Streamer[T]) NewClient(buffSize int) *Client[T] {
+func (s *Streamer[T]) NewClient(buffSize int) *Client[T] {
 	ch := make(chan *T, buffSize)
 	c := &Client[T]{
-		streamer: m,
+		streamer: s,
 		input:    ch,
 		C:        ch,
 	}
@@ -52,56 +52,56 @@ func (m *Streamer[T]) NewClient(buffSize int) *Client[T] {
 	return c
 }
 
-func (m *Streamer[T]) Broadcast(data *T) bool {
-	m.mu.Lock()
-	if !m.isRunning {
-		m.mu.Unlock()
+func (s *Streamer[T]) Broadcast(data *T) bool {
+	s.mu.Lock()
+	if !s.isRunning {
+		s.mu.Unlock()
 		return false
 	}
-	m.broadcast <- data
-	m.mu.Unlock()
+	s.broadcast <- data
+	s.mu.Unlock()
 	return true
 }
 
-func (m *Streamer[T]) Run() {
-	m.mu.Lock()
-	if m.isRunning {
-		m.mu.Unlock()
+func (s *Streamer[T]) Run() {
+	s.mu.Lock()
+	if s.isRunning {
+		s.mu.Unlock()
 		return
 	}
-	m.isRunning = true
-	m.mu.Unlock()
+	s.isRunning = true
+	s.mu.Unlock()
 	for {
 		select {
-		case <-m.stop:
-			for client := range m.clients {
+		case <-s.stop:
+			for client := range s.clients {
 				close(client.input)
 			}
-			clear(m.clients)
+			clear(s.clients)
 			break
-		case client := <-m.add:
-			m.clients[client] = true
-		case client := <-m.remove:
-			if _, ok := m.clients[client]; ok {
-				delete(m.clients, client)
+		case client := <-s.add:
+			s.clients[client] = true
+		case client := <-s.remove:
+			if _, ok := s.clients[client]; ok {
+				delete(s.clients, client)
 				close(client.input)
 			}
-		case chunk := <-m.broadcast:
-			for client := range m.clients {
+		case chunk := <-s.broadcast:
+			for client := range s.clients {
 				client.input <- chunk
 			}
 		}
 	}
 }
 
-func (m *Streamer[T]) Stop() bool {
-	m.mu.Lock()
-	if !m.isRunning {
-		m.mu.Unlock()
+func (s *Streamer[T]) Stop() bool {
+	s.mu.Lock()
+	if !s.isRunning {
+		s.mu.Unlock()
 		return false
 	}
-	m.isRunning = false
-	m.stop <- true
-	m.mu.Unlock()
+	s.isRunning = false
+	s.stop <- true
+	s.mu.Unlock()
 	return true
 }
