@@ -13,7 +13,7 @@ import (
 )
 
 const SERVER_ADDRESS = ":1337"
-const BUFFERED_FRAMES_COUNT = 16
+const FRAMES_BUFFER_SIZE = 32
 const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
 const CAMERA_WIDTH = 1920
@@ -48,7 +48,7 @@ func serveTcpRgb16StreamSocket(width int, height int, mux *muxer.Muxer[PixelsRGB
 func serveTcpRgb16StreamSocketConnection(conn net.Conn, width int, height int, mux *muxer.Muxer[PixelsRGB16], address string) {
 	log.Print("Accepted input stream at ", address)
 
-	buffer := [BUFFERED_FRAMES_COUNT]PixelsRGB16{}
+	buffer := [FRAMES_BUFFER_SIZE]PixelsRGB16{}
 	for i := range buffer {
 		buffer[i] = make(PixelsRGB16, width*height*2)
 	}
@@ -56,7 +56,7 @@ func serveTcpRgb16StreamSocketConnection(conn net.Conn, width int, height int, m
 	var buffIndex int32
 	for {
 		frame := buffer[buffIndex]
-		buffIndex = (buffIndex + 1) % BUFFERED_FRAMES_COUNT
+		buffIndex = (buffIndex + 1) % FRAMES_BUFFER_SIZE
 		size, err := io.ReadFull(conn, frame)
 		if err != nil {
 			if err == io.EOF {
@@ -80,9 +80,9 @@ func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[PixelsRGB
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		boundary := "\r\n--" + MJPEG_FRAME_BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n"
 
-		clientL := muxL.NewClient(0)
+		clientL := muxL.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 		defer clientL.Close()
-		clientR := muxR.NewClient(0)
+		clientR := muxR.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 		defer clientR.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
@@ -145,9 +145,9 @@ func handleMjpegStreamRequest(width int, height int, muxL *muxer.Muxer[PixelsRGB
 }
 
 func makeStereoCameraMuxer(inputAddrL string, inputAddrR string, outputAddr string) {
-	muxL := muxer.NewMuxer[PixelsRGB16](BUFFERED_FRAMES_COUNT - 1)
+	muxL := muxer.NewMuxer[PixelsRGB16](FRAMES_BUFFER_SIZE/2 - 2)
 	go muxL.Run()
-	muxR := muxer.NewMuxer[PixelsRGB16](BUFFERED_FRAMES_COUNT - 1)
+	muxR := muxer.NewMuxer[PixelsRGB16](FRAMES_BUFFER_SIZE/2 - 2)
 	go muxR.Run()
 	go serveTcpRgb16StreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxL, inputAddrL)
 	go serveTcpRgb16StreamSocket(RESCALE_WIDTH, RESCALE_HEIGHT, muxR, inputAddrR)

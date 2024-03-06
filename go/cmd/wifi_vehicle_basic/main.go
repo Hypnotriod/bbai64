@@ -139,7 +139,7 @@ func handleMjpegStreamHttpRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseW
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 
-		client := mux.NewClient(MJPEG_STREAM_CHUNKS_BUFFER_LENGTH/2 - 1)
+		client := mux.NewClient(MJPEG_STREAM_CHUNKS_BUFFER_LENGTH/2 - 2)
 		defer client.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
@@ -169,7 +169,7 @@ func handleMjpegStreamHttpRequest(mux *muxer.Muxer[Chunk]) func(w http.ResponseW
 }
 
 func makeMjpegMuxer(inputAddr string, outputAddr string) *muxer.Muxer[Chunk] {
-	mux := muxer.NewMuxer[Chunk](MJPEG_STREAM_CHUNKS_BUFFER_LENGTH/2 - 1)
+	mux := muxer.NewMuxer[Chunk](MJPEG_STREAM_CHUNKS_BUFFER_LENGTH/2 - 2)
 	go mux.Run()
 	go serveMjpegStreamTcpSocket(mux, inputAddr)
 	http.HandleFunc(outputAddr, handleMjpegStreamHttpRequest(mux))

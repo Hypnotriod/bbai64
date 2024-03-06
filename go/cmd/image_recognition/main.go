@@ -20,7 +20,7 @@ import (
 )
 
 const SERVER_ADDRESS = ":1337"
-const BUFFERED_FRAMES_COUNT = 32
+const FRAMES_BUFFER_SIZE = 64
 const CHUNKS_BUFFER_SIZE = 1024
 const CHUNK_SIZE = 4096
 const MJPEG_STREAM_CHUNKS_BUFFER_LENGTH = 1024
@@ -77,7 +77,7 @@ func serveAnalyticsStreamTcpSocket(width int, height int, mux *muxer.Muxer[Pixel
 func serveAnalyticsStreamTcpSocketConnection(conn net.Conn, width int, height int, mux *muxer.Muxer[PixelsRGB], address string) {
 	log.Print("Accepted input stream at ", address)
 
-	buffer := [BUFFERED_FRAMES_COUNT]PixelsRGB{}
+	buffer := [FRAMES_BUFFER_SIZE]PixelsRGB{}
 	for i := range buffer {
 		buffer[i] = make(PixelsRGB, width*height*CHANNELS_NUM)
 	}
@@ -85,7 +85,7 @@ func serveAnalyticsStreamTcpSocketConnection(conn net.Conn, width int, height in
 	var buffIndex int32
 	for {
 		frame := buffer[buffIndex]
-		buffIndex = (buffIndex + 1) % BUFFERED_FRAMES_COUNT
+		buffIndex = (buffIndex + 1) % FRAMES_BUFFER_SIZE
 		size, err := io.ReadFull(conn, frame)
 		if err != nil {
 			if err == io.EOF {
@@ -148,7 +148,7 @@ func handleVisualizationMjpegStreamRequest(mux *muxer.Muxer[Chunk]) func(w http.
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 
-		client := mux.NewClient(0)
+		client := mux.NewClient(CHUNKS_BUFFER_SIZE/2 - 2)
 		defer client.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
@@ -183,7 +183,7 @@ func handleAnalyticsMjpegStreamRequest(width int, height int, mux *muxer.Muxer[P
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		boundary := "\r\n--" + MJPEG_FRAME_BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n"
 
-		client := mux.NewClient(BUFFERED_FRAMES_COUNT/2 - 1)
+		client := mux.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 		defer client.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
@@ -229,7 +229,7 @@ func handleAnalyticsMjpegStreamRequest(width int, height int, mux *muxer.Muxer[P
 }
 
 func makeVisualizationMjpegMuxer(inputAddr string, outputAddr string) *muxer.Muxer[Chunk] {
-	mux := muxer.NewMuxer[Chunk](CHUNKS_BUFFER_SIZE - 1)
+	mux := muxer.NewMuxer[Chunk](CHUNKS_BUFFER_SIZE/2 - 2)
 	go mux.Run()
 	go serveVisualizationMjpegStreamTcpSocket(mux, inputAddr)
 	http.HandleFunc(outputAddr, handleVisualizationMjpegStreamRequest(mux))
@@ -237,7 +237,7 @@ func makeVisualizationMjpegMuxer(inputAddr string, outputAddr string) *muxer.Mux
 }
 
 func makeAnalyticsCameraMuxer(inputAddr string, outputAddr string) *muxer.Muxer[PixelsRGB] {
-	mux := muxer.NewMuxer[PixelsRGB](BUFFERED_FRAMES_COUNT/2 - 1)
+	mux := muxer.NewMuxer[PixelsRGB](FRAMES_BUFFER_SIZE/2 - 2)
 	go mux.Run()
 	go serveAnalyticsStreamTcpSocket(TENSOR_WIDTH, TENSOR_HEIGHT, mux, inputAddr)
 	http.HandleFunc(outputAddr, handleAnalyticsMjpegStreamRequest(TENSOR_WIDTH, TENSOR_HEIGHT, mux))
@@ -306,7 +306,7 @@ func feedFrame(frame []byte) {
 }
 
 func processFrames(mux *muxer.Muxer[PixelsRGB]) {
-	client := mux.NewClient(BUFFERED_FRAMES_COUNT/2 - 1)
+	client := mux.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 	defer client.Close()
 	for {
 		for i := 0; i < PREDICT_EACH_FRAME-1; i++ { // skip frames
