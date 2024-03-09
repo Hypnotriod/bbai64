@@ -66,6 +66,7 @@ momentum = config["momentum"]
 train_path = config["train_path"]
 test_path = config["test_path"]
 model_path = config["model_path"]
+tflite_model_path = config["tflite_model_path"]
 batch_size = config["batch_size"]
 epochs = config["epochs"]
 classes = config["classes"]
@@ -111,8 +112,10 @@ def generate_batches_with_augmentation(path):
 def create_folders():
     if not os.path.exists(model_path):
         os.mkdir(model_path)
-    if not os.path.exists(augmented_data):
+    if augmented_data and not os.path.exists(augmented_data):
         os.mkdir(augmented_data)
+    if tflite_model_path and not os.path.exists(tflite_model_path):
+        os.mkdir(tflite_model_path)
     if not os.path.exists("logs"):
         os.mkdir("logs")
 
@@ -211,8 +214,16 @@ if epochs_after_unfreeze > 0:
         period=checkpoint_period_after_unfreeze)
     train(checkpoint, epochs_after_unfreeze)
 
-print("Saving...")
+print("Saving model...")
 tf.saved_model.save(model, model_path)
+
+if tflite_model_path:
+    print("Converting model...")
+    converter = tf.lite.TFLiteConverter.from_saved_model(model_path)
+    tflite_model = converter.convert()
+    print("Saving TFLite model...")
+    with open(tflite_model_path + "/saved_model.tflite", "wb") as f:
+        f.write(tflite_model)
 
 # end time
 end = time.time()

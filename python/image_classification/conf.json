@@ -4,6 +4,7 @@
     "test_path": "test_data",
     "augmented_data": "augmented_data",
     "model_path": "saved_model",
+    "tflite_model_path": "saved_model_tflite",
     "img_size": 224,
     "learning_rate": 0.001,
     "momentum": 0.9,
