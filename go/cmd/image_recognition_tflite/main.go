@@ -267,7 +267,7 @@ func initModel() {
 
 	status := interpreter.AllocateTensors()
 	if status != tflite.OK {
-		log.Print("Allocate failed")
+		log.Print("Tensor allocation failed")
 		return
 	}
 
@@ -279,7 +279,7 @@ func predict(printPredictions bool) {
 	startTime := time.Now()
 	status := interpreter.Invoke()
 	if status != tflite.OK {
-		log.Println("Invoke failed")
+		log.Println("Interpreter invoke failed")
 		return
 	}
 	if printPredictions {
