@@ -29,5 +29,11 @@ build-image-recognition:
 run-image-recognition:
 	cd bin && sudo ./image-recognition
 
+build-image-recognition-tflite:
+	cd go/ && go build -o ../bin/image-recognition-tflite cmd/image_recognition_tflite/main.go && rsync -cr model/ ../bin/model/ && rsync -cr public/ ../bin/public/
+
+run-image-recognition-tflite:
+	cd bin && sudo ./image-recognition-tflite
+
 run-train-image-classification:
 	cd python/image_classification && python train.py
