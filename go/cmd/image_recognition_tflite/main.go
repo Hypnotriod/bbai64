@@ -3,6 +3,7 @@ package main
 import (
 	"bbai64/gstpipeline"
 	"bbai64/streamer"
+	"bbai64/titfldelegate"
 	"bufio"
 	"fmt"
 	"io"
@@ -32,8 +33,8 @@ const RESCALE_VISUALIZATION_WIDTH = 1280
 const RESCALE_VISUALIZATION_HEIGHT = 720
 const RESCALE_ANALYTICS_WIDTH = 426
 const RESCALE_ANALYTICS_HEIGHT = 240
-const TENSOR_WIDTH = 128
-const TENSOR_HEIGHT = 128
+const TENSOR_WIDTH = 224
+const TENSOR_HEIGHT = 224
 const CHANNELS_NUM = 3
 const TOP_PREDICTIONS_NUM = 3
 const PREDICT_EACH_FRAME = 10
@@ -242,23 +243,22 @@ func makeAnalyticsCameraStreamer(inputAddr string, outputAddr string) *streamer.
 }
 
 func initModel() {
-	model := tflite.NewModelFromFile("model/test_model_tflite/saved_model.tflite")
+	model := tflite.NewModelFromFile("model/TFL-CL-0000-mobileNetV1-mlperf/model/mobilenet_v1_1.0_224.tflite")
 	if model == nil {
 		log.Println("Cannot load model")
 		return
 	}
 
-	labelsRaw, err := os.ReadFile("model/test_model_tflite/labels.txt")
+	labelsRaw, err := os.ReadFile("model/TFL-CL-0000-mobileNetV1-mlperf/labels.txt")
 	if err != nil {
 		log.Fatal("Cannot read model labels: ", err)
 	}
 	labels = strings.Split(string(labelsRaw), "\n")
 
 	options := tflite.NewInterpreterOptions()
-	options.SetNumThread(2)
-	// options.AddDelegate(external.New(external.DelegateOptions{
-	// 	LibPath: "/usr/lib/libtidl_tfl_delegate.so",
-	// }))
+	delegate := titfldelegate.TiTflDelegateCreate(
+		"/usr/lib/libtidl_tfl_delegate.so", "model/TFL-CL-0000-mobileNetV1-mlperf/artifacts")
+	options.AddDelegate(delegate)
 	interpreter = tflite.NewInterpreter(model, options)
 	if interpreter == nil {
 		log.Println("Cannot create interpreter")
@@ -275,17 +275,15 @@ func initModel() {
 	tensorInputFlat = (*[1 * TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM]float32)(input.Data())
 }
 
-func predict(printPredictions bool) {
+func predict() {
 	startTime := time.Now()
 	status := interpreter.Invoke()
 	if status != tflite.OK {
 		log.Println("Interpreter invoke failed")
 		return
 	}
-	if printPredictions {
-		predictions := interpreter.GetOutputTensor(0).Float32s()
-		printTopPredictions(TOP_PREDICTIONS_NUM, predictions, time.Since(startTime))
-	}
+	predictions := interpreter.GetOutputTensor(0).Float32s()
+	printTopPredictions(TOP_PREDICTIONS_NUM, predictions, time.Since(startTime))
 }
 
 func printTopPredictions(num int, predictions []float32, timeTaken time.Duration) {
@@ -318,6 +316,22 @@ func feedFrame(frame []byte) {
 	}
 }
 
+func feedFrameTiRgb(frame []byte) {
+	var n int = 0
+	for i := 0; i < len(frame); i += 3 {
+		tensorInputFlat[n] = float32(frame[i]) / 255.0
+		n++
+	}
+	for i := 1; i < len(frame); i += 3 {
+		tensorInputFlat[n] = float32(frame[i]) / 255.0
+		n++
+	}
+	for i := 2; i < len(frame); i += 3 {
+		tensorInputFlat[n] = float32(frame[i]) / 255.0
+		n++
+	}
+}
+
 func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
 	client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 	defer client.Close()
@@ -331,8 +345,8 @@ func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
 		if !ok {
 			return
 		}
-		feedFrame(*frame)
-		predict(true)
+		feedFrameTiRgb(*frame)
+		predict()
 	}
 }
 

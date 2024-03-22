@@ -1,0 +1,79 @@
+calibration_dataset:
+  name: imagenet
+  num_classes: 1000
+  num_frames: 50
+  path: ./dependencies/datasets/imagenet/val
+  shuffle: true
+  split: ./dependencies/datasets/imagenet/val.txt
+input_dataset:
+  name: imagenet
+  num_classes: 1000
+  num_frames: 10000
+  path: ./dependencies/datasets/imagenet/val
+  shuffle: true
+  split: ./dependencies/datasets/imagenet/val.txt
+metric:
+  label_offset_pred: -1
+  run_dir: /data/ssd/files/a0393608/work/code/ti/edgeai-algo/edgeai-benchmark/work_dirs/modelartifacts/8bits/cl-0000_tflitert_imagenet1k_mlperf_mobilenet_v1_1.0_224_tflite
+model_info:
+  metric_reference:
+    accuracy_top1%: 71.676
+postprocess: {}
+preprocess:
+  add_flip_image: false
+  backend: pil
+  crop: 224
+  data_layout: NHWC
+  interpolation: null
+  pad_color: 0
+  resize: 256
+  resize_with_pad: false
+  reverse_channels: false
+session:
+  artifacts_folder: artifacts
+  dir_tree_depth: 3
+  extra_inputs: null
+  input_data_layout: NHWC
+  input_mean: null
+  input_optimization: true
+  input_scale: null
+  input_shape: null
+  model_file: /data/ssd/files/a0393608/work/code/ti/edgeai-algo/edgeai-benchmark/work_dirs/modelartifacts/8bits/cl-0000_tflitert_imagenet1k_mlperf_mobilenet_v1_1.0_224_tflite/model/mobilenet_v1_1.0_224.tflite
+  model_folder: model
+  model_id: cl-0000
+  model_path: model/mobilenet_v1_1.0_224.tflite
+  model_type: null
+  num_inputs: 1
+  num_tidl_subgraphs: 16
+  output_shape: null
+  run_dir: cl-0000_tflitert_imagenet1k_mlperf_mobilenet_v1_1.0_224_tflite
+  runtime_options:
+    accuracy_level: 1
+    advanced_options:activation_clipping: 1
+    advanced_options:add_data_convert_ops: 3
+    advanced_options:bias_calibration: 1
+    advanced_options:calibration_frames: 50
+    advanced_options:calibration_iterations: 50
+    advanced_options:channel_wise_quantization: 0
+    advanced_options:high_resolution_optimization: 0
+    advanced_options:output_feature_16bit_names_list: ''
+    advanced_options:params_16bit_names_list: ''
+    advanced_options:pre_batchnorm_fold: 1
+    advanced_options:quantization_scale_type: 0
+    advanced_options:weight_clipping: 1
+    artifacts_folder: /data/ssd/files/a0393608/work/code/ti/edgeai-algo/edgeai-benchmark/work_dirs/modelartifacts/8bits/cl-0000_tflitert_imagenet1k_mlperf_mobilenet_v1_1.0_224_tflite/artifacts
+    debug_level: 0
+    import: 'no'
+    platform: J7
+    priority: 0
+    tensor_bits: 8
+    tidl_tools_path: /data/ssd/files/a0393608/work/code/ti/edgeai-algo/edgeai-benchmark/tidl_tools
+    version: '8.2'
+  session_name: tflitert
+  supported_devices: null
+  target_device: pc
+  tensor_bits: 8
+  tidl_offload: true
+  tidl_tools_path: /data/ssd/files/a0393608/work/code/ti/edgeai-algo/edgeai-benchmark/tidl_tools
+  work_dir: ./work_dirs/modelartifacts/8bits
+task_type: classification
