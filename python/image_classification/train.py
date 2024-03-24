@@ -59,6 +59,7 @@ with open("conf.json") as f:
     config = json.load(f)
 
 # config variables
+disable_cuda_devices = config["disable_cuda_devices"]
 weights = config["weights"]
 img_size = config["img_size"]
 learning_rate = config["learning_rate"]
@@ -77,6 +78,9 @@ data_augmentation = config["data_augmentation"]
 epochs_after_unfreeze = config["epochs_after_unfreeze"]
 checkpoint_period = config["checkpoint_period"]
 checkpoint_period_after_unfreeze = config["checkpoint_period_after_unfreeze"]
+
+if disable_cuda_devices:
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 def generate_batches(path, start, end):
