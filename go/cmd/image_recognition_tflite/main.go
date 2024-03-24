@@ -36,7 +36,7 @@ const TENSOR_WIDTH = 224
 const TENSOR_HEIGHT = 224
 const CHANNELS_NUM = 3
 const TOP_PREDICTIONS_NUM = 1
-const PREDICT_EACH_FRAME = 10
+const PREDICT_EACH_FRAME = 30
 
 type PixelsRGB []byte
 
@@ -244,8 +244,7 @@ func makeAnalyticsCameraStreamer(inputAddr string, outputAddr string) *streamer.
 func initModel() {
 	model := tflite.NewModelFromFile("model/coins_tflite/saved_model.tflite")
 	if model == nil {
-		log.Println("Cannot load model")
-		return
+		log.Fatal("Cannot load model")
 	}
 
 	labelsRaw, err := os.ReadFile("model/coins_tflite/labels.txt")
@@ -255,23 +254,47 @@ func initModel() {
 	labels = strings.Split(string(labelsRaw), "\n")
 
 	options := tflite.NewInterpreterOptions()
+	options.SetNumThread(2)
 	// delegate := titfldelegate.TiTflDelegateCreate(
 	// 	"/usr/lib/libtidl_tfl_delegate.so", "model/TFL-CL-0000-mobileNetV1-mlperf/artifacts")
 	// options.AddDelegate(delegate)
 	interpreter = tflite.NewInterpreter(model, options)
 	if interpreter == nil {
-		log.Println("Cannot create interpreter")
-		return
+		log.Fatal("Cannot create interpreter")
 	}
 
 	status := interpreter.AllocateTensors()
 	if status != tflite.OK {
-		log.Print("Tensor allocation failed")
-		return
+		log.Fatal("Tensor allocation failed")
 	}
 
 	input := interpreter.GetInputTensor(0)
 	tensorInputFlat = (*[1 * TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM]float32)(input.Data())
+}
+
+func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
+	initModel() // initialize the model in the same thread where the interpreter is called to avoid memory access violation
+	client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
+	defer client.Close()
+	for {
+		for i := 0; i < PREDICT_EACH_FRAME-1; i++ { // skip frames
+			if _, ok := <-client.C; !ok {
+				return
+			}
+		}
+		frame, ok := <-client.C
+		if !ok {
+			return
+		}
+		feedFrame(*frame)
+		predict()
+	}
+}
+
+func feedFrame(frame []byte) {
+	for i := 0; i < len(tensorInputFlat); i++ {
+		tensorInputFlat[i] = float32(frame[i]) / 255.0
+	}
 }
 
 func predict() {
@@ -309,33 +332,7 @@ func printTopPredictions(num int, predictions []float32, timeTaken time.Duration
 	fmt.Println(timeTaken)
 }
 
-func feedFrame(frame []byte) {
-	for i := 0; i < len(tensorInputFlat); i++ {
-		tensorInputFlat[i] = float32(frame[i]) / 255.0
-	}
-}
-
-func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
-	client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
-	defer client.Close()
-	for {
-		for i := 0; i < PREDICT_EACH_FRAME-1; i++ { // skip frames
-			if _, ok := <-client.C; !ok {
-				return
-			}
-		}
-		frame, ok := <-client.C
-		if !ok {
-			return
-		}
-		feedFrame(*frame)
-		predict()
-	}
-}
-
 func main() {
-	initModel()
-
 	strmrAnalytics := makeAnalyticsCameraStreamer(":9990", "/mjpeg_stream1")
 	defer strmrAnalytics.Stop()
 
