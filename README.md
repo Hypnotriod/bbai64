@@ -33,6 +33,13 @@ wget https://github.com/Hypnotriod/bbai64/raw/master/dri.zip
 sudo unzip dri.zip -d /usr/lib/
 ```
 
+# libtensorflowlite_c 2.9.0 for linux arm64
+```
+wget https://github.com/Hypnotriod/bbai64/raw/master/libtensorflowlite_c-2.9.0-linux-arm64.tar.gz
+sudo tar -C /usr/local -xvf libtensorflowlite_c-2.9.0-linux-arm64.tar.gz
+sudo ldconfig
+```
+
 # libtensorflow 2.4.1 for linux arm64
 ```
 wget https://github.com/kesuskim/libtensorflow-2.4.1-linux-arm64/raw/master/libtensorflow.tar.gz
