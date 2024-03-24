@@ -37,6 +37,7 @@ import glob
 import numpy as np
 import os
 import warnings
+import random
 import tensorflow as tf
 from skimage import io, transform
 from tensorflow import keras
@@ -83,20 +84,36 @@ if disable_cuda_devices:
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
-def generate_batches(path, start, end):
-    x = np.empty((classes*(end-start), img_size, img_size, 3))
-    y = np.empty(classes*(end-start), dtype=int)
-    n = 0
+def generate_batches(path):
+    validation_bound = int(batch_size*(1-validation_split))
+    x1 = np.empty((classes*(validation_bound), img_size, img_size, 3))
+    y1 = np.empty(classes*(validation_bound), dtype=int)
+    x2 = np.empty(
+        (classes*(batch_size-validation_bound), img_size, img_size, 3))
+    y2 = np.empty(classes*(batch_size-validation_bound), dtype=int)
+    n1 = 0
+    n2 = 0
     files = glob.glob(path + "/*/*")
+    if not len(files) == classes * batch_size:
+        raise Exception(
+            'Training data is not equally distributed: check `classes` or/and `batch_size` configuration')
     for f in range(0, len(files), batch_size):
-        for i in range(f+start, f+end):
-            if i < len(files):
-                img = io.imread(files[i])
-                img = preprocess_input(img)
-                x[n] = transform.resize(img, (img_size, img_size))
-                y[n] = int(files[i].replace("\\", "/").split("/")[1])
-                n += 1
-    return (x, to_categorical(y, num_classes=classes))
+        classId = int(files[f].replace("\\", "/").split("/")[1])
+        xs = []
+        for i in range(f, f+batch_size):
+            img = io.imread(files[i])
+            img = preprocess_input(img)
+            xs.append(transform.resize(img, (img_size, img_size)))
+        random.shuffle(xs)
+        for i in range(0, validation_bound):
+            x1[n1] = xs[i]
+            y1[n1] = classId
+            n1 += 1
+        for i in range(validation_bound, batch_size):
+            x2[n2] = xs[i]
+            y2[n2] = classId
+            n2 += 1
+    return ((x1, to_categorical(y1, num_classes=classes)), (x2, to_categorical(y2, num_classes=classes)))
 
 
 def generate_batches_with_augmentation(path):
@@ -132,11 +149,9 @@ def train(checkpoint, epochs):
             epochs=epochs,
             callbacks=[checkpoint])
     else:
-        validation_bound = int(batch_size*(1-validation_split))
-        train_data = generate_batches(
-            train_path, 0, validation_bound)
-        validation_data = generate_batches(
-            train_path, validation_bound, batch_size)
+        data = generate_batches(train_path)
+        train_data = data[0]
+        validation_data = data[1]
         samples = len(train_data[0]) + len(validation_data[0])
         model.fit(
             x=train_data[0],
