@@ -35,7 +35,7 @@ const RESCALE_ANALYTICS_HEIGHT = 240
 const TENSOR_WIDTH = 224
 const TENSOR_HEIGHT = 224
 const CHANNELS_NUM = 3
-const TOP_PREDICTIONS_NUM = 3
+const TOP_PREDICTIONS_NUM = 1
 const PREDICT_EACH_FRAME = 10
 
 type PixelsRGB []byte
@@ -242,13 +242,13 @@ func makeAnalyticsCameraStreamer(inputAddr string, outputAddr string) *streamer.
 }
 
 func initModel() {
-	model := tflite.NewModelFromFile("model/test_model_tflite/saved_model.tflite")
+	model := tflite.NewModelFromFile("model/coins_tflite/saved_model.tflite")
 	if model == nil {
 		log.Println("Cannot load model")
 		return
 	}
 
-	labelsRaw, err := os.ReadFile("model/test_model_tflite/labels.txt")
+	labelsRaw, err := os.ReadFile("model/coins_tflite/labels.txt")
 	if err != nil {
 		log.Fatal("Cannot read model labels: ", err)
 	}

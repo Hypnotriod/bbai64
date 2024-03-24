@@ -1,4 +1,0 @@
-offroad
-forward
-left
-right
