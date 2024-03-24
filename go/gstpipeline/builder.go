@@ -141,6 +141,10 @@ func TiOvxDlColorConvertRgb() string {
 	return " ! tiovxdlcolorconvert out-pool-size=4 ! video/x-raw, format=RGB"
 }
 
+func TiOvxDlColorConvertNV12() string {
+	return " ! tiovxdlcolorconvert out-pool-size=4 ! video/x-raw, format=NV12"
+}
+
 func MjpegTcpStreamLocalhost(boundary string, port uint) string {
 	return fmt.Sprintf(" ! multipartmux boundary=%s ! tcpclientsink host=127.0.0.1 port=%d",
 		boundary, port)

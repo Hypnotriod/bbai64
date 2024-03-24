@@ -3,7 +3,6 @@ package main
 import (
 	"bbai64/gstpipeline"
 	"bbai64/streamer"
-	"bbai64/titfldelegate"
 	"bufio"
 	"fmt"
 	"io"
@@ -243,22 +242,22 @@ func makeAnalyticsCameraStreamer(inputAddr string, outputAddr string) *streamer.
 }
 
 func initModel() {
-	model := tflite.NewModelFromFile("model/TFL-CL-0000-mobileNetV1-mlperf/model/mobilenet_v1_1.0_224.tflite")
+	model := tflite.NewModelFromFile("model/test_model_tflite/saved_model.tflite")
 	if model == nil {
 		log.Println("Cannot load model")
 		return
 	}
 
-	labelsRaw, err := os.ReadFile("model/TFL-CL-0000-mobileNetV1-mlperf/labels.txt")
+	labelsRaw, err := os.ReadFile("model/test_model_tflite/labels.txt")
 	if err != nil {
 		log.Fatal("Cannot read model labels: ", err)
 	}
 	labels = strings.Split(string(labelsRaw), "\n")
 
 	options := tflite.NewInterpreterOptions()
-	delegate := titfldelegate.TiTflDelegateCreate(
-		"/usr/lib/libtidl_tfl_delegate.so", "model/TFL-CL-0000-mobileNetV1-mlperf/artifacts")
-	options.AddDelegate(delegate)
+	// delegate := titfldelegate.TiTflDelegateCreate(
+	// 	"/usr/lib/libtidl_tfl_delegate.so", "model/TFL-CL-0000-mobileNetV1-mlperf/artifacts")
+	// options.AddDelegate(delegate)
 	interpreter = tflite.NewInterpreter(model, options)
 	if interpreter == nil {
 		log.Println("Cannot create interpreter")
@@ -316,22 +315,6 @@ func feedFrame(frame []byte) {
 	}
 }
 
-func feedFrameTiRgb(frame []byte) {
-	var n int = 0
-	for i := 0; i < len(frame); i += 3 {
-		tensorInputFlat[n] = float32(frame[i]) / 255.0
-		n++
-	}
-	for i := 1; i < len(frame); i += 3 {
-		tensorInputFlat[n] = float32(frame[i]) / 255.0
-		n++
-	}
-	for i := 2; i < len(frame); i += 3 {
-		tensorInputFlat[n] = float32(frame[i]) / 255.0
-		n++
-	}
-}
-
 func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
 	client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 	defer client.Close()
@@ -345,7 +328,7 @@ func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
 		if !ok {
 			return
 		}
-		feedFrameTiRgb(*frame)
+		feedFrame(*frame)
 		predict()
 	}
 }
