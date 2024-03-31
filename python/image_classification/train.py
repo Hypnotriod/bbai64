@@ -149,9 +149,7 @@ def train(checkpoint, epochs):
             epochs=epochs,
             callbacks=[checkpoint])
     else:
-        data = generate_batches(train_path)
-        train_data = data[0]
-        validation_data = data[1]
+        train_data, validation_data = generate_batches(train_path)
         samples = len(train_data[0]) + len(validation_data[0])
         model.fit(
             x=train_data[0],
