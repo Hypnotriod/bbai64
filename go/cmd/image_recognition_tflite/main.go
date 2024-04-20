@@ -3,6 +3,7 @@ package main
 import (
 	"bbai64/gstpipeline"
 	"bbai64/streamer"
+	"bbai64/titfldelegate"
 	"bufio"
 	"fmt"
 	"io"
@@ -46,7 +47,7 @@ type Chunk struct {
 }
 
 var interpreter *tflite.Interpreter
-var tensorInputFlat *[1 * TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM]float32
+var tensorInput *[1 * TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM]byte
 var labels []string
 
 var jpegParams = jpegenc.EncodeParams{
@@ -254,10 +255,10 @@ func initModel() {
 	labels = strings.Split(string(labelsRaw), "\n")
 
 	options := tflite.NewInterpreterOptions()
-	options.SetNumThread(2)
-	// delegate := titfldelegate.TiTflDelegateCreate(
-	// 	"/usr/lib/libtidl_tfl_delegate.so", "model/TFL-CL-0000-mobileNetV1-mlperf/artifacts")
-	// options.AddDelegate(delegate)
+	delegate := titfldelegate.TiTflDelegateCreate(
+		"/usr/lib/libtidl_tfl_delegate.so", "model/coins_tflite/")
+	options.AddDelegate(delegate)
+
 	interpreter = tflite.NewInterpreter(model, options)
 	if interpreter == nil {
 		log.Fatal("Cannot create interpreter")
@@ -269,7 +270,7 @@ func initModel() {
 	}
 
 	input := interpreter.GetInputTensor(0)
-	tensorInputFlat = (*[1 * TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM]float32)(input.Data())
+	tensorInput = (*[1 * TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM]byte)(input.Data())
 }
 
 func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
@@ -286,14 +287,8 @@ func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
 		if !ok {
 			return
 		}
-		feedFrame(*frame)
+		copy(tensorInput[:], *frame)
 		predict()
-	}
-}
-
-func feedFrame(frame []byte) {
-	for i := 0; i < len(tensorInputFlat); i++ {
-		tensorInputFlat[i] = float32(frame[i]) / 255.0
 	}
 }
 
@@ -347,7 +342,8 @@ func main() {
 		RESCALE_VISUALIZATION_WIDTH, RESCALE_VISUALIZATION_HEIGHT,
 		JPEG_QUALITY,
 		MJPEG_FRAME_BOUNDARY,
-		9991)
+		9991,
+		true)
 	go processFrames(strmrAnalytics)
 
 	http.Handle("/", http.FileServer(http.Dir("./public")))

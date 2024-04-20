@@ -1,0 +1,25 @@
+postprocess:
+  data_layout: NHWC
+preprocess:
+  crop:
+  - 224
+  - 224
+  data_layout: NHWC
+  mean:
+  - 0
+  - 0
+  - 0
+  resize:
+  - 224
+  - 224
+  scale:
+  - 1
+  - 1
+  - 1
+session:
+  artifacts_folder: ''
+  model_folder: model
+  model_path: saved_model.tflite
+  session_name: tflitert
+target_device: pc
+task_type: classification

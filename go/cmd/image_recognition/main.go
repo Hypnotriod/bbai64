@@ -340,7 +340,8 @@ func main() {
 		RESCALE_VISUALIZATION_WIDTH, RESCALE_VISUALIZATION_HEIGHT,
 		JPEG_QUALITY,
 		MJPEG_FRAME_BOUNDARY,
-		9991)
+		9991,
+		false)
 	go processFrames(strmrAnalytics)
 
 	http.Handle("/", http.FileServer(http.Dir("./public")))

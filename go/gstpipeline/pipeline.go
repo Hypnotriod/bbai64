@@ -111,12 +111,17 @@ func LauchImx219CsiCameraAnalyticsRgbStream1VisualizationMjpegStream2(
 	r2Width uint, r2Height uint,
 	quality uint,
 	boundary string,
-	port2 uint) {
+	port2 uint,
+	useTiovxdlpreproc bool) {
 	cmdSetup := exec.Command(
 		"bash", "-c", CsiCameraSetup(IMX219, index, width, height),
 	)
 	if err := cmdSetup.Run(); err != nil {
 		log.Fatal("Cannot setup CSI Camera: ", err)
+	}
+	tiovxdlpreproc := ""
+	if useTiovxdlpreproc {
+		tiovxdlpreproc = TiovxdlpreprocUint8NhwcRgb()
 	}
 	log.Print(strings.Join(cmdSetup.Args, " "))
 	cmd := exec.Command(
@@ -128,6 +133,7 @@ func LauchImx219CsiCameraAnalyticsRgbStream1VisualizationMjpegStream2(
 				r1Width, r1Height,
 				TiOvxDlColorConvertRgb()+
 					VideoBox(c1Width/2, c1Width/2, c1Height/2, c1Height/2)+
+					tiovxdlpreproc+
 					TcpStreamLocalhost(port1),
 				r2Width, r2Height,
 				JpegEncode(quality)+

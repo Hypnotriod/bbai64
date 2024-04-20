@@ -102,6 +102,10 @@ func VideoBox(left uint, right uint, top uint, bottom uint) string {
 	return fmt.Sprintf(" ! videobox left=%d right=%d top=%d bottom=%d", left, right, top, bottom)
 }
 
+func TiovxdlpreprocUint8NhwcRgb() string {
+	return " ! tiovxdlpreproc data-type=uint8 channel-order=nhwc tensor-format=rgb out-pool-size=4 ! application/x-tensor-tiovx"
+}
+
 type Median uint
 
 const (
