@@ -54,17 +54,17 @@ import (
 	"github.com/mattn/go-tflite/delegates"
 )
 
-type TiTflDeleg struct {
+type TiTfLiteDelegate struct {
 	d *C.TfLiteDelegate
 }
 
 // Delete the delegate
-func (d *TiTflDeleg) Delete() {
+func (d *TiTfLiteDelegate) Delete() {
 	C.TfLiteExternalDelegateDelete(d.d)
 }
 
 // Return a pointer
-func (d *TiTflDeleg) Ptr() unsafe.Pointer {
+func (d *TiTfLiteDelegate) Ptr() unsafe.Pointer {
 	return unsafe.Pointer(d.d)
 }
 
@@ -73,7 +73,7 @@ func TiTflDelegateCreate(libPath string, artifactsPath string) delegates.Delegat
 	if d == nil {
 		return nil
 	}
-	return &TiTflDeleg{
+	return &TiTfLiteDelegate{
 		d: d,
 	}
 }
