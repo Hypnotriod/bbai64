@@ -53,7 +53,8 @@ var labels []string
 var jpegParams = jpegenc.EncodeParams{
 	QualityFactor: jpegenc.QualityFactorBest,
 	PixelType:     jpegenc.PixelTypeRGB888,
-	Subsample:     jpegenc.Subsample444,
+	Subsample:     jpegenc.Subsample424,
+	ChromaSwap:    true,
 }
 
 func serveAnalyticsStreamTcpSocket(width int, height int, strmr *streamer.Streamer[PixelsRGB], address string) {
