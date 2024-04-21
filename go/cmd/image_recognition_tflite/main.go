@@ -36,8 +36,13 @@ const RESCALE_ANALYTICS_HEIGHT = 240
 const TENSOR_WIDTH = 224
 const TENSOR_HEIGHT = 224
 const CHANNELS_NUM = 3
+const TENSOR_SIZE = TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM
 const TOP_PREDICTIONS_NUM = 1
 const PREDICT_EACH_FRAME = 30
+const MODEL_PATH = "model/coins_tflite/saved_model.tflite"
+const LABELS_PATH = "model/coins_tflite/labels.txt"
+const ARTIFACTS_PATH = "model/coins_tflite/artifacts"
+const TFL_DELEGATE_PATH = "/usr/lib/libtidl_tfl_delegate.so"
 
 type PixelsRGB []byte
 
@@ -47,7 +52,6 @@ type Chunk struct {
 }
 
 var interpreter *tflite.Interpreter
-var tensorInput *[1 * TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM]byte
 var labels []string
 
 var jpegParams = jpegenc.EncodeParams{
@@ -244,20 +248,19 @@ func makeAnalyticsCameraStreamer(inputAddr string, outputAddr string) *streamer.
 }
 
 func initModel() {
-	model := tflite.NewModelFromFile("model/coins_tflite/saved_model.tflite")
+	model := tflite.NewModelFromFile(MODEL_PATH)
 	if model == nil {
 		log.Fatal("Cannot load model")
 	}
 
-	labelsRaw, err := os.ReadFile("model/coins_tflite/labels.txt")
+	labelsRaw, err := os.ReadFile(LABELS_PATH)
 	if err != nil {
 		log.Fatal("Cannot read model labels: ", err)
 	}
 	labels = strings.Split(string(labelsRaw), "\n")
 
 	options := tflite.NewInterpreterOptions()
-	delegate := titfldelegate.TiTflDelegateCreate(
-		"/usr/lib/libtidl_tfl_delegate.so", "model/coins_tflite/")
+	delegate := titfldelegate.TiTflDelegateCreate(TFL_DELEGATE_PATH, ARTIFACTS_PATH)
 	options.AddDelegate(delegate)
 
 	interpreter = tflite.NewInterpreter(model, options)
@@ -269,13 +272,10 @@ func initModel() {
 	if status != tflite.OK {
 		log.Fatal("Tensor allocation failed")
 	}
-
-	input := interpreter.GetInputTensor(0)
-	tensorInput = (*[1 * TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM]byte)(input.Data())
 }
 
 func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
-	initModel() // initialize the model in the same thread where the interpreter is called to avoid memory access violation
+	inputTensor := (*[TENSOR_SIZE]byte)(interpreter.GetInputTensor(0).Data())
 	client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 	defer client.Close()
 	for {
@@ -288,7 +288,7 @@ func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
 		if !ok {
 			return
 		}
-		copy(tensorInput[:], *frame)
+		copy(inputTensor[:], *frame)
 		predict()
 	}
 }
@@ -329,6 +329,8 @@ func printTopPredictions(num int, predictions []float32, timeTaken time.Duration
 }
 
 func main() {
+	initModel()
+
 	strmrAnalytics := makeAnalyticsCameraStreamer(":9990", "/mjpeg_stream1")
 	defer strmrAnalytics.Stop()
 
@@ -344,6 +346,7 @@ func main() {
 		JPEG_QUALITY,
 		MJPEG_FRAME_BOUNDARY,
 		9991)
+
 	go processFrames(strmrAnalytics)
 
 	http.Handle("/", http.FileServer(http.Dir("./public")))
