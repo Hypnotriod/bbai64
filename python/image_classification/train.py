@@ -3,10 +3,8 @@
 # conda create --name tensorflow241
 # conda activate tensorflow241
 # conda install python=3.6
-# conda install opencv
 # pip install tensorflow==2.4.1
 # pip install keras==2.4
-# pip install pillow
 # pip install scikit-image
 
 # CUDA 11.0: https://developer.nvidia.com/cuda-11.0-download-archive
