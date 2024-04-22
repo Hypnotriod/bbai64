@@ -46,7 +46,6 @@ from keras.utils import to_categorical
 from keras.optimizers import SGD
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing import image
-from keras.preprocessing.image import ImageDataGenerator
 from keras.applications.mobilenet_v2 import preprocess_input
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
