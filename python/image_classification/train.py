@@ -72,7 +72,7 @@ batch_size = config["batch_size"]
 epochs = config["epochs"]
 classes = config["classes"]
 num_classes = len(classes)
-augmented_data = config["augmented_data"]
+shuffle = config["shuffle"]
 validation_split = config["validation_split"]
 checkpoint_monitor = config["checkpoint_monitor"]
 epochs_after_unfreeze = config["epochs_after_unfreeze"]
@@ -108,7 +108,8 @@ def generate_batches(path):
             img = io.imread(files[i])
             img = preprocess_input(img)
             xs.append(transform.resize(img, (img_size, img_size)))
-        random.shuffle(xs)
+        if shuffle:
+            random.shuffle(xs)
         for i in range(0, validation_bound):
             x1[n1] = xs[i]
             y1[n1] = classId
@@ -129,8 +130,6 @@ def write_labels(path):
 def create_folders():
     if not os.path.exists(model_path):
         os.mkdir(model_path)
-    if augmented_data and not os.path.exists(augmented_data):
-        os.mkdir(augmented_data)
     if tflite_model_path and not os.path.exists(tflite_model_path):
         os.mkdir(tflite_model_path)
     if not os.path.exists(labels_path):
