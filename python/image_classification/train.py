@@ -14,17 +14,17 @@
 
 # img_size: 224, 192, 160, 128, 96 (see: https://huggingface.co/models?search=mobilenet_v2)
 # the number of images of each class must match the batch_size
-# class folders must be named as 0, 1, 2, 3, ...
-# train_path ->
-#               0 ->
+# class folders must be named by class names specified in classes field
+# train_data ->
+#               class0 ->
 #                    *.jpg
 #                    *.jpg
 #                    *.jpg
-#               1 ->
+#               class1 ->
 #                    *.jpg
 #                    *.jpg
 #                    *.jpg
-#               2 ->
+#               class2 ->
 #                    *.jpg
 #                    *.jpg
 #                    *.jpg
@@ -69,13 +69,14 @@ train_path = config["train_path"]
 test_path = config["test_path"]
 model_path = config["model_path"]
 tflite_model_path = config["tflite_model_path"]
+labels_path = config["labels_path"]
 batch_size = config["batch_size"]
 epochs = config["epochs"]
 classes = config["classes"]
+num_classes = len(classes)
 augmented_data = config["augmented_data"]
 validation_split = config["validation_split"]
 checkpoint_monitor = config["checkpoint_monitor"]
-data_augmentation = config["data_augmentation"]
 epochs_after_unfreeze = config["epochs_after_unfreeze"]
 checkpoint_period = config["checkpoint_period"]
 checkpoint_period_after_unfreeze = config["checkpoint_period_after_unfreeze"]
@@ -86,19 +87,24 @@ if disable_cuda_devices:
 
 def generate_batches(path):
     validation_bound = int(batch_size*(1-validation_split))
-    x1 = np.empty((classes*(validation_bound), img_size, img_size, 3))
-    y1 = np.empty(classes*(validation_bound), dtype=int)
+    x1 = np.empty(
+        (num_classes*validation_bound, img_size, img_size, 3))
+    y1 = np.empty(num_classes*validation_bound, dtype=int)
     x2 = np.empty(
-        (classes*(batch_size-validation_bound), img_size, img_size, 3))
-    y2 = np.empty(classes*(batch_size-validation_bound), dtype=int)
+        (num_classes*(batch_size-validation_bound), img_size, img_size, 3))
+    y2 = np.empty(num_classes*(batch_size-validation_bound), dtype=int)
     n1 = 0
     n2 = 0
     files = glob.glob(path + "/*/*")
-    if not len(files) == classes * batch_size:
+    if not len(files) == num_classes * batch_size:
         raise Exception(
-            'Training data is not equally distributed: check `classes` or/and `batch_size` configuration')
+            "Training data is not equally distributed: check 'classes' or/and 'batch_size' configuration")
     for f in range(0, len(files), batch_size):
-        classId = int(files[f].replace("\\", "/").split("/")[1])
+        className = files[f].replace("\\", "/").split("/")[1]
+        if className not in classes:
+            raise Exception(
+                "There is no class with: '%s' name found in '%s'" % (className, path))
+        classId = classes.index(className)
         xs = []
         for i in range(f, f+batch_size):
             img = io.imread(files[i])
@@ -113,21 +119,13 @@ def generate_batches(path):
             x2[n2] = xs[i]
             y2[n2] = classId
             n2 += 1
-    return ((x1, to_categorical(y1, num_classes=classes)), (x2, to_categorical(y2, num_classes=classes)))
+    return ((x1, to_categorical(y1, num_classes=num_classes)), (x2, to_categorical(y2, num_classes=num_classes)))
 
 
-def generate_batches_with_augmentation(path):
-    train_datagen = ImageDataGenerator(
-        shear_range=0.2,
-        rotation_range=0.3,
-        zoom_range=0.1,
-        validation_split=validation_split)
-    train_generator = train_datagen.flow_from_directory(
-        train_path=path,
-        target_size=(img_size, img_size),
-        batch_size=batch_size,
-        save_to_dir=augmented_data)
-    return train_generator
+def write_labels(path):
+    f = open(path + "/labels.txt", "w")
+    f.write("\n".join(classes))
+    f.close()
 
 
 def create_folders():
@@ -137,28 +135,23 @@ def create_folders():
         os.mkdir(augmented_data)
     if tflite_model_path and not os.path.exists(tflite_model_path):
         os.mkdir(tflite_model_path)
+    if not os.path.exists(labels_path):
+        os.mkdir(labels_path)
     if not os.path.exists("logs"):
         os.mkdir("logs")
 
 
 def train(checkpoint, epochs):
-    if data_augmentation:
-        model.fit(
-            generate_batches_with_augmentation(train_path),
-            verbose=1,
-            epochs=epochs,
-            callbacks=[checkpoint])
-    else:
-        train_data, validation_data = generate_batches(train_path)
-        samples = len(train_data[0]) + len(validation_data[0])
-        model.fit(
-            x=train_data[0],
-            y=train_data[1],
-            epochs=epochs,
-            steps_per_epoch=samples//batch_size,
-            verbose=1,
-            validation_data=validation_data,
-            callbacks=[checkpoint])
+    train_data, validation_data = generate_batches(train_path)
+    samples = len(train_data[0]) + len(validation_data[0])
+    model.fit(
+        x=train_data[0],
+        y=train_data[1],
+        epochs=epochs,
+        steps_per_epoch=samples//batch_size,
+        verbose=1,
+        validation_data=validation_data,
+        callbacks=[checkpoint])
 
 
 def test():
@@ -178,7 +171,7 @@ def test():
             y_class = y_prob.argmax(axis=-1)
             y_class = y_class[0]
             y_confidence = int(y_prob[0][y_class] * 100)
-            if y_class == int(folder):
+            if y_class == classes.index(folder):
                 success += 1
             average_confidence += y_confidence
         success = int(100*success/len(files))
@@ -193,7 +186,7 @@ create_folders()
 # create model
 base_model = MobileNetV2(include_top=True, weights=weights,
                          input_tensor=Input(shape=(img_size, img_size, 3)), input_shape=(img_size, img_size, 3))
-predictions = Dense(classes, activation="softmax")(
+predictions = Dense(num_classes, activation="softmax")(
     base_model.layers[-2].output)
 model = Model(inputs=base_model.input, outputs=predictions)
 
@@ -232,6 +225,7 @@ if epochs_after_unfreeze > 0:
     train(checkpoint, epochs_after_unfreeze)
 
 print("Saving model...")
+write_labels(labels_path)
 tf.saved_model.save(model, model_path)
 
 if tflite_model_path:

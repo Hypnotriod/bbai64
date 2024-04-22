@@ -6,15 +6,19 @@
     "augmented_data": "augmented_data",
     "model_path": "saved_model",
     "tflite_model_path": "saved_model_tflite",
+    "labels_path": "labels",
+    "classes": [
+        "class0",
+        "class1",
+        "class2"
+    ],
+    "batch_size": 100,
     "img_size": 224,
     "learning_rate": 0.001,
     "momentum": 0.9,
-    "classes": 3,
-    "batch_size": 100,
     "validation_split": 0.25,
     "epochs": 50,
     "epochs_after_unfreeze": 0,
-    "data_augmentation": false,
     "checkpoint_monitor": "val_loss",
     "checkpoint_period": 5,
     "checkpoint_period_after_unfreeze": 1
