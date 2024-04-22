@@ -35,5 +35,8 @@ build-image-recognition-tflite:
 run-image-recognition-tflite:
 	cd bin && sudo ./image-recognition-tflite
 
-run-train-image-classification:
-	cd python/image_classification && python train.py
+train-image-classification:
+	cd python/image_classification && python3 train.py
+
+compile-image-classification:
+	cd python/osrt_tfl && python3 compile.py -c classification_config.json

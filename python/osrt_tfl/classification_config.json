@@ -1,0 +1,11 @@
+{
+    "model_name": "classification_model",
+    "model_path" : "../image_classification/saved_model_tflite/saved_model.tflite",
+    "calibration_images": ["../image_classification/test_data/0.jpg", "../image_classification/test_data/1.jpg"],
+    "artifacts_path": "../image_classification/artifacts",
+    "mean": [0, 0, 0],
+    "scale" : [1, 1, 1],
+    "num_classes": 4,
+    "session_name" : "tflitert",
+    "model_type": "classification"
+}

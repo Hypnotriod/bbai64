@@ -8,3 +8,4 @@ python/image_classification/saved_model_tflite
 python/image_classification/labels
 python/image_classification/test_data/*
 python/image_classification/train_data/*
+python/image_classification/artifacts/*
