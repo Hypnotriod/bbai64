@@ -1,10 +1,17 @@
 {
     "model_name": "classification_model",
     "model_path" : "../image_classification/saved_model_tflite/saved_model.tflite",
-    "calibration_images": ["../image_classification/calibration_data/0.jpg", "../image_classification/calibration_data/1.jpg"],
+    "calibration_images": [
+        "../image_classification/calibration_data/0.jpg",
+        "../image_classification/calibration_data/1.jpg",
+        "../image_classification/calibration_data/2.jpg",
+        "../image_classification/calibration_data/3.jpg"
+    ],
+    "calibration_iterations": 15,
+    "tensor_bits": 16,
     "artifacts_path": "../image_classification/artifacts",
     "mean": [0, 0, 0],
-    "scale" : [0.003921569, 0.003921569, 0.003921569],
+    "scale" : [0.003921568627, 0.003921568627, 0.003921568627],
     "num_classes": 4,
     "session_name" : "tflitert",
     "model_type": "classification"
