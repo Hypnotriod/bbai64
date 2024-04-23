@@ -39,6 +39,7 @@ const CHANNELS_NUM = 3
 const TENSOR_SIZE = TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM
 const TOP_PREDICTIONS_NUM = 1
 const PREDICT_EACH_FRAME = 30
+const USE_DELEGATE = true
 const MODEL_PATH = "model/coins_tflite/saved_model.tflite"
 const LABELS_PATH = "model/coins_tflite/labels.txt"
 const ARTIFACTS_PATH = "model/coins_tflite/artifacts"
@@ -260,8 +261,10 @@ func initModel() {
 	labels = strings.Split(string(labelsRaw), "\n")
 
 	options := tflite.NewInterpreterOptions()
-	delegate := titfldelegate.TiTflDelegateCreate(TFL_DELEGATE_PATH, ARTIFACTS_PATH)
-	options.AddDelegate(delegate)
+	if USE_DELEGATE {
+		delegate := titfldelegate.TiTflDelegateCreate(TFL_DELEGATE_PATH, ARTIFACTS_PATH)
+		options.AddDelegate(delegate)
+	}
 
 	interpreter = tflite.NewInterpreter(model, options)
 	if interpreter == nil {
@@ -275,7 +278,7 @@ func initModel() {
 }
 
 func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
-	inputTensor := (*[TENSOR_SIZE]byte)(interpreter.GetInputTensor(0).Data())
+	inputTensor := (*[TENSOR_SIZE]float32)(interpreter.GetInputTensor(0).Data())
 	client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 	defer client.Close()
 	for {
@@ -288,7 +291,9 @@ func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
 		if !ok {
 			return
 		}
-		copy(inputTensor[:], *frame)
+		for i, b := range *frame {
+			inputTensor[i] = float32(b) / 255
+		}
 		predict()
 	}
 }

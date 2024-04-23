@@ -102,8 +102,14 @@ func VideoBox(left uint, right uint, top uint, bottom uint) string {
 	return fmt.Sprintf(" ! videobox left=%d right=%d top=%d bottom=%d", left, right, top, bottom)
 }
 
-func TiovxdlpreprocUint8NhwcRgb() string {
-	return " ! tiovxdlpreproc data-type=uint8 channel-order=nhwc tensor-format=rgb out-pool-size=4 ! application/x-tensor-tiovx"
+func TiovxdlpreprocUint8NhwcRgb(mean [3]float32, scale [3]float32) string {
+	return fmt.Sprintf(" ! tiovxdlpreproc data-type=uint8 mean-0=%g mean-1=%g mean-2=%g scale-0=%g scale-1=%g scale-2=%g channel-order=nhwc tensor-format=rgb out-pool-size=4 ! application/x-tensor-tiovx",
+		mean[0], mean[1], mean[2], scale[0], scale[1], scale[2])
+}
+
+func TiovxdlpreprocFloat32NhwcRgb(mean [3]float32, scale [3]float32) string {
+	return fmt.Sprintf(" ! tiovxdlpreproc data-type=float32 mean-0=%g mean-1=%g mean-2=%g scale-0=%g scale-1=%g scale-2=%g channel-order=nhwc tensor-format=rgb out-pool-size=4 ! application/x-tensor-tiovx",
+		mean[0], mean[1], mean[2], scale[0], scale[1], scale[2])
 }
 
 type Median uint

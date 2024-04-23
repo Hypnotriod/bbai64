@@ -13,9 +13,9 @@ preprocess:
   - 224
   - 224
   scale:
-  - 1
-  - 1
-  - 1
+  - 0.003921568627
+  - 0.003921568627
+  - 0.003921568627
 session:
   artifacts_folder: ''
   model_folder: model
