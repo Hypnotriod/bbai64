@@ -23,7 +23,7 @@ required_options = {
 }
 optional_options = {
     "platform": "J7",
-    "version":" 7.2",
+    "version": " 7.2",
     "tensor_bits": 8,
     "debug_level": 0,
     "max_num_subgraphs": 16,
@@ -44,6 +44,7 @@ optional_options = {
     "advanced_options:channel_wise_quantization": 0,
 }
 
+
 def gen_param_yaml(artifacts_folder_path, config, new_height, new_width):
     resize = []
     crop = []
@@ -51,40 +52,53 @@ def gen_param_yaml(artifacts_folder_path, config, new_height, new_width):
     resize.append(new_height)
     crop.append(new_width)
     crop.append(new_height)
-    dict_file =[]
+    dict_file = []
     layout = "NCHW"
     if config["session_name"] == "tflitert":
         layout = "NHWC"
-    
+
     model_file_name = os.path.basename(config["model_path"])
-    
-    dict_file.append( {"session" :  {"artifacts_folder": "",
-                                    "model_folder": "model",
-                                    "model_path": model_file_name,
-                                    "session_name": config["session_name"]} ,
-                    "task_type" : config["model_type"],
-                    "target_device": "pc",
-                    "postprocess":{"data_layout" : layout },
-                    "preprocess" :{"data_layout" : layout ,
-                                    "mean":config["mean"],
-                                    "scale":config["scale"],
-                                    "resize":resize,
-                                    "crop":crop
-                                    } })
-    
-    if(config["model_type"] == "od"):
-        if(config["od_type"] == "SSD"):
-            dict_file[0]["postprocess"]["formatter"] = {"name" : "DetectionBoxSL2BoxLS", "src_indices" : [5,4]}
-        elif(config["od_type"] == "HasDetectionPostProcLayer"):
-            dict_file[0]["postprocess"]["formatter"] = {"name" : "DetectionYXYX2XYXY","src_indices" : [1,0,3,2]}
-        
+
+    dict_file.append({
+        "task_type": config["model_type"],
+        "target_device": "pc",
+        "session":  {
+            "artifacts_folder": "",
+            "model_folder": "model",
+            "model_path": model_file_name,
+            "session_name": config["session_name"],
+        },
+        "postprocess": {
+            "data_layout": layout,
+        },
+        "preprocess": {
+            "data_layout": layout,
+            "mean": config["mean"],
+            "scale": config["scale"],
+            "resize": resize,
+            "crop": crop,
+        }
+    })
+
+    if (config["model_type"] == "od"):
+        if (config["od_type"] == "SSD"):
+            dict_file[0]["postprocess"]["formatter"] = {
+                "name": "DetectionBoxSL2BoxLS",
+                "src_indices": [5, 4],
+            }
+        elif (config["od_type"] == "HasDetectionPostProcLayer"):
+            dict_file[0]["postprocess"]["formatter"] = {
+                "name": "DetectionYXYX2XYXY",
+                "src_indices": [1, 0, 3, 2],
+            }
         dict_file[0]["postprocess"]["detection_thr"] = 0.3
 
     with open(os.path.join(artifacts_folder_path, "param.yaml"), "w") as file:
         yaml.dump(dict_file[0], file)
 
     if (config["session_name"] == "tflitert") or (config["session_name"] == "onnxrt"):
-        shutil.copy(config["model_path"], os.path.join(artifacts_folder_path,model_file_name))
+        shutil.copy(config["model_path"], os.path.join(
+            artifacts_folder_path, model_file_name))
 
 
 def infer_image(interpreter, image_files, config):
@@ -92,38 +106,44 @@ def infer_image(interpreter, image_files, config):
     floating_model = input_details[0]['dtype'] == np.float32
     batch = input_details[0]['shape'][0]
     height = input_details[0]['shape'][1]
-    width  = input_details[0]['shape'][2]
+    width = input_details[0]['shape'][2]
     channel = input_details[0]['shape'][3]
-    new_height = height  #valid height for modified resolution for given network
-    new_width = width  #valid width for modified resolution for given network
-    imgs    = []
-    # copy image data in input_data if num_batch is more than 1 
+    new_height = height  # valid height for modified resolution for given network
+    new_width = width  # valid width for modified resolution for given network
+    imgs = []
+    # copy image data in input_data if num_batch is more than 1
     shape = [batch, new_height, new_width, channel]
     input_data = np.zeros(shape)
+
     for i in range(batch):
-        imgs.append(Image.open(image_files[i]).convert('RGB').resize((new_width, new_height), Image.LANCZOS))
-        temp_input_data = np.expand_dims(imgs[i], axis=0)  
-        input_data[i] = temp_input_data[0] 
+        imgs.append(Image.open(image_files[i]).convert(
+            'RGB').resize((new_width, new_height), Image.LANCZOS))
+        temp_input_data = np.expand_dims(imgs[i], axis=0)
+        input_data[i] = temp_input_data[0]
+
     if floating_model:
         input_data = np.float32(input_data)
         for mean, scale, ch in zip(config['mean'], config['scale'], range(input_data.shape[3])):
-            input_data[:,:,:, ch] = ((input_data[:,:,:, ch]- mean) * scale)
+            input_data[:, :, :, ch] = (
+                (input_data[:, :, :, ch] - mean) * scale)
     else:
         input_data = np.uint8(input_data)
         config['mean'] = [0, 0, 0]
-        config['scale']  = [1, 1, 1]
+        config['scale'] = [1, 1, 1]
 
-    interpreter.resize_tensor_input(input_details[0]['index'], [batch, new_height, new_width, channel])
+    interpreter.resize_tensor_input(input_details[0]['index'], [
+                                    batch, new_height, new_width, channel])
     interpreter.allocate_tensors()
     interpreter.set_tensor(input_details[0]['index'], input_data)
     interpreter.invoke()
     return new_height, new_width
 
+
 def run_model(config):
-    model =  config["model_name"]
+    model = config["model_name"]
     print("\nRunning_Model : ", model)
 
-    #set delegate options
+    # set delegate options
     delegate_options = {}
     delegate_options.update(required_options)
     delegate_options.update(optional_options)
@@ -132,9 +152,12 @@ def run_model(config):
     delegate_options["artifacts_folder"] = delegate_options["artifacts_folder"] + "/"
 
     if config["model_type"] == "od":
-        delegate_options["object_detection:meta_layers_names_list"] = config["meta_layers_names_list"] if ("meta_layers_names_list" in config) else ""
-        delegate_options["object_detection:meta_arch_type"] = config["meta_arch_type"] if ("meta_arch_type" in config) else -1
-    if ("object_detection:confidence_threshold" in config  and "object_detection:top_k" in config ):
+        delegate_options["object_detection:meta_layers_names_list"] = config["meta_layers_names_list"] if (
+            "meta_layers_names_list" in config) else ""
+        delegate_options["object_detection:meta_arch_type"] = config["meta_arch_type"] if (
+            "meta_arch_type" in config) else -1
+
+    if ("object_detection:confidence_threshold" in config and "object_detection:top_k" in config):
         delegate_options["object_detection:confidence_threshold"] = config["object_detection:confidence_threshold"]
         delegate_options["object_detection:top_k"] = config["object_detection:top_k"]
 
@@ -145,27 +168,34 @@ def run_model(config):
         [os.rmdir(os.path.join(root, d)) for d in dirs]
 
     numFrames = len(calibration_images)
-    
+
     ############   set interpreter  ################################
-    interpreter = tflite.Interpreter(model_path=config["model_path"],
-                                    experimental_delegates=[tflite.load_delegate(os.path.join(tidl_tools_path, "tidl_model_import_tflite.so"),
-                                    delegate_options)])
+    delegate = tflite.load_delegate(os.path.join(
+        tidl_tools_path, "tidl_model_import_tflite.so"), delegate_options)
+    interpreter = tflite.Interpreter(
+        model_path=config["model_path"], experimental_delegates=[delegate])
     ################################################################
-    
+
     # run interpreter
     for i in range(numFrames):
-        start_index = i%len(calibration_images)
+        start_index = i % len(calibration_images)
         input_details = interpreter.get_input_details()
         batch = input_details[0]["shape"][0]
         input_images = []
-        #for batch > 1 input images will be more than one in single input tensor
+        # for batch > 1 input images will be more than one in single input tensor
         for j in range(batch):
-            input_images.append(calibration_images[(start_index+j)%len(calibration_images)])
-        new_height, new_width  = infer_image(interpreter, input_images, config)
-    output_file_name = "py_out_" + model + "_"+os.path.basename(calibration_images[i%len(calibration_images)])
+            input_images.append(
+                calibration_images[(start_index+j) % len(calibration_images)])
+        new_height, new_width = infer_image(interpreter, input_images, config)
 
-    gen_param_yaml(delegate_options["artifacts_folder"], config, int(new_height), int(new_width))
-    log = f"\n \nCompleted_Model : {model:50s}, Output File : {output_file_name}\n \n " #{classes} \n \n"
+    output_file_name = "py_out_" + model + "_" + \
+        os.path.basename(calibration_images[i % len(calibration_images)])
+
+    gen_param_yaml(delegate_options["artifacts_folder"], config, int(
+        new_height), int(new_width))
+
+    log = f"\n \nCompleted_Model : {model}, Output File : {output_file_name}\n \n "
     print(log)
+
 
 run_model(config)
