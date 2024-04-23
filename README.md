@@ -51,7 +51,18 @@ sudo tar -C /usr/local -xvf libtensorflow.tar.gz
 sudo ldconfig
 ```
 
-# compile tflite model artifacts for tidl delegate on Ubuntu PC
+# Prepare edgeai-tidl-tools on Ubuntu PC
+* Clone [edgeai-tidl-tools](https://github.com/TexasInstruments/edgeai-tidl-tools)
+```
+sudo apt-get install libyaml-cpp-dev
+sudo apt-get install cmake
+cd edgeai-tidl-tools
+git checkout 08_02_00_05 -b 08_02_00_05
+export SOC=am68pa
+./setup.sh
+```
+
+# Compile tflite model artifacts for tidl delegate on Ubuntu PC
 ```
 make compile-image-classification TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tidl-tools/tidl_tools/
 ```
