@@ -51,6 +51,11 @@ sudo tar -C /usr/local -xvf libtensorflow.tar.gz
 sudo ldconfig
 ```
 
+# compile tflite model artifacts for tidl delegate on Ubuntu PC
+```
+make compile-image-classification TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tidl-tools/tidl_tools/
+```
+
 # wifi vehicle hardware
 * 2 channels RC car platform with steering servo and ESC (Electronic Speed Control)
 * 3.3v to 5-6v PWM signal conversion circuit

@@ -39,4 +39,9 @@ train-image-classification:
 	cd python/image_classification && python3 train.py
 
 compile-image-classification:
-	cd python/osrt_tfl && python3 compile.py -c classification_config.json
+	export SOC=am68pa && \
+	export DEVICE=j7 && \
+	export TIDL_TOOLS_PATH=${TIDL_TOOLS_PATH}
+	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${TIDL_TOOLS_PATH} && \
+	cd python/osrt_tfl && \
+	python3 compile.py -c classification_config.json

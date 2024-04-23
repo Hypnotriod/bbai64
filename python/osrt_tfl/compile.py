@@ -140,16 +140,12 @@ def infer_image(interpreter, image_files, config):
 
 
 def run_model(config):
-    model = config["model_name"]
-    print("\nRunning_Model : ", model)
+    print("\nRunning_Model : ", config["model_name"], "\n")
 
     # set delegate options
     delegate_options = {}
     delegate_options.update(required_options)
     delegate_options.update(optional_options)
-
-    # stripping off the ss-tfl- from model name
-    delegate_options["artifacts_folder"] = delegate_options["artifacts_folder"] + "/"
 
     if config["model_type"] == "od":
         delegate_options["object_detection:meta_layers_names_list"] = config["meta_layers_names_list"] if (
@@ -188,14 +184,10 @@ def run_model(config):
                 calibration_images[(start_index+j) % len(calibration_images)])
         new_height, new_width = infer_image(interpreter, input_images, config)
 
-    output_file_name = "py_out_" + model + "_" + \
-        os.path.basename(calibration_images[i % len(calibration_images)])
-
     gen_param_yaml(delegate_options["artifacts_folder"], config, int(
         new_height), int(new_width))
 
-    log = f"\n \nCompleted_Model : {model}, Output File : {output_file_name}\n \n "
-    print(log)
+    print("\nCompleted_Model : ", config["model_name"], "\n")
 
 
 run_model(config)
