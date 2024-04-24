@@ -1,3 +1,5 @@
+# origin: https://github.com/TexasInstruments/edgeai-tidl-tools/blob/master/examples/osrt_python/tfl/tflrt_delegate.py
+
 import yaml
 import json
 import shutil
