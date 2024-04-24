@@ -23,17 +23,17 @@ build-wifi-two-wheeled:
 run-wifi-two-wheeled:
 	cd bin && sudo ./wifi-two-wheeled
 
-build-image-recognition:
-	cd go/ && go build -o ../bin/image-recognition cmd/image_recognition/main.go && rsync -cr model/ ../bin/model/ && rsync -cr public/ ../bin/public/
+build-image-classification:
+	cd go/ && go build -o ../bin/image-classification cmd/image_classification/main.go && rsync -cr model/ ../bin/model/ && rsync -cr public/ ../bin/public/
 
-run-image-recognition:
-	cd bin && sudo ./image-recognition
+run-image-classification:
+	cd bin && sudo ./image-classification
 
-build-image-recognition-tflite:
-	cd go/ && go build -o ../bin/image-recognition-tflite cmd/image_recognition_tflite/main.go && rsync -cr model/ ../bin/model/ && rsync -cr public/ ../bin/public/
+build-image-classification-tflite:
+	cd go/ && go build -o ../bin/image-classification-tflite cmd/image_classification_tflite/main.go && rsync -cr model/ ../bin/model/ && rsync -cr public/ ../bin/public/
 
-run-image-recognition-tflite:
-	cd bin && sudo ./image-recognition-tflite
+run-image-classification-tflite:
+	cd bin && sudo ./image-classification-tflite
 
 train-image-classification:
 	cd python/image_classification && python3 train.py
