@@ -28,3 +28,4 @@ def write_labels(path):
 
 
 write_labels(labels_path)
+print("Successfully generated: labels.txt and labelmap.pbtxt")

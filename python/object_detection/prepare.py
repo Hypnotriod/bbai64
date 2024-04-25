@@ -4,6 +4,8 @@ import json
 with open("conf.json") as f:
     config = json.load(f)
 
+if not os.path.exists(config["labels_path"]):
+    os.mkdir(config["labels_path"])
 if not os.path.exists(config["base_model_dir"]):
     os.mkdir(config["base_model_dir"])
 if not os.path.exists(config["model_dir"]):
