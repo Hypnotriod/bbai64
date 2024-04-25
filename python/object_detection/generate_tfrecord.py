@@ -1,8 +1,8 @@
 # origin: https://github.com/BenGreenfield825/Tensorflow-Object-Detection-with-Tensorflow-2.0/blob/master/model_training/generate_tfrecord.py
 
 # python generate_tfrecord.py --csv_input train_data_labels.csv --image_dir train_data --output_path train.record --labels labels/labels.txt
-# python generate_tfrecord.py --csv_input test_data_labels.csv --image_dir test_data --output_path train.record --labels labels/labels.txt
-# python generate_tfrecord.py --csv_input validation_data_labels.csv --image_dir validation_data --output_path train.record --labels labels/labels.txt
+# python generate_tfrecord.py --csv_input test_data_labels.csv --image_dir test_data --output_path test.record --labels labels/labels.txt
+# python generate_tfrecord.py --csv_input validation_data_labels.csv --image_dir validation_data --output_path validation.record --labels labels/labels.txt
 
 from __future__ import division
 from __future__ import print_function

@@ -11,9 +11,11 @@ python/image_classification/train_data/*
 python/image_classification/calibration_data/*
 python/image_classification/artifacts/*
 python/object_detection/labels
-python/object_detection/models/*
+python/object_detection/models
+python/object_detection/base_model
+python/object_detection/training
 python/object_detection/test_data/*
 python/object_detection/train_data/*
 python/object_detection/validation_data/*
-python/object_detection/**/*.csv
-python/object_detection/**/*.record
+python/object_detection/saved_model
+python/object_detection/saved_model_tflite

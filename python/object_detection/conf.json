@@ -1,0 +1,26 @@
+{
+    "labels_path": "labels",
+    "train_path": "train_data",
+    "test_path": "test_data",
+    "validation_path": "validation_data",
+    "train_csv_path": "training/train_data.csv",
+    "test_csv_path": "training/test_data.csv",
+    "validation_csv_path": "training/validation_data.csv",
+    "base_model_dir": "base_model",
+    "model_dir": "training",
+    "labelmap_path": "labels/labelmap.pbtxt",
+    "base_config_path": "base_model/pipeline.config",
+    "fine_tune_checkpoint": "base_model/checkpoint/ckpt-0",
+    "train_record_path": "training/train.record",
+    "test_record_path": "training/test.record",
+    "validation_record_path": "training/validation.record",
+    "pipeline_config_path": "training/train_pipeline.config",
+    "batch_size": 16,
+    "num_eval_steps": 1000,
+    "num_steps": 1000,
+    "classes": [
+        "class0",
+        "class1",
+        "class2"
+    ]
+}
