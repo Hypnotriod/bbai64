@@ -14,7 +14,7 @@
     "train_record_path": "training/train.record",
     "test_record_path": "training/test.record",
     "validation_record_path": "training/validation.record",
-    "pipeline_config_path": "training/train_pipeline.config",
+    "pipeline_config_path": "training/pipeline.config",
     "batch_size": 16,
     "num_eval_steps": 1000,
     "num_steps": 1000,
