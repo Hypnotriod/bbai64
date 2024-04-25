@@ -72,8 +72,8 @@ make compile-image-classification TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tid
 [protocolbuffers_v3.20](https://github.com/protocolbuffers/protobuf/releases/tag/v3.20.0)
 ```
 cd python/object_detection
-conda create --name tensorflow241
-conda activate tensorflow241
+conda create --name tensorflow_od
+conda activate tensorflow_od
 conda install python=3.7
 pip install -r requirements.txt
 git clone https://github.com/tensorflow/models.git
@@ -81,6 +81,7 @@ cd models/research/
 protoc object_detection/protos/*.proto --python_out=.
 cp object_detection/packages/tf2/setup.py .
 python -m pip install .
+pip install protobuf==3.20.3
 ```
 * `prepare.py` - to generate `labels.txt`, `labelmap.pbtxt`, `train.record`, `test.record`, `pipeline.config`
 * `train.py` - to train the model
