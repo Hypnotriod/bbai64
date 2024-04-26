@@ -192,6 +192,18 @@ def start_training():
     ))
 
 
+def generate_evaluation_data():
+    os.system("{python} models/research/object_detection/model_main_tf2.py \
+        --model_dir={model_dir} \
+        --pipeline_config_path={pipeline_config_path} \
+        --checkpoint_dir={checkpoint_dir}".format(
+        python=args.python,
+        model_dir=config["model_dir"],
+        pipeline_config_path=config["pipeline_config_path"],
+        checkpoint_dir=config["model_dir"],
+    ))
+
+
 def export_saved_model():
     print("Saving TFLite-friendly model...")
     os.system("{python} models/research/object_detection/export_tflite_graph_tf2.py \
@@ -246,6 +258,7 @@ if "prepare" not in args.skip:
 
 if "train" not in args.skip:
     start_training()
+    generate_evaluation_data()
 
 if "export" not in args.skip:
     export_saved_model()
