@@ -45,3 +45,6 @@ compile-image-classification:
 	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${TIDL_TOOLS_PATH} && \
 	cd python/osrt_tfl && \
 	python3 compile.py -c classification_config.json
+
+train-object-detection:
+	cd python/object_detection && python3 train.py --python=python3
