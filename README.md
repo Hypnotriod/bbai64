@@ -68,8 +68,9 @@ make compile-image-classification TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tid
 ```
 
 # Object detection
-[tf2_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md)
-[protocolbuffers_v3.20](https://github.com/protocolbuffers/protobuf/releases/tag/v3.20.0)
+[protocolbuffers_v3.20](https://github.com/protocolbuffers/protobuf/releases/tag/v3.20.3)
+* Download and extract model content from [tf2_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md) to `python/object_detection/base_model` folder
+* Update in `python/object_detection/base_model/pipeline.config` the `input_path: "PATH_TO_BE_CONFIGURED"` fields of `train_input_reader` and `eval_input_reader` with `"PATH_TO_BE_CONFIGURED/train"` and `"PATH_TO_BE_CONFIGURED/eval"` respectively
 ```
 cd python/object_detection
 conda create --name tensorflow_od
@@ -83,9 +84,8 @@ cp object_detection/packages/tf2/setup.py .
 python -m pip install .
 pip install protobuf==3.20.3
 ```
-* `prepare.py` - to generate `labels.txt`, `labelmap.pbtxt`, `train.record`, `test.record`, `pipeline.config`
-* `train.py` - to train the model
-* `export.py` - to generate `saved_model.pb`, `saved_model.tflite`
+* `train.py` - to train the model. 
+* * `--skip` - to skip phases `prepare` `train` `export`
 
 # wifi vehicle hardware
 * 2 channels RC car platform with steering servo and ESC (Electronic Speed Control)
