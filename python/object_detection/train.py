@@ -168,6 +168,15 @@ def generate_pipeline_config():
         # Set training steps
         base_config = re.sub('num_steps: [0-9]+',
                              'num_steps: {}'.format(config["num_steps"]), base_config)
+        # Set max detections per class
+        base_config = re.sub('max_detections_per_class: [0-9]+',
+                             'max_detections_per_class: {}'.format(config["max_detections_per_class"]), base_config)
+        # Set max total detections
+        base_config = re.sub('max_total_detections: [0-9]+',
+                             'max_total_detections: {}'.format(config["max_total_detections"]), base_config)
+        # Set max number of boxes
+        base_config = re.sub('max_number_of_boxes: [0-9]+',
+                             'max_number_of_boxes: {}'.format(config["max_number_of_boxes"]), base_config)
         # Set fine-tune checkpoint type to detection
         base_config = re.sub('fine_tune_checkpoint_type: "classification"',
                              'fine_tune_checkpoint_type: "{}"'.format('detection'), base_config)
