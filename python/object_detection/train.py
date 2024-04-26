@@ -224,7 +224,7 @@ def export_saved_model():
     print("Saving TFLite model...")
     if not os.path.exists("saved_model_tflite"):
         os.mkdir("saved_model_tflite")
-    with open("saved_model_tflite/saved_model.tflite", "w") as f:
+    with open("saved_model_tflite/saved_model.tflite", "wb") as f:
         f.write(tflite_model)
 
 
