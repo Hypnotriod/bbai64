@@ -259,9 +259,6 @@ func initModel() {
 		log.Fatal("Cannot read model labels: ", err)
 	}
 	labels = strings.Split(string(labelsRaw), "\n")
-	for i := range labels {
-		labels[i] = strings.Trim(labels[i], "\r")
-	}
 
 	options := tflite.NewInterpreterOptions()
 	if USE_DELEGATE {
