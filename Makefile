@@ -48,3 +48,6 @@ compile-image-classification:
 
 train-object-detection:
 	cd python/object_detection && python3 train.py --python=python3
+
+tensorboard-object-detection:
+	cd python/object_detection && tensorboard --logdir training
