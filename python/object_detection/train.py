@@ -231,11 +231,9 @@ if "prepare" not in args.skip:
     print("Successfully generated: labels.txt and labelmap.pbtxt")
 
     xml_to_csv_input = [config["train_path"],
-                        config["test_path"],
-                        config["validation_path"]]
+                        config["test_path"]]
     xml_to_csv_output = [config["train_csv_path"],
-                         config["test_csv_path"],
-                         config["validation_csv_path"]]
+                         config["test_csv_path"]]
     for i, folder in enumerate(xml_to_csv_input):
         xml_df = xml_to_csv(folder)
         xml_df.to_csv(xml_to_csv_output[i], index=None)
@@ -249,10 +247,6 @@ if "prepare" not in args.skip:
                        config["test_path"],
                        config["test_csv_path"],
                        config["test_record_path"])
-    generate_tf_record(config["classes"],
-                       config["validation_path"],
-                       config["validation_csv_path"],
-                       config["validation_record_path"])
 
     generate_pipeline_config()
 
