@@ -51,3 +51,9 @@ train-object-detection:
 
 tensorboard-object-detection:
 	cd python/object_detection && tensorboard --logdir training
+
+build-object-detection-tflite:
+	cd go/ && go build -o ../bin/object-detection-tflite cmd/object_detection_tflite/main.go && rsync -cr model/ ../bin/model/ && rsync -cr public/ ../bin/public/
+
+run-object-detection-tflite:
+	cd bin && sudo ./object-detection-tflite
