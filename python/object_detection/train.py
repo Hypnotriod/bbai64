@@ -46,7 +46,6 @@ def generate_folders():
 
 def generate_labels(path, classes):
     f = open(path + "/labels.txt", "w")
-    f.write("background\n")
     f.write("\n".join(classes))
     f.close()
 
