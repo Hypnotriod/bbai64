@@ -259,6 +259,9 @@ func initModel() {
 		log.Fatal("Cannot read model labels: ", err)
 	}
 	labels = strings.Split(string(labelsRaw), "\n")
+	for i := range labels {
+		labels[i] = strings.Trim(labels[i], "\r")
+	}
 
 	options := tflite.NewInterpreterOptions()
 	if USE_DELEGATE {
@@ -311,14 +314,19 @@ func predict() {
 	count := interpreter.GetOutputTensor(2).Float32s()
 	classes := interpreter.GetOutputTensor(3).Float32s()
 	for n := 0; n < int(count[0]); n++ {
-		label := labels[int(classes[n])+1]
-		fmt.Printf("%s score: %.2g [ymin: %.2g xmin: %.2g ymax: %.2g xmax: %.2g] %s\n",
+		label := labels[int(classes[n])]
+		score := scores[n]
+		ymin := int(boxes[n+0] * TENSOR_HEIGHT)
+		xmin := int(boxes[n+1] * TENSOR_WIDTH)
+		ymax := int(boxes[n+2] * TENSOR_HEIGHT)
+		xmax := int(boxes[n+3] * TENSOR_WIDTH)
+		fmt.Printf("%s score: %.2g [x: %d  y: %d w: %d h: %d] %s\n",
 			label,
-			scores[n],
-			boxes[n+0],
-			boxes[n+1],
-			boxes[n+2],
-			boxes[n+3],
+			score,
+			xmin,
+			ymin,
+			xmax-xmin,
+			ymax-ymin,
 			time.Since(startTime))
 	}
 }
