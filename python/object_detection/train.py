@@ -46,13 +46,14 @@ def generate_folders():
 
 def generate_labels(path, classes):
     f = open(path + "/labels.txt", "w")
+    f.write("background\n")
     f.write("\n".join(classes))
     f.close()
 
     f = open(path + "/labelmap.pbtxt", "w")
     pbtxt = ""
     for id in range(0, len(classes)):
-        pbtxt = pbtxt + LABELMAP_ITEM_TEMPLATE % (id, classes[id])
+        pbtxt = pbtxt + LABELMAP_ITEM_TEMPLATE % (id+1, classes[id])
     f.write(pbtxt)
     f.close()
 
@@ -108,7 +109,7 @@ def create_tf_example(group, path, labels):
         ymins.append(row['ymin'] / height)
         ymaxs.append(row['ymax'] / height)
         classes_text.append(row['class'].encode('utf8'))
-        classes.append(labels.index(row['class']))
+        classes.append(labels.index(row['class'])+1)
 
     tf_example = tf.train.Example(features=tf.train.Features(feature={
         'image/height': dataset_util.int64_feature(height),
@@ -160,7 +161,7 @@ def generate_pipeline_config():
                              'input_path: "{}"'.format(config["test_record_path"]), base_config)
         # Set number of classes.
         base_config = re.sub('num_classes: [0-9]+',
-                             'num_classes: {}'.format(len(config["classes"])-1), base_config)
+                             'num_classes: {}'.format(len(config["classes"])), base_config)
         # Set batch size
         base_config = re.sub('batch_size: [0-9]+',
                              'batch_size: {}'.format(config["batch_size"]), base_config)
