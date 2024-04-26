@@ -5,6 +5,7 @@ import (
 	"bbai64/streamer"
 	"bbai64/titfldelegate"
 	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -39,9 +40,9 @@ const TENSOR_SIZE = TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM
 const TOP_PREDICTIONS_NUM = 1
 const PREDICT_EACH_FRAME = 30
 const USE_DELEGATE = false
-const MODEL_PATH = "model/chess_tflite/saved_model.tflite"
-const LABELS_PATH = "model/chess_tflite/labels.txt"
-const ARTIFACTS_PATH = "model/chess_tflite/artifacts"
+const MODEL_PATH = "model/items_tflite/saved_model.tflite"
+const LABELS_PATH = "model/items_tflite/labels.txt"
+const ARTIFACTS_PATH = "model/items_tflite/artifacts"
 const TFL_DELEGATE_PATH = "/usr/lib/libtidl_tfl_delegate.so"
 
 type PixelsRGB []byte
@@ -258,6 +259,9 @@ func initModel() {
 		log.Fatal("Cannot read model labels: ", err)
 	}
 	labels = strings.Split(string(labelsRaw), "\n")
+	for i := range labels {
+		labels[i] = strings.Trim(labels[i], "\r")
+	}
 
 	options := tflite.NewInterpreterOptions()
 	if USE_DELEGATE {
@@ -291,27 +295,34 @@ func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
 			return
 		}
 		for i, b := range *frame {
-			inputTensor[i] = float32(b) / 255
+			inputTensor[i] = (float32(b) - 127.5) / 127.5
 		}
 		predict()
 	}
 }
 
 func predict() {
+	startTime := time.Now()
 	status := interpreter.Invoke()
 	if status != tflite.OK {
 		log.Println("Interpreter invoke failed")
 		return
 	}
-	log.Println("***********************")
+	fmt.Println("-------")
 	scores := interpreter.GetOutputTensor(0).Float32s()
 	boxes := interpreter.GetOutputTensor(1).Float32s()
 	count := interpreter.GetOutputTensor(2).Float32s()
 	classes := interpreter.GetOutputTensor(3).Float32s()
 	for n := 0; n < int(count[0]); n++ {
-		log.Println("class: ", labels[int(classes[n])])
-		log.Println("score: ", scores[n])
-		log.Println("box: ", boxes[n+0], " ", boxes[n+1], " ", boxes[n+2], " ", boxes[n+3])
+		label := labels[int(classes[n])+1]
+		fmt.Printf("%s score: %.2g [ymin: %.2g xmin: %.2g ymax: %.2g xmax: %.2g] %s\n",
+			label,
+			scores[n],
+			boxes[n+0],
+			boxes[n+1],
+			boxes[n+2],
+			boxes[n+3],
+			time.Since(startTime))
 	}
 }
 
