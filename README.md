@@ -85,7 +85,7 @@ python -m pip install .
 pip install protobuf==3.20.3
 ```
 * `train.py` - to train the model. 
-* * `--skip` - to skip phases `prepare` `train` `export`
+  * `--skip` - to skip phases `prepare` `train` `export`
 
 # wifi vehicle hardware
 * 2 channels RC car platform with steering servo and ESC (Electronic Speed Control)
