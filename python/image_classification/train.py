@@ -226,6 +226,7 @@ if tflite_model_path:
     print("Converting model...")
     converter = tf.lite.TFLiteConverter.from_saved_model(model_path)
     tflite_model = converter.convert()
+    tf.lite.experimental.Analyzer.analyze(model_content=tflite_model, gpu_compatibility=True)
     print("Saving TFLite model...")
     with open(tflite_model_path + "/saved_model.tflite", "wb") as f:
         f.write(tflite_model)

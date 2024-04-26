@@ -219,6 +219,7 @@ def export_saved_model():
     converter = tf.lite.TFLiteConverter.from_saved_model("saved_model")
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
     tflite_model = converter.convert()
+    tf.lite.experimental.Analyzer.analyze(model_content=tflite_model, gpu_compatibility=True)
     print("Saving TFLite model...")
     os.mkdir("saved_model_tflite")
     with open("saved_model_tflite/saved_model.tflite", "wb") as f:
