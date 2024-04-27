@@ -15,7 +15,7 @@
     "pipeline_config_path": "training/pipeline.config",
     "batch_size": 16,
     "num_eval_steps": 1000,
-    "num_steps": 1000,
+    "num_steps": 8000,
     "max_detections_per_class": 100,
     "max_total_detections": 100,
     "max_number_of_boxes": 100,
