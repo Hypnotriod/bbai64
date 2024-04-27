@@ -39,7 +39,8 @@ const CHANNELS_NUM = 3
 const TENSOR_SIZE = TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM
 const TOP_PREDICTIONS_NUM = 1
 const PREDICT_EACH_FRAME = 30
-const USE_DELEGATE = false
+const MIN_SCORE = 0.7
+const USE_DELEGATE = true
 const MODEL_PATH = "model/items_tflite/saved_model.tflite"
 const LABELS_PATH = "model/items_tflite/labels.txt"
 const ARTIFACTS_PATH = "model/items_tflite/artifacts"
@@ -314,8 +315,11 @@ func predict() {
 	count := interpreter.GetOutputTensor(2).Float32s()
 	classes := interpreter.GetOutputTensor(3).Float32s()
 	for n := 0; n < int(count[0]); n++ {
-		label := labels[int(classes[n])]
 		score := scores[n]
+		if score < MIN_SCORE {
+			continue
+		}
+		label := labels[int(classes[n])]
 		ymin := int(boxes[n+0] * TENSOR_HEIGHT)
 		xmin := int(boxes[n+1] * TENSOR_WIDTH)
 		ymax := int(boxes[n+2] * TENSOR_HEIGHT)

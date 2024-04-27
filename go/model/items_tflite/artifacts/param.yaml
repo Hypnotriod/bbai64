@@ -1,0 +1,33 @@
+postprocess:
+  data_layout: NHWC
+  detection_thr: 0.3
+  formatter:
+    name: DetectionYXYX2XYXY
+    src_indices:
+    - 1
+    - 0
+    - 3
+    - 2
+preprocess:
+  crop:
+  - 300
+  - 300
+  data_layout: NHWC
+  mean:
+  - 127.5
+  - 127.5
+  - 127.5
+  resize:
+  - 300
+  - 300
+  scale:
+  - 0.0078431374
+  - 0.0078431374
+  - 0.0078431374
+session:
+  artifacts_folder: ''
+  model_folder: model
+  model_path: saved_model.tflite
+  session_name: tflitert
+target_device: pc
+task_type: od
