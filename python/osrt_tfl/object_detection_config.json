@@ -1,0 +1,19 @@
+{
+    "model_name": "object_detection",
+    "model_path" : "../object_detection/saved_model_tflite/saved_model.tflite",
+    "calibration_images": [
+        "../object_detection/calibration_data/0.png",
+        "../object_detection/calibration_data/1.png",
+        "../object_detection/calibration_data/2.png",
+        "../object_detection/calibration_data/3.png"
+    ],
+    "calibration_iterations": 15,
+    "tensor_bits": 16,
+    "artifacts_path": "../object_detection/artifacts",
+    "mean": [127.5, 127.5, 127.5],
+    "scale" : [0.0078431374, 0.0078431374, 0.0078431374],
+    "num_classes": 4,
+    "session_name" : "tflitert",
+    "model_type": "od",
+    "od_type" : "HasDetectionPostProcLayer"
+}

@@ -16,5 +16,7 @@ python/object_detection/base_model
 python/object_detection/training
 python/object_detection/test_data/*
 python/object_detection/train_data/*
+python/object_detection/calibration_data/*
+python/object_detection/artifacts/*
 python/object_detection/saved_model
 python/object_detection/saved_model_tflite
