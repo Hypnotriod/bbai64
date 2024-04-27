@@ -38,8 +38,6 @@ if config["disable_cuda_devices"]:
 def generate_folders():
     if not os.path.exists(config["labels_path"]):
         os.mkdir(config["labels_path"])
-    if not os.path.exists(config["base_model_dir"]):
-        os.mkdir(config["base_model_dir"])
     if not os.path.exists(config["model_dir"]):
         os.mkdir(config["model_dir"])
 

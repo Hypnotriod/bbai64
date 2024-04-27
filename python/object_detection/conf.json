@@ -5,7 +5,6 @@
     "test_path": "test_data",
     "train_csv_path": "training/train_data.csv",
     "test_csv_path": "training/test_data.csv",
-    "base_model_dir": "base_model",
     "model_dir": "training",
     "labelmap_path": "labels/labelmap.pbtxt",
     "base_config_path": "base_model/pipeline.config",
