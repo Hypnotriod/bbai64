@@ -77,11 +77,11 @@ conda create --name tensorflow_od
 conda activate tensorflow_od
 conda install python=3.7
 pip install -r requirements.txt
-git clone https://github.com/tensorflow/models.git
+git clone --depth 1 https://github.com/tensorflow/models.git
 cd models/research/
 protoc object_detection/protos/*.proto --python_out=.
 cp object_detection/packages/tf2/setup.py .
-python -m pip install .
+python3 -m pip install .
 pip install protobuf==3.20.3
 ```
 * `train.py` - to train the model. 
