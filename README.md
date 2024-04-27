@@ -70,6 +70,15 @@ make compile-image-classification TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tid
 make compile-object-detection TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tidl-tools/tidl_tools/
 ```
 
+# Image classification
+```
+cd python/image_classification
+conda create --name tensorflow_ic
+conda activate tensorflow_ic
+conda install python=3.7
+pip install -r requirements.txt
+```
+
 # Object detection
 [protocolbuffers_v3.20](https://github.com/protocolbuffers/protobuf/releases/tag/v3.20.3)
 * Download and extract model content from [tf2_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md) to `python/object_detection/base_model` folder
