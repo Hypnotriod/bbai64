@@ -309,7 +309,7 @@ func predict() {
 		log.Println("Interpreter invoke failed")
 		return
 	}
-	fmt.Println("-------")
+	log.Println("---", time.Since(startTime), "---")
 	scores := interpreter.GetOutputTensor(0).Float32s()
 	boxes := interpreter.GetOutputTensor(1).Float32s()
 	count := interpreter.GetOutputTensor(2).Float32s()
@@ -324,14 +324,14 @@ func predict() {
 		xmin := int(boxes[n+1] * TENSOR_WIDTH)
 		ymax := int(boxes[n+2] * TENSOR_HEIGHT)
 		xmax := int(boxes[n+3] * TENSOR_WIDTH)
-		fmt.Printf("%s score: %.2g [x: %d  y: %d w: %d h: %d] %s\n",
+		fmt.Printf("    %s score: %.2g [x: %d  y: %d w: %d h: %d]\n",
 			label,
 			score,
 			xmin,
 			ymin,
 			xmax-xmin,
 			ymax-ymin,
-			time.Since(startTime))
+		)
 	}
 }
 
