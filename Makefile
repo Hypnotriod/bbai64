@@ -46,14 +46,22 @@ compile-image-classification:
 	cd python/osrt_tfl && \
 	python3 compile.py -c classification_config.json
 
+build-object-detection-tflite:
+	cd go/ && go build -o ../bin/object-detection-tflite cmd/object_detection_tflite/main.go && rsync -cr model/ ../bin/model/ && rsync -cr public/ ../bin/public/
+
+run-object-detection-tflite:
+	cd bin && sudo ./object-detection-tflite
+
 train-object-detection:
 	cd python/object_detection && python3 train.py --python=python3
 
 tensorboard-object-detection:
 	cd python/object_detection && tensorboard --logdir training
 
-build-object-detection-tflite:
-	cd go/ && go build -o ../bin/object-detection-tflite cmd/object_detection_tflite/main.go && rsync -cr model/ ../bin/model/ && rsync -cr public/ ../bin/public/
-
-run-object-detection-tflite:
-	cd bin && sudo ./object-detection-tflite
+compile-object-detection:
+	export SOC=am68pa && \
+	export DEVICE=j7 && \
+	export TIDL_TOOLS_PATH=${TIDL_TOOLS_PATH}
+	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${TIDL_TOOLS_PATH} && \
+	cd python/osrt_tfl && \
+	python3 compile.py -c object_detection_config.json
