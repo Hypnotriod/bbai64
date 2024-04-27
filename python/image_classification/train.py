@@ -40,7 +40,7 @@ from tensorflow import keras
 from keras.applications.mobilenet_v2 import MobileNetV2
 from keras.models import Model
 from keras.layers import Dense, Input
-from keras.utils import to_categorical
+from keras.utils import to_categorical, img_to_array
 from keras.optimizers import SGD
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing import image
@@ -51,7 +51,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["TF_DISABLE_RZ_CHECK"] = "1"
 
 # load the user configs
-with open("conf.json") as f:
+with open("config.json") as f:
     config = json.load(f)
 
 # config variables
@@ -159,9 +159,9 @@ def test():
             img = io.imread(file)
             img = preprocess_input(img)
             img = transform.resize(img, (img_size, img_size))
-            x = image.img_to_array(img)
+            x = img_to_array(img)
             x = np.expand_dims(x, axis=0)
-            y_prob = model.predict(x)
+            y_prob = model.predict(x, verbose=0)
             y_class = y_prob.argmax(axis=-1)
             y_class = y_class[0]
             y_confidence = int(y_prob[0][y_class] * 100)
@@ -174,7 +174,6 @@ def test():
             folder, success, average_confidence))
 
 
-print("Tensorflow version: "+tf.__version__)
 create_folders()
 
 # create model
@@ -189,7 +188,7 @@ model.summary()
 
 # create callbacks
 checkpoint = ModelCheckpoint(
-    "logs/weights.h5", monitor=checkpoint_monitor, save_best_only=True, period=checkpoint_period)
+    "logs/weights.h5", monitor=checkpoint_monitor, save_best_only=True, save_freq=checkpoint_period)
 
 # start time
 start = time.time()
@@ -215,7 +214,7 @@ if epochs_after_unfreeze > 0:
         "logs/weights.h5",
         monitor=checkpoint_monitor,
         save_best_only=True,
-        period=checkpoint_period_after_unfreeze)
+        save_freq=checkpoint_period_after_unfreeze)
     train(checkpoint, epochs_after_unfreeze)
 
 print("Saving model...")

@@ -28,7 +28,7 @@ parser.add_argument("-p", "--python", default="python",
                     help="Python executable", required=False)
 args = parser.parse_args()
 
-with open("conf.json") as f:
+with open("config.json") as f:
     config = json.load(f)
 
 if config["disable_cuda_devices"]:
