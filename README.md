@@ -56,6 +56,8 @@ sudo ldconfig
 ```
 sudo apt-get install libyaml-cpp-dev
 sudo apt-get install cmake
+conda create --name tensorflow_tidl
+conda activate tensorflow_tidl
 cd edgeai-tidl-tools
 git checkout 08_02_00_05 -b 08_02_00_05
 export SOC=am68pa
@@ -65,6 +67,7 @@ export SOC=am68pa
 # Compile tflite model artifacts for tidl delegate on Ubuntu PC
 ```
 make compile-image-classification TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tidl-tools/tidl_tools/
+make compile-object-detection TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tidl-tools/tidl_tools/
 ```
 
 # Object detection
