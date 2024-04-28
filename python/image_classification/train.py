@@ -1,13 +1,5 @@
 # origin: https://github.com/amineHorseman/mobilenet-v2-custom-dataset
 
-# conda create --name tensorflow241
-# conda activate tensorflow241
-# conda install python=3.6
-# pip install -r requirements.txt
-
-# CUDA 11.0: https://developer.nvidia.com/cuda-11.0-download-archive
-# cuDNN Library: https://developer.nvidia.com/rdp/cudnn-archive
-
 # img_size: 224, 192, 160, 128, 96 (https://github.com/JonathanCMitchell/mobilenet_v2_keras/blob/master/mobilenetv2.py)
 # the number of images of each class must match the batch_size
 # class folders must be named by class names specified in classes field
