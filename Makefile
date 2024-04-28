@@ -65,3 +65,6 @@ compile-object-detection:
 	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${TIDL_TOOLS_PATH} && \
 	cd python/osrt_tfl && \
 	python3 compile.py -c object_detection_config.json
+
+build-edgeai-tidl-tools-docker-container:
+	docker build -t edgeai-tidl-tools-08_02_00_05 -f edgeai-tidl-tools-08_02_00_05.Dockerfile .
