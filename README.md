@@ -70,9 +70,9 @@ make compile-object-detection TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tidl-to
 ```
 
 # CUDA, cuDNN
-[tensorflow cuDNN CUDA configuration list](https://www.tensorflow.org/install/source#gpu)
-[cuda-11.2.0 for tensorflow 2.10.1](https://developer.nvidia.com/cuda-11.2.0-download-archive)
-[cudnn-archive](https://developer.nvidia.com/rdp/cudnn-archive)
+[tensorflow cuDNN CUDA configuration list](https://www.tensorflow.org/install/source#gpu)  
+[cuda-11.2.0 for tensorflow 2.10.1](https://developer.nvidia.com/cuda-11.2.0-download-archive)  
+[cudnn-archive](https://developer.nvidia.com/rdp/cudnn-archive)  
 
 # Image classification
 ```
