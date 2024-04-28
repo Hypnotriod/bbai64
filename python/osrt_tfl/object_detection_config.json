@@ -12,7 +12,6 @@
     "artifacts_path": "../object_detection/artifacts",
     "mean": [127.5, 127.5, 127.5],
     "scale" : [0.0078431374, 0.0078431374, 0.0078431374],
-    "num_classes": 4,
     "session_name" : "tflitert",
     "model_type": "od",
     "od_type" : "HasDetectionPostProcLayer"

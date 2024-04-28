@@ -12,7 +12,6 @@
     "artifacts_path": "../image_classification/artifacts",
     "mean": [0, 0, 0],
     "scale" : [0.003921568627, 0.003921568627, 0.003921568627],
-    "num_classes": 4,
     "session_name" : "tflitert",
     "model_type": "classification"
 }
