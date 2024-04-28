@@ -72,5 +72,5 @@ build-edgeai-tidl-tools-docker-container:
 compile-object-detection-docker:
 	docker run -it -v "$(CURDIR)/python:/workspace/python" edgeai-tidl-tools-08_02_00_05 "cd /workspace/python/osrt_tfl && python3 compile.py -c object_detection_config.json && exit"
 
-compile-image-classification:
+compile-image-classification-docker:
 	docker run -it -v "$(CURDIR)/python:/workspace/python" edgeai-tidl-tools-08_02_00_05 "cd /workspace/python/osrt_tfl && python3 compile.py -c object_detection_config.json && exit"
