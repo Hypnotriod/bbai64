@@ -10,12 +10,11 @@ import numpy as np
 import os
 import warnings
 import tensorflow as tf
-from skimage import io, transform
 from tensorflow import keras
 from keras.applications.mobilenet_v2 import MobileNetV2
 from keras.models import Model
 from keras.layers import Dense, Input
-from keras.utils import img_to_array, image_dataset_from_directory
+from keras.utils import img_to_array, load_img, image_dataset_from_directory
 from keras.optimizers import SGD
 from keras.callbacks import ModelCheckpoint
 from keras.applications.mobilenet_v2 import preprocess_input
@@ -102,11 +101,10 @@ def test():
         average_confidence = 0
         files = glob.glob(test_path + "/" + folder + "/*")
         for file in files:
-            img = io.imread(file)
-            img = preprocess_input(img)
-            img = transform.resize(img, (img_size, img_size))
+            img = load_img(file, target_size=(img_size, img_size))
             x = img_to_array(img)
             x = np.expand_dims(x, axis=0)
+            x = preprocess_input(x)
             y_prob = model.predict(x, verbose=0)
             y_class = y_prob.argmax(axis=-1)
             y_class = y_class[0]
