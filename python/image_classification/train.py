@@ -44,7 +44,6 @@ validation_split = config["validation_split"]
 checkpoint_monitor = config["checkpoint_monitor"]
 epochs_after_unfreeze = config["epochs_after_unfreeze"]
 checkpoint_period = config["checkpoint_period"]
-checkpoint_period_after_unfreeze = config["checkpoint_period_after_unfreeze"]
 
 if disable_cuda_devices:
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -157,7 +156,7 @@ if epochs_after_unfreeze > 0:
         "logs/weights.h5",
         monitor=checkpoint_monitor,
         save_best_only=True,
-        save_freq=checkpoint_period_after_unfreeze)
+        save_freq=checkpoint_period)
     train(checkpoint, epochs_after_unfreeze)
 
 print("Saving model...")

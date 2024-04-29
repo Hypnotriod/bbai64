@@ -17,11 +17,10 @@
     "learning_rate": 0.001,
     "momentum": 0.9,
     "validation_split": 0.25,
-	"shuffle": true,
+    "shuffle": true,
     "seed": 1337,
     "epochs": 50,
     "epochs_after_unfreeze": 5,
     "checkpoint_monitor": "val_loss",
-    "checkpoint_period": "epoch",
-    "checkpoint_period_after_unfreeze": 1
+    "checkpoint_period": "epoch"
 }
