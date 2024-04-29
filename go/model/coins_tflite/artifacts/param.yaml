@@ -6,16 +6,16 @@ preprocess:
   - 224
   data_layout: NHWC
   mean:
-  - 0
-  - 0
-  - 0
+  - 127.5
+  - 127.5
+  - 127.5
   resize:
   - 224
   - 224
   scale:
-  - 0.003921568627
-  - 0.003921568627
-  - 0.003921568627
+  - 0.0078431374
+  - 0.0078431374
+  - 0.0078431374
 session:
   artifacts_folder: ''
   model_folder: model
