@@ -11,13 +11,12 @@ import os
 import warnings
 import tensorflow as tf
 from tensorflow import keras
-from keras.applications.mobilenet_v2 import MobileNetV2
+from keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input
 from keras.models import Model
 from keras.layers import Dense, Input
 from keras.utils import img_to_array, load_img, image_dataset_from_directory
 from keras.optimizers import SGD
 from keras.callbacks import ModelCheckpoint
-from keras.applications.mobilenet_v2 import preprocess_input
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
