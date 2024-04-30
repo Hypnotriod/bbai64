@@ -82,6 +82,11 @@ conda activate tensorflow_ic
 conda install python=3.7
 pip install -r requirements.txt
 ```
+* `config.json` - training configuration file.
+* `train.py` - script to train the model.
+
+# Labeling Tools
+[labelImg](https://github.com/HumanSignal/labelImg)
 
 # Object detection
 [protocolbuffers_v3.20](https://github.com/protocolbuffers/protobuf/releases/tag/v3.20.3)
@@ -100,7 +105,8 @@ cp object_detection/packages/tf2/setup.py .
 python3 -m pip install .
 pip install protobuf==3.20.3
 ```
-* `train.py` - to train the model. 
+* `config.json` - training configuration file.
+* `train.py` - script to train the model.
   * `--skip` - to skip phases `prepare` `train` `export`
 
 # wifi vehicle hardware
