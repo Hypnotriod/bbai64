@@ -9,7 +9,7 @@
     ],
     "calibration_iterations": 15,
     "tensor_bits": 16,
-    "artifacts_path": "../image_classification/artifacts",
+    "artifacts_folder": "../image_classification/artifacts",
     "mean": [0, 0, 0],
     "scale" : [0.003921568627, 0.003921568627, 0.003921568627],
     "session_name" : "tflitert",

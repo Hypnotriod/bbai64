@@ -17,22 +17,20 @@ os.environ["TIDL_RT_PERFSTATS"] = "1"
 with open(args.config) as f:
     config = json.load(f)
 
-tidl_tools_path = os.environ["TIDL_TOOLS_PATH"]
-calibration_images = config["calibration_images"]
 required_options = {
-    "tidl_tools_path": tidl_tools_path,
-    "artifacts_folder": config["artifacts_path"],
+    "tidl_tools_path": os.environ["TIDL_TOOLS_PATH"],
+    "artifacts_folder": "artifacts",
 }
 optional_options = {
     "platform": "J7",
     "version": " 7.2",
-    "tensor_bits": config["tensor_bits"],
+    "tensor_bits": 8,
     "debug_level": 0,
     "max_num_subgraphs": 16,
     "deny_list": "",
     "accuracy_level": 1,
     "advanced_options:calibration_frames": 2,
-    "advanced_options:calibration_iterations": config["calibration_iterations"],
+    "advanced_options:calibration_iterations": 5,
     "advanced_options:output_feature_16bit_names_list": "",
     "advanced_options:params_16bit_names_list": "",
     "advanced_options:quantization_scale_type": 0,
@@ -149,6 +147,13 @@ def run_model(config):
     delegate_options.update(required_options)
     delegate_options.update(optional_options)
 
+    if "artifacts_folder" in config:
+        delegate_options["artifacts_folder"] = config["artifacts_folder"]
+    if "tensor_bits" in config:
+        delegate_options["tensor_bits"] = config["tensor_bits"]
+    if "calibration_iterations" in config:
+        delegate_options["advanced_options:calibration_iterations"] = config["calibration_iterations"]
+
     if config["model_type"] == "od":
         delegate_options["object_detection:meta_layers_names_list"] = config["meta_layers_names_list"] if (
             "meta_layers_names_list" in config) else ""
@@ -165,14 +170,14 @@ def run_model(config):
         [os.remove(os.path.join(root, f)) for f in files]
         [os.rmdir(os.path.join(root, d)) for d in dirs]
 
+    calibration_images = config["calibration_images"]
     numFrames = len(calibration_images)
 
-    ############   set interpreter  ################################
+    # set interpreter
     delegate = tflite.load_delegate(os.path.join(
-        tidl_tools_path, "tidl_model_import_tflite.so"), delegate_options)
+        delegate_options["tidl_tools_path"], "tidl_model_import_tflite.so"), delegate_options)
     interpreter = tflite.Interpreter(
         model_path=config["model_path"], experimental_delegates=[delegate])
-    ################################################################
 
     # run interpreter
     for i in range(numFrames):
