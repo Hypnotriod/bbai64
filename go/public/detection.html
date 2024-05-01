@@ -1,0 +1,189 @@
+<html>
+
+<head>
+    <title>Object Detection</title>
+    <style>
+        body,
+        div,
+        a,
+        img {
+            outline: none;
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            overflow: hidden;
+        }
+
+        #stream {
+            pointer-events: none;
+            overflow: hidden;
+            height: 100vh;
+            width: auto;
+        }
+
+        #snapshot {
+            overflow: hidden;
+            height: 35vh;
+            width: auto;
+            position: absolute;
+            left: 5vh;
+            top: 5vh;
+        }
+
+        #container {
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 100vh;
+        }
+
+        .box {
+            background-color: #ff000033;
+            border: 3px solid #ff0000;
+            border-width: 3px;
+            width: 10vh;
+            height: 10vh;
+            position: absolute;
+            margin-top: 90vh;
+            margin-left: -90vh;
+        }
+
+        .box-label {
+            position: absolute;
+            margin-top: 0;
+            margin-left: -50%;
+            width: 100%;
+            height: 20px;
+            font-size: 15px;
+            background-color: #ff000033;
+            color: white;
+            font-family: "Roboto", "Comic Sans", sans-serif;
+        }
+
+        #status {
+            overflow: hidden;
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            text-shadow:
+                -1px 0px 0px black,
+                1px 0px 0px black,
+                0px -1px 0px black,
+                0px 1px 0px black;
+            color: white;
+            font-family: "Roboto", "Comic Sans", sans-serif;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <img id="stream" src="/mjpeg_stream2" />
+    </div>
+    <img id="snapshot" src="/mjpeg_stream1" />
+
+    <script defer>
+        const COLORS = ["#aa0000", "#00aa00", "#0000aa", "#aaaa00", "#aa00aa", "#00aaaa"];
+        const boxes = [];
+
+        const SERVER_WS_URL
+            = (window.location.protocol === "https:" ? "wss:" : "ws:")
+            + `//${window.location.hostname}:${window.location.port}/ws`;
+
+        let snapshotCounter = 0;
+        let detections = [
+            {
+                label: "label1",
+                class: 0,
+                score: 0.75,
+                xmin: 0.25,
+                ymin: 0.25,
+                xmax: 0.75,
+                ymax: 0.75,
+            }
+        ];
+
+        const getBox = (index) => {
+            const container = document.getElementById("container");
+            if (!boxes[index]) {
+                const box = document.createRange().createContextualFragment(
+                    `<div class="box" id="box${index}"><span class="box-label">Test</span></div>`
+                );
+                container.appendChild(box);
+                boxes[index] = document.getElementById(`box${index}`);
+            }
+            return boxes[index];
+        }
+
+        const initWebSocket = () => {
+            try {
+                webSocket = new WebSocket(SERVER_WS_URL);
+                webSocket.onopen = onWebSocketOpen;
+                webSocket.onclose = onWebSocketClose;
+                webSocket.onmessage = onWebSocketMessage;
+            } catch (e) {
+                console.log("WebSocket connection error:", e);
+                webSocket = null;
+            }
+        }
+
+        const onWebSocketOpen = (e) => {
+            console.log("WebSocket connection established.");
+        }
+
+        const onWebSocketClose = (e) => {
+            console.log("WebSocket connection closed.");
+            webSocket = null;
+        }
+
+        const onWebSocketMessage = (e) => {
+            detections = JSON.parse(e.data);
+            updateBoxes();
+        }
+
+        const onWebSocketError = (e) => {
+            console.log("Websocket error:", e);
+        }
+
+        const updateBoxes = () => {
+            boxes.forEach(b => b.style.display = "none");
+            detections.forEach((d, i) => {
+                const box = getBox(i);
+                const color = COLORS[d.class % COLORS.length];
+                box.style.backgroundColor = color + "33";
+                box.style.borderColor = color;
+                const width = (d.xmax - d.xmin) * 100;
+                const height = (d.ymax - d.ymin) * 100;
+                box.style.marginLeft = `${(d.xmin * 200 - (100 - width))}vh`;
+                box.style.marginTop = `${(d.ymin * 200 - (100 - height))}vh`;
+                box.style.width = `${width}vh`;
+                box.style.height = `${height}vh`;
+                box.style.display = "block";
+                const label = box.getElementsByClassName("box-label")[0];
+                label.textContent = `${d.label}: ${~~(d.score * 100)}%`;
+                label.style.backgroundColor = color;
+            });
+        }
+
+        const snapshot = () => {
+            const canvas = document.createElement("canvas");
+            const img = document.getElementById("snapshot");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            const link = document.createElement("a");
+            link.download = `snapshot_${snapshotCounter++}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        }
+        document.getElementById("snapshot").onclick = snapshot;
+        window.onkeydown = e => e.keyCode === 32 && snapshot();
+        initWebSocket();
+    </script>
+</body>
+
+</html>

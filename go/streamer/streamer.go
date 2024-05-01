@@ -31,6 +31,13 @@ type Streamer[T any] struct {
 	stop      chan bool
 }
 
+func BufferSizeFromTotal(total int) int {
+	if total < 4 {
+		return 0
+	}
+	return total/2 - 2
+}
+
 func NewStreamer[T any](buffSize int) *Streamer[T] {
 	return &Streamer[T]{
 		clients:   make(map[*Client[T]]bool),

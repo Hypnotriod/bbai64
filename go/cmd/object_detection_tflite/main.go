@@ -4,7 +4,9 @@ import (
 	"bbai64/gstpipeline"
 	"bbai64/streamer"
 	"bbai64/titfldelegate"
+	"bbai64/vehicle"
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +17,7 @@ import (
 	"time"
 
 	"github.com/Hypnotriod/jpegenc"
+	"github.com/gorilla/websocket"
 	"github.com/mattn/go-tflite"
 )
 
@@ -37,8 +40,9 @@ const TENSOR_WIDTH = 300
 const TENSOR_HEIGHT = 300
 const CHANNELS_NUM = 3
 const TENSOR_SIZE = TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM
+const FRAME_ADJUST_SCALE = float32(TENSOR_HEIGHT) / float32(RESCALE_ANALYTICS_HEIGHT)
 const TOP_PREDICTIONS_NUM = 1
-const PREDICT_EACH_FRAME = 30
+const PREDICT_EACH_FRAME = 1
 const MIN_SCORE = 0.7
 const USE_DELEGATE = true
 const MODEL_PATH = "model/items_tflite/saved_model.tflite"
@@ -53,6 +57,18 @@ type Chunk struct {
 	Size int
 }
 
+type Detection struct {
+	Label string  `json:"label"`
+	Class int     `json:"class"`
+	Score float32 `json:"score"`
+	Xmin  float32 `json:"xmin"`
+	Ymin  float32 `json:"ymin"`
+	Xmax  float32 `json:"xmax"`
+	Ymax  float32 `json:"ymax"`
+}
+
+type Detections []Detection
+
 var interpreter *tflite.Interpreter
 var labels []string
 
@@ -61,6 +77,45 @@ var jpegParams = jpegenc.EncodeParams{
 	PixelType:     jpegenc.PixelTypeRGB888,
 	Subsample:     jpegenc.Subsample424,
 	ChromaSwap:    true,
+}
+
+var wsUpgrader = websocket.Upgrader{
+	ReadBufferSize:  2048,
+	WriteBufferSize: 2048,
+	CheckOrigin:     checkOrigin,
+}
+
+func checkOrigin(r *http.Request) bool {
+	return true
+}
+
+func serveInferenceResultWSRequest(strmr *streamer.Streamer[Detections]) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		conn, err := wsUpgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Print("Websocket upgrade error: ", err)
+			return
+		}
+		log.Print("Websocket connection established with ", r.Host)
+		defer conn.Close()
+		client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
+		defer client.Close()
+		for {
+			detections, ok := <-client.C
+			if !ok {
+				break
+			}
+			message, _ := json.Marshal(detections)
+			conn.SetWriteDeadline(time.Now().Add(CONNECTION_TIMEOUT))
+			err = conn.WriteMessage(websocket.TextMessage, message)
+			if err != nil {
+				log.Print("Websocket write error: ", err)
+				break
+			}
+		}
+		vehicle.Reset()
+		log.Print("Websocket connection terminated with ", r.Host)
+	}
 }
 
 func serveAnalyticsStreamTcpSocket(width int, height int, strmr *streamer.Streamer[PixelsRGB], address string) {
@@ -234,7 +289,7 @@ func handleAnalyticsMjpegStreamRequest(width int, height int, strmr *streamer.St
 }
 
 func makeVisualizationMjpegStreamer(inputAddr string, outputAddr string) *streamer.Streamer[Chunk] {
-	strmr := streamer.NewStreamer[Chunk](CHUNKS_BUFFER_SIZE/2 - 2)
+	strmr := streamer.NewStreamer[Chunk](streamer.BufferSizeFromTotal(CHUNKS_BUFFER_SIZE))
 	go strmr.Run()
 	go serveVisualizationMjpegStreamTcpSocket(strmr, inputAddr)
 	http.HandleFunc(outputAddr, handleVisualizationMjpegStreamRequest(strmr))
@@ -242,7 +297,7 @@ func makeVisualizationMjpegStreamer(inputAddr string, outputAddr string) *stream
 }
 
 func makeAnalyticsCameraStreamer(inputAddr string, outputAddr string) *streamer.Streamer[PixelsRGB] {
-	strmr := streamer.NewStreamer[PixelsRGB](FRAMES_BUFFER_SIZE/2 - 2)
+	strmr := streamer.NewStreamer[PixelsRGB](streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
 	go strmr.Run()
 	go serveAnalyticsStreamTcpSocket(TENSOR_WIDTH, TENSOR_HEIGHT, strmr, inputAddr)
 	http.HandleFunc(outputAddr, handleAnalyticsMjpegStreamRequest(TENSOR_WIDTH, TENSOR_HEIGHT, strmr))
@@ -281,9 +336,9 @@ func initModel() {
 	}
 }
 
-func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
+func processFrames(frameStrmr *streamer.Streamer[PixelsRGB], detStrmr *streamer.Streamer[Detections]) {
 	inputTensor := (*[TENSOR_SIZE]float32)(interpreter.GetInputTensor(0).Data())
-	client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
+	client := frameStrmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 	defer client.Close()
 	for {
 		for i := 0; i < PREDICT_EACH_FRAME-1; i++ { // skip frames
@@ -298,11 +353,11 @@ func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
 		for i, b := range *frame {
 			inputTensor[i] = (float32(b) - 127.5) / 127.5
 		}
-		predict()
+		predict(detStrmr)
 	}
 }
 
-func predict() {
+func predict(detStrmr *streamer.Streamer[Detections]) {
 	startTime := time.Now()
 	status := interpreter.Invoke()
 	if status != tflite.OK {
@@ -314,25 +369,36 @@ func predict() {
 	boxes := interpreter.GetOutputTensor(1).Float32s()
 	count := interpreter.GetOutputTensor(2).Float32s()
 	classes := interpreter.GetOutputTensor(3).Float32s()
+	detections := Detections{}
 	for n := 0; n < int(count[0]); n++ {
 		score := scores[n]
 		if score < MIN_SCORE {
 			continue
 		}
 		label := labels[int(classes[n])]
-		ymin := int(boxes[n+0] * TENSOR_HEIGHT)
-		xmin := int(boxes[n+1] * TENSOR_WIDTH)
-		ymax := int(boxes[n+2] * TENSOR_HEIGHT)
-		xmax := int(boxes[n+3] * TENSOR_WIDTH)
+		ymin := boxes[n+0]
+		xmin := boxes[n+1]
+		ymax := boxes[n+2]
+		xmax := boxes[n+3]
 		fmt.Printf("    %s score: %.2g [x: %d  y: %d w: %d h: %d]\n",
 			label,
 			score,
-			xmin,
-			ymin,
-			xmax-xmin,
-			ymax-ymin,
+			int(xmin*TENSOR_WIDTH),
+			int(ymin*TENSOR_HEIGHT),
+			int((xmax-xmin)*TENSOR_WIDTH),
+			int((ymax-ymin)*TENSOR_HEIGHT),
 		)
+		detections = append(detections, Detection{
+			Label: label,
+			Class: int(classes[n]),
+			Score: score,
+			Xmin:  FRAME_ADJUST_SCALE*(xmin-0.5) + 0.5,
+			Ymin:  FRAME_ADJUST_SCALE*(ymin-0.5) + 0.5,
+			Xmax:  FRAME_ADJUST_SCALE*(xmax-0.5) + 0.5,
+			Ymax:  FRAME_ADJUST_SCALE*(ymax-0.5) + 0.5,
+		})
 	}
+	detStrmr.Broadcast(&detections)
 }
 
 func main() {
@@ -354,8 +420,13 @@ func main() {
 		MJPEG_FRAME_BOUNDARY,
 		9991)
 
-	go processFrames(strmrAnalytics)
+	detStrmr := streamer.NewStreamer[Detections](streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
+	go detStrmr.Run()
+	defer detStrmr.Stop()
 
+	go processFrames(strmrAnalytics, detStrmr)
+
+	http.HandleFunc("/ws", serveInferenceResultWSRequest(detStrmr))
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 
 	http.ListenAndServe(SERVER_ADDRESS, nil)
