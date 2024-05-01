@@ -60,21 +60,67 @@
         <img id="stream" src="/mjpeg_stream2" />
     </div>
     <img id="snapshot" src="/mjpeg_stream1" />
+    <span id="status"></span>
 
     <script defer>
+        const SERVER_WS_URL
+            = (window.location.protocol === "https:" ? "wss:" : "ws:")
+            + `//${window.location.hostname}:${window.location.port}/ws`;
+
+        const status = document.getElementById("status");
+
         let snapshotCounter = 0;
-        document.getElementById('snapshot').onclick = function () {
-            const canvas = document.createElement('canvas');
-            const img = document.getElementById('snapshot');
+        var predictions = {}; //todo
+
+        const initWebSocket = () => {
+            try {
+                webSocket = new WebSocket(SERVER_WS_URL);
+                webSocket.onopen = onWebSocketOpen;
+                webSocket.onclose = onWebSocketClose;
+                webSocket.onmessage = onWebSocketMessage;
+            } catch (e) {
+                console.log("WebSocket connection error:", e);
+                webSocket = null;
+            }
+        }
+
+        const onWebSocketOpen = (e) => {
+            console.log("WebSocket connection established.");
+        }
+
+        const onWebSocketClose = (e) => {
+            console.log("WebSocket connection closed.");
+            webSocket = null;
+        }
+
+        const onWebSocketMessage = (e) => {
+            predictions = JSON.parse(e.data);
+            updatePredictions();
+        }
+
+        const onWebSocketError = (e) => {
+            console.log("Websocket error:", e);
+        }
+
+        const updatePredictions = () => {
+            //todo
+        }
+
+        const snapshot = () => {
+            const canvas = document.createElement("canvas");
+            const img = document.getElementById("snapshot");
             canvas.width = img.naturalWidth;
             canvas.height = img.naturalHeight;
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext("2d");
             ctx.drawImage(img, 0, 0);
-            const link = document.createElement('a');
+            const link = document.createElement("a");
             link.download = `snapshot_${snapshotCounter++}.png`;
-            link.href = canvas.toDataURL('image/png');
+            link.href = canvas.toDataURL("image/png");
             link.click();
-        };
+        }
+        document.getElementById("snapshot").onclick = snapshot;
+        window.onkeydown = e => e.keyCode === 32 && snapshot();
+        initWebSocket();
     </script>
 </body>
 

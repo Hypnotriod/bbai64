@@ -87,12 +87,11 @@
 
     <script defer>
         const COLORS = ["#aa0000", "#00aa00", "#0000aa", "#aaaa00", "#aa00aa", "#00aaaa"];
-        const boxes = [];
-
         const SERVER_WS_URL
             = (window.location.protocol === "https:" ? "wss:" : "ws:")
             + `//${window.location.hostname}:${window.location.port}/ws`;
 
+        const boxes = [];
         let snapshotCounter = 0;
         let detections = [
             {
