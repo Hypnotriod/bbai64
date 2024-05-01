@@ -6,14 +6,18 @@ import (
 	"bbai64/titfldelegate"
 	"bbai64/vehicle"
 	"bufio"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/Hypnotriod/jpegenc"
@@ -304,7 +308,7 @@ func makeAnalyticsCameraStreamer(inputAddr string, outputAddr string) *streamer.
 	return strmr
 }
 
-func initModel() {
+func initModel() *tflite.Model {
 	model := tflite.NewModelFromFile(MODEL_PATH)
 	if model == nil {
 		log.Fatal("Cannot load model")
@@ -334,6 +338,7 @@ func initModel() {
 	if status != tflite.OK {
 		log.Fatal("Tensor allocation failed")
 	}
+	return model
 }
 
 func processFrames(frameStrmr *streamer.Streamer[PixelsRGB], detStrmr *streamer.Streamer[Detections]) {
@@ -402,7 +407,10 @@ func predict(detStrmr *streamer.Streamer[Detections]) {
 }
 
 func main() {
-	initModel()
+	server := &http.Server{Addr: SERVER_ADDRESS}
+
+	model := initModel()
+	defer model.Delete()
 
 	strmrAnalytics := makeAnalyticsCameraStreamer(":9990", "/mjpeg_stream1")
 	defer strmrAnalytics.Stop()
@@ -429,5 +437,17 @@ func main() {
 	http.HandleFunc("/ws", serveInferenceResultWSRequest(detStrmr))
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 
-	http.ListenAndServe(SERVER_ADDRESS, nil)
+	go func() {
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("HTTP server error: %v", err)
+		}
+	}()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
+
+	if err := server.Shutdown(context.Background()); err != nil {
+		log.Fatalf("HTTP shutdown error: %v", err)
+	}
 }
