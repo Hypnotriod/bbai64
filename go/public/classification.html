@@ -70,7 +70,13 @@
         const status = document.getElementById("status");
 
         let snapshotCounter = 0;
-        var predictions = {}; //todo
+        var predictions = [
+            {
+                label: "label1",
+                class: 0,
+                score: 0.75,
+            }
+        ];
 
         const initWebSocket = () => {
             try {
@@ -103,7 +109,8 @@
         }
 
         const updatePredictions = () => {
-            //todo
+            status.innerHTML = predictions.reduce(
+                (acc, p) => `${p.label}: ${~~(p.score * 100)}%<br>`, "");
         }
 
         const snapshot = () => {
