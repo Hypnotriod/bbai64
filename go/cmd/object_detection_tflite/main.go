@@ -369,7 +369,8 @@ func predict(detStrmr *streamer.Streamer[Detections]) {
 		log.Println("Interpreter invoke failed")
 		return
 	}
-	log.Println("---", time.Since(startTime), "---")
+	endTime := time.Since(startTime)
+	log.Println("---", endTime, "---")
 	scores := interpreter.GetOutputTensor(0).Float32s()
 	boxes := interpreter.GetOutputTensor(1).Float32s()
 	count := interpreter.GetOutputTensor(2).Float32s()

@@ -11,6 +11,7 @@
             margin: 0;
             padding: 0;
             background-color: black;
+            overflow: hidden;
         }
 
         #stream {
@@ -38,19 +39,17 @@
             min-height: 100vh;
         }
 
-        #status {
-            overflow: hidden;
+        #labels {
             position: absolute;
-            left: 10px;
-            top: 10px;
-            text-shadow:
-                -1px 0px 0px black,
-                1px 0px 0px black,
-                0px -1px 0px black,
-                0px 1px 0px black;
+            display: none;
+            margin-top: -90vh;
+            margin-right: 0;
+            width: 100vh;
+            min-height: 20px;
+            font-size: 15px;
+            background-color: #ff000033;
             color: white;
             font-family: "Roboto", "Comic Sans", sans-serif;
-            font-size: 12px;
         }
     </style>
 </head>
@@ -58,16 +57,17 @@
 <body>
     <div id="container">
         <img id="stream" src="/mjpeg_stream2" />
+        <span id="labels"></span>
     </div>
     <img id="snapshot" src="/mjpeg_stream1" />
-    <span id="status"></span>
 
     <script defer>
+        const COLORS = ["#aa0000", "#00aa00", "#0000aa", "#aaaa00", "#aa00aa", "#00aaaa"];
         const SERVER_WS_URL
             = (window.location.protocol === "https:" ? "wss:" : "ws:")
             + `//${window.location.hostname}:${window.location.port}/ws`;
 
-        const status = document.getElementById("status");
+        const labels = document.getElementById("labels");
 
         let snapshotCounter = 0;
         var predictions = [
@@ -109,7 +109,14 @@
         }
 
         const updatePredictions = () => {
-            status.innerHTML = predictions.reduce(
+            if (!predictions.length) {
+                labels.style.display = "none";
+                return;
+            }
+            const color = COLORS[predictions[0].class % COLORS.length];
+            labels.style.backgroundColor = color;
+            labels.style.display = "block";
+            labels.innerHTML = predictions.reduce(
                 (acc, p) => `${p.label}: ${~~(p.score * 100)}%<br>`, "");
         }
 

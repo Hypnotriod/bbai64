@@ -4,8 +4,10 @@ import (
 	"bbai64/gstpipeline"
 	"bbai64/streamer"
 	"bbai64/titfldelegate"
+	"bbai64/vehicle"
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -19,6 +21,7 @@ import (
 	"time"
 
 	"github.com/Hypnotriod/jpegenc"
+	"github.com/gorilla/websocket"
 	"github.com/mattn/go-tflite"
 )
 
@@ -56,6 +59,14 @@ type Chunk struct {
 	Size int
 }
 
+type Prediction struct {
+	Label string  `json:"label"`
+	Class int     `json:"class"`
+	Score float32 `json:"score"`
+}
+
+type Predictions []Prediction
+
 var interpreter *tflite.Interpreter
 var labels []string
 
@@ -64,6 +75,45 @@ var jpegParams = jpegenc.EncodeParams{
 	PixelType:     jpegenc.PixelTypeRGB888,
 	Subsample:     jpegenc.Subsample424,
 	ChromaSwap:    true,
+}
+
+var wsUpgrader = websocket.Upgrader{
+	ReadBufferSize:  2048,
+	WriteBufferSize: 2048,
+	CheckOrigin:     checkOrigin,
+}
+
+func checkOrigin(r *http.Request) bool {
+	return true
+}
+
+func serveInferenceResultWSRequest(strmr *streamer.Streamer[Predictions]) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		conn, err := wsUpgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Print("Websocket upgrade error: ", err)
+			return
+		}
+		log.Print("Websocket connection established with ", r.Host)
+		defer conn.Close()
+		client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
+		defer client.Close()
+		for {
+			predictions, ok := <-client.C
+			if !ok {
+				break
+			}
+			message, _ := json.Marshal(predictions)
+			conn.SetWriteDeadline(time.Now().Add(CONNECTION_TIMEOUT))
+			err = conn.WriteMessage(websocket.TextMessage, message)
+			if err != nil {
+				log.Print("Websocket write error: ", err)
+				break
+			}
+		}
+		vehicle.Reset()
+		log.Print("Websocket connection terminated with ", r.Host)
+	}
 }
 
 func serveAnalyticsStreamTcpSocket(width int, height int, strmr *streamer.Streamer[PixelsRGB], address string) {
@@ -285,7 +335,7 @@ func initModel() *tflite.Model {
 	return model
 }
 
-func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
+func processFrames(strmr *streamer.Streamer[PixelsRGB], predStrmr *streamer.Streamer[Predictions]) {
 	inputTensor := (*[TENSOR_SIZE]float32)(interpreter.GetInputTensor(0).Data())
 	client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
 	defer client.Close()
@@ -302,43 +352,49 @@ func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
 		for i, b := range *frame {
 			inputTensor[i] = float32(b) / 255
 		}
-		predict()
+		predict(predStrmr)
 	}
 }
 
-func predict() {
+func predict(predStrmr *streamer.Streamer[Predictions]) {
 	startTime := time.Now()
 	status := interpreter.Invoke()
 	if status != tflite.OK {
 		log.Println("Interpreter invoke failed")
 		return
 	}
-	predictions := interpreter.GetOutputTensor(0).Float32s()
-	printTopPredictions(TOP_PREDICTIONS_NUM, predictions, time.Since(startTime))
-}
-
-func printTopPredictions(num int, predictions []float32, timeTaken time.Duration) {
-	var topPredictions []float32 = make([]float32, num)
-	var topLabels []string = make([]string, num)
+	endTime := time.Since(startTime)
+	result := interpreter.GetOutputTensor(0).Float32s()
+	var topPredictions []float32 = make([]float32, TOP_PREDICTIONS_NUM)
+	var topLabels []string = make([]string, TOP_PREDICTIONS_NUM)
+	var topClasses []int = make([]int, TOP_PREDICTIONS_NUM)
 	for i, label := range labels {
 	jloop:
 		for j := 0; j < len(topPredictions); j++ {
-			if predictions[i] < topPredictions[j] {
+			if result[i] < topPredictions[j] {
 				continue
 			}
 			for k := len(topPredictions) - 2; k >= j; k-- {
 				topPredictions[k+1] = topPredictions[k]
 				topLabels[k+1] = topLabels[k]
+				topClasses[k+1] = topClasses[k]
 			}
-			topPredictions[j] = predictions[i]
+			topPredictions[j] = result[i]
 			topLabels[j] = label
+			topClasses[j] = j
 			break jloop
 		}
 	}
+	predictions := Predictions{}
 	for i, label := range topLabels {
 		fmt.Printf("%s: %.2f%%, ", label, topPredictions[i]*100)
+		predictions = append(predictions, Prediction{
+			Label: label,
+			Class: topClasses[i],
+			Score: topPredictions[i],
+		})
 	}
-	fmt.Println(timeTaken)
+	fmt.Println(endTime)
 }
 
 func main() {
@@ -363,8 +419,13 @@ func main() {
 		MJPEG_FRAME_BOUNDARY,
 		9991)
 
-	go processFrames(strmrAnalytics)
+	predStrmr := streamer.NewStreamer[Predictions](streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
+	go predStrmr.Run()
+	defer predStrmr.Stop()
 
+	go processFrames(strmrAnalytics, predStrmr)
+
+	http.HandleFunc("/ws", serveInferenceResultWSRequest(predStrmr))
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 
 	go func() {
