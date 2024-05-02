@@ -11,6 +11,7 @@ func LauchUsbJpegCameraMjpegStream(index uint, width uint, height uint, quality 
 		"bash", "-c", GStreamerLaunch()+
 			UsbJpegCameraV4l2Source(index)+
 			UsbJpegCameraConfig(width, height)+
+			JpegDecode()+
 			JpegEncode(quality)+
 			MjpegTcpStreamLocalhost(boundary, port),
 	)

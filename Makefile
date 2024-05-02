@@ -5,6 +5,12 @@ build-mjpeg-http-stream:
 run-mjpeg-http-stream:
 	cd bin && sudo ./mjpeg-http-stream
 
+build-usb-cam-mjpeg-stream:
+	cd go/ && go build -o ../bin/usb-cam-mjpeg-stream cmd/usb_cam_mjpeg_stream/main.go && rsync -cr public/ ../bin/public/
+
+run-usb-cam-mjpeg-stream:
+	cd bin && sudo ./usb-cam-mjpeg-stream
+
 build-comb-mjpeg-http-stream:
 	cd go/ && go build -o ../bin/comb-mjpeg-http-stream cmd/comb_mjpeg_http_stream/main.go && rsync -cr public/ ../bin/public/
 

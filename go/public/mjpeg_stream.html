@@ -1,0 +1,45 @@
+<html>
+
+<head>
+    <title>Camera mjpeg stream testing</title>
+    <style>
+        body,
+        div,
+        img {
+            outline: none;
+            margin: 0;
+            padding: 0;
+            background-color: black;
+        }
+
+        img {
+            width: auto;
+            height: 100%;
+        }
+
+        #stream {
+            pointer-events: none;
+            overflow: hidden;
+            height: 100vh;
+            width: auto;
+            object-fit: cover;
+        }
+
+        #container {
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <img id="stream" src="/mjpeg_stream" />
+    </div>
+</body>
+
+</html>
