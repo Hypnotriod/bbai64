@@ -45,7 +45,7 @@ const TENSOR_HEIGHT = 224
 const CHANNELS_NUM = 3
 const TENSOR_SIZE = TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM
 const TOP_PREDICTIONS_NUM = 1
-const PREDICT_EACH_FRAME = 30
+const PREDICT_EACH_FRAME = 1
 const USE_DELEGATE = true
 const MODEL_PATH = "model/coins_tflite/saved_model.tflite"
 const LABELS_PATH = "model/coins_tflite/labels.txt"
@@ -394,6 +394,7 @@ func predict(predStrmr *streamer.Streamer[Predictions]) {
 			Score: topPredictions[i],
 		})
 	}
+	predStrmr.Broadcast(&predictions)
 	fmt.Println(endTime)
 }
 
