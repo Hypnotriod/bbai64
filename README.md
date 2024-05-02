@@ -11,8 +11,9 @@ Based on `bbai64-emmc-flasher-debian-11.8-xfce-edgeai-arm64-2023-10-07-10gb.img.
 * [PWM](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#PWM)
 * [SPI](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#SPI)
 
-# TI Edge AI
+# Docs
 [edgeai_dataflows](https://software-dl.ti.com/jacinto7/esd/processor-sdk-linux-edgeai/TDA4VM/08_06_01/exports/docs/common/edgeai_dataflows.html)
+[gstreamer plugins](https://gstreamer.freedesktop.org/documentation/plugins_doc.html?gi-language=c)
 
 # Go installation  
 [Latest Go toolchain builds](https://go.dev/dl/) 
