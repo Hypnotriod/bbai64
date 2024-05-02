@@ -64,6 +64,14 @@ func CsiCameraConfig(index uint, sensor Sensor, width uint, height uint) string 
 		width, height, subdev, sensorName, SENSORS_DSP_PATH, sensor, SENSORS_DSP_PATH, sensor, formatMsb)
 }
 
+func UsbJpegCameraV4l2Source(index uint) string {
+	return fmt.Sprintf(" v4l2src device=/dev/video%d io-mode=2", index)
+}
+
+func UsbJpegCameraConfig(width uint, height uint) string {
+	return fmt.Sprintf(" ! image/jpeg, width=%d, height=%d", width, height)
+}
+
 func GlStereoMix(leftSource string, rightSource string, leftConfig string, rightConfig string) string {
 	return fmt.Sprintf(
 		" -ev%s name=left%s name=right glstereomix name=mix left.%s ! glupload ! mix. right.%s ! glupload ! mix. mix. ! video/x-raw'(memory:GLMemory)', multiview-mode=side-by-side ! gldownload ! queue",
@@ -77,6 +85,10 @@ func VideoTestSource(width uint, height uint) string {
 
 func DecodeBin() string {
 	return " ! decodebin"
+}
+
+func JpegDecode() string {
+	return " ! jpegdec"
 }
 
 func VideoScale(width uint, height uint) string {

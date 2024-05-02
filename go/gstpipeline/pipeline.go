@@ -6,6 +6,20 @@ import (
 	"strings"
 )
 
+func LauchUsbJpegCameraMjpegStream(index uint, width uint, height uint, quality uint, boundary string, port uint) {
+	cmd := exec.Command(
+		"bash", "-c", GStreamerLaunch()+
+			UsbJpegCameraV4l2Source(index)+
+			UsbJpegCameraConfig(width, height)+
+			JpegEncode(quality)+
+			MjpegTcpStreamLocalhost(boundary, port),
+	)
+	log.Print(strings.Join(cmd.Args, " "))
+	if err := cmd.Run(); err != nil {
+		log.Fatal("Cannot start GStreamer pipeline: ", err)
+	}
+}
+
 func LauchImx219CsiCameraMjpegStream(index uint, width uint, height uint, rWidth uint, rHeight uint, quality uint, boundary string, port uint) {
 	cmdSetup := exec.Command("bash", "-c", CsiCameraSetup(IMX219, index, width, height))
 	log.Print(strings.Join(cmdSetup.Args, " "))
