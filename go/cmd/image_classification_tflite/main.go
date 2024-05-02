@@ -381,7 +381,7 @@ func predict(predStrmr *streamer.Streamer[Predictions]) {
 			}
 			topPredictions[j] = result[i]
 			topLabels[j] = label
-			topClasses[j] = j
+			topClasses[j] = i
 			break jloop
 		}
 	}
