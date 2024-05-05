@@ -68,6 +68,7 @@ export SOC=am68pa
 ```
 
 # Compile tflite model artifacts for tidl delegate on Ubuntu PC
+[TI Deep Learning Library User Guide](https://software-dl.ti.com/jacinto7/esd/processor-sdk-rtos-jacinto7/07_03_00_07/exports/docs/tidl_j7_02_00_00_07/ti_dl/docs/user_guide_html/md_tidl_osr_tflrt_tidl.html)
 ```
 make compile-image-classification TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tidl-tools/tidl_tools/
 make compile-object-detection TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tidl-tools/tidl_tools/

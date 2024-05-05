@@ -153,6 +153,7 @@ def run_model(config):
         delegate_options["tensor_bits"] = config["tensor_bits"]
     if "calibration_iterations" in config:
         delegate_options["advanced_options:calibration_iterations"] = config["calibration_iterations"]
+    delegate_options["advanced_options:calibration_frames"] = len(config["calibration_images"])
 
     if config["model_type"] == "od":
         delegate_options["object_detection:meta_layers_names_list"] = config["meta_layers_names_list"] if (
