@@ -447,10 +447,8 @@ func main() {
 
 	tensorType := interpreter.GetInputTensor(0).Type()
 	if tensorType == tflite.UInt8 {
-		log.Println("Tesnsor type is UInt8")
 		go processFramesUint8(strmrAnalytics, predStrmr)
 	} else if tensorType == tflite.Float32 {
-		log.Println("Tesnsor type is Float32")
 		go processFramesFloat32(strmrAnalytics, predStrmr)
 	} else {
 		log.Fatal("Input tensor type", tensorType, "is not supperted")
