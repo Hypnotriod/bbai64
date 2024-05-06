@@ -1,0 +1,91 @@
+person/person
+vehicle/bicycle
+vehicle/car
+vehicle/motorcycle
+vehicle/airplane
+vehicle/bus
+vehicle/train
+vehicle/truck
+vehicle/boat
+outdoor/traffic light
+outdoor/fire hydrant
+outdoor/street sign
+outdoor/stop sign
+outdoor/parking meter
+outdoor/bench
+animal/bird
+animal/cat
+animal/dog
+animal/horse
+animal/sheep
+animal/cow
+animal/elephant
+animal/bear
+animal/zebra
+animal/giraffe
+accessory/hat
+accessory/backpack
+accessory/umbrella
+accessory/shoe
+accessory/eye glasses
+accessory/handbag
+accessory/tie
+accessory/suitcase
+sports/frisbee
+sports/skis
+sports/snowboard
+sports/sports ball
+sports/kite
+sports/baseball bat
+sports/baseball glove
+sports/skateboard
+sports/surfboard
+sports/tennis racket
+kitchen/bottle
+kitchen/plate
+kitchen/wine glass
+kitchen/cup
+kitchen/fork
+kitchen/knife
+kitchen/spoon
+kitchen/bowl
+food/banana
+food/apple
+food/sandwich
+food/orange
+food/broccoli
+food/carrot
+food/hot dog
+food/pizza
+food/donut
+food/cake
+furniture/chair
+furniture/couch
+furniture/potted plant
+furniture/bed
+furniture/mirror
+furniture/dining table
+furniture/window
+furniture/desk
+furniture/toilet
+furniture/door
+electronic/tv
+electronic/laptop
+electronic/mouse
+electronic/remote
+electronic/keyboard
+electronic/cell phone
+appliance/microwave
+appliance/oven
+appliance/toaster
+appliance/sink
+appliance/refrigerator
+appliance/blender
+indoor/book
+indoor/clock
+indoor/vase
+indoor/scissors
+indoor/teddy bear
+indoor/hair drier
+indoor/toothbrush
+indoor/hair brush

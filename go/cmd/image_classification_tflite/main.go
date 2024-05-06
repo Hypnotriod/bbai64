@@ -42,14 +42,16 @@ const RESCALE_ANALYTICS_WIDTH = 426
 const RESCALE_ANALYTICS_HEIGHT = 240
 const TENSOR_WIDTH = 224
 const TENSOR_HEIGHT = 224
+const MEAN = 0
+const SCALE = 1.0 / 255.0
 const CHANNELS_NUM = 3
 const TENSOR_SIZE = TENSOR_WIDTH * TENSOR_HEIGHT * CHANNELS_NUM
-const TOP_PREDICTIONS_NUM = 1
+const TOP_PREDICTIONS_NUM = 5
 const PREDICT_EACH_FRAME = 1
 const USE_DELEGATE = true
-const MODEL_PATH = "model/coins_tflite/saved_model.tflite"
-const LABELS_PATH = "model/coins_tflite/labels.txt"
-const ARTIFACTS_PATH = "model/coins_tflite/artifacts"
+const MODEL_PATH = "model/mobileNetV1-mlperf/model/mobilenet_v1_1.0_224.tflite"
+const LABELS_PATH = "model/mobileNetV1-mlperf/labels.txt"
+const ARTIFACTS_PATH = "model/mobileNetV1-mlperf/artifacts"
 const TFL_DELEGATE_PATH = "/usr/lib/libtidl_tfl_delegate.so"
 
 type PixelsRGB []byte
@@ -96,7 +98,7 @@ func serveInferenceResultWSRequest(strmr *streamer.Streamer[Predictions]) func(w
 		}
 		log.Print("Websocket connection established with ", r.Host)
 		defer conn.Close()
-		client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
+		client := strmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
 		defer client.Close()
 		for {
 			predictions, ok := <-client.C
@@ -241,7 +243,7 @@ func handleAnalyticsMjpegStreamRequest(width int, height int, strmr *streamer.St
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		boundary := "\r\n--" + MJPEG_FRAME_BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n"
 
-		client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
+		client := strmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
 		defer client.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
@@ -295,7 +297,7 @@ func makeVisualizationMjpegStreamer(inputAddr string, outputAddr string) *stream
 }
 
 func makeAnalyticsCameraStreamer(inputAddr string, outputAddr string) *streamer.Streamer[PixelsRGB] {
-	strmr := streamer.NewStreamer[PixelsRGB](FRAMES_BUFFER_SIZE/2 - 2)
+	strmr := streamer.NewStreamer[PixelsRGB](streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
 	go strmr.Run()
 	go serveAnalyticsStreamTcpSocket(TENSOR_WIDTH, TENSOR_HEIGHT, strmr, inputAddr)
 	http.HandleFunc(outputAddr, handleAnalyticsMjpegStreamRequest(TENSOR_WIDTH, TENSOR_HEIGHT, strmr))
@@ -335,12 +337,31 @@ func initModel() *tflite.Model {
 	return model
 }
 
-func processFrames(strmr *streamer.Streamer[PixelsRGB], predStrmr *streamer.Streamer[Predictions]) {
-	inputTensor := (*[TENSOR_SIZE]float32)(interpreter.GetInputTensor(0).Data())
-	client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
+func processFramesUint8(frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *streamer.Streamer[Predictions]) {
+	inputTensor := (*[TENSOR_SIZE]byte)(interpreter.GetInputTensor(0).Data())
+	client := frameStrmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
 	defer client.Close()
 	for {
-		for i := 0; i < PREDICT_EACH_FRAME-1; i++ { // skip frames
+		for i := 0; i < PREDICT_EACH_FRAME-1; i++ {
+			if _, ok := <-client.C; !ok {
+				return
+			}
+		}
+		frame, ok := <-client.C
+		if !ok {
+			return
+		}
+		copy(inputTensor[:], *frame)
+		predict(predStrmr)
+	}
+}
+
+func processFramesFloat32(frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *streamer.Streamer[Predictions]) {
+	inputTensor := (*[TENSOR_SIZE]float32)(interpreter.GetInputTensor(0).Data())
+	client := frameStrmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
+	defer client.Close()
+	for {
+		for i := 0; i < PREDICT_EACH_FRAME-1; i++ {
 			if _, ok := <-client.C; !ok {
 				return
 			}
@@ -350,7 +371,7 @@ func processFrames(strmr *streamer.Streamer[PixelsRGB], predStrmr *streamer.Stre
 			return
 		}
 		for i, b := range *frame {
-			inputTensor[i] = float32(b) / 255
+			inputTensor[i] = (float32(b) - MEAN) * SCALE
 		}
 		predict(predStrmr)
 	}
@@ -424,7 +445,16 @@ func main() {
 	go predStrmr.Run()
 	defer predStrmr.Stop()
 
-	go processFrames(strmrAnalytics, predStrmr)
+	tensorType := interpreter.GetInputTensor(0).Type()
+	if tensorType == tflite.UInt8 {
+		log.Println("Tesnsor type is UInt8")
+		go processFramesUint8(strmrAnalytics, predStrmr)
+	} else if tensorType == tflite.Float32 {
+		log.Println("Tesnsor type is Float32")
+		go processFramesFloat32(strmrAnalytics, predStrmr)
+	} else {
+		log.Fatal("Input tensor type", tensorType, "is not supperted")
+	}
 
 	http.HandleFunc("/ws", serveInferenceResultWSRequest(predStrmr))
 	http.Handle("/", http.FileServer(http.Dir("./public")))

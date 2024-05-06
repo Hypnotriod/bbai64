@@ -35,7 +35,7 @@
             overflow: hidden;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             text-align: center;
             min-height: 100vh;
         }
@@ -43,7 +43,7 @@
         #labels {
             position: absolute;
             display: none;
-            margin-top: -90vh;
+            margin-top: 20px;
             margin-right: 0;
             width: 100vh;
             min-height: 20px;
@@ -118,7 +118,7 @@
             labels.style.backgroundColor = color;
             labels.style.display = "block";
             labels.innerHTML = predictions.reduce(
-                (acc, p) => `${p.label}: ${~~(p.score * 100)}%<br>`, "");
+                (acc, p) => acc + `${p.label}: ${~~(p.score * 100)}%<br>`, "");
         }
 
         const snapshot = () => {
