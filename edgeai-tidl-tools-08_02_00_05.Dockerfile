@@ -8,13 +8,16 @@ RUN apt-get update && apt-get install -y \
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update && apt-get install -y \
     build-essential \
-    cmake \
+    cmake \ 
     protobuf-compiler \
     libprotobuf-dev \
     wget \
     unzip \
     python3.7 \
     python3-pip \
+    graphviz \
+    libgraphviz-dev \
+    pkg-config \
     git
 RUN git clone --depth 1 --branch 08_02_00_05 https://github.com/TexasInstruments/edgeai-tidl-tools && \
     cd edgeai-tidl-tools && \

@@ -2,10 +2,10 @@
     "model_name": "object_detection",
     "model_path" : "../object_detection/saved_model_tflite/saved_model.tflite",
     "calibration_images": [
-        "../object_detection/calibration_data/0.png",
-        "../object_detection/calibration_data/1.png",
-        "../object_detection/calibration_data/2.png",
-        "../object_detection/calibration_data/3.png"
+        "../object_detection/calibration_data/0.jpg",
+        "../object_detection/calibration_data/1.jpg",
+        "../object_detection/calibration_data/2.jpg",
+        "../object_detection/calibration_data/3.jpg"
     ],
     "calibration_iterations": 15,
     "tensor_bits": 16,
