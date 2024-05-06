@@ -11,6 +11,7 @@ from PIL import Image
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", help="Config JSON path", required=True)
+parser.add_argument("-d", "--debug_level", default=0, help="Debug Level: 0 - no debug, 1 - rt debug prints, >=2 - increasing levels of debug and trace dump", required=False)
 args = parser.parse_args()
 os.environ["TIDL_RT_PERFSTATS"] = "1"
 
@@ -25,7 +26,7 @@ optional_options = {
     "platform": "J7",
     "version": " 7.2",
     "tensor_bits": 8,
-    "debug_level": 0,
+    "debug_level": args.debug_level,
     "max_num_subgraphs": 16,
     "deny_list": "",
     "accuracy_level": 1,
