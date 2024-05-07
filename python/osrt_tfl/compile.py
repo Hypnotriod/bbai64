@@ -41,7 +41,7 @@ optional_options = {
     "advanced_options:activation_clipping": 1,
     "advanced_options:weight_clipping": 1,
     "advanced_options:bias_calibration": 1,
-    "advanced_options:add_data_convert_ops":  3,
+    "advanced_options:add_data_convert_ops":  0,
     "advanced_options:channel_wise_quantization": 0,
 }
 
