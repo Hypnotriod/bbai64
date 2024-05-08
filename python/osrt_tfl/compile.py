@@ -152,6 +152,8 @@ def run_model(config):
         delegate_options["artifacts_folder"] = config["artifacts_folder"]
     if "tensor_bits" in config:
         delegate_options["tensor_bits"] = config["tensor_bits"]
+    if "deny_list" in config:
+        delegate_options["deny_list"] = config["deny_list"]
     if "calibration_iterations" in config:
         delegate_options["advanced_options:calibration_iterations"] = config["calibration_iterations"]
     delegate_options["advanced_options:calibration_frames"] = len(config["calibration_images"])
