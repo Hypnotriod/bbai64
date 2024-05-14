@@ -1,5 +1,6 @@
 {
     "disable_cuda_devices": false,
+    "tensorflow_version": 1,
     "labels_path": "labels",
     "train_path": "train_data",
     "test_path": "test_data",

@@ -172,7 +172,59 @@ def generate_pipeline_config():
             config["pipeline_config_path"]))
 
 
-def start_training():
+def start_training_tf1():
+    if os.system("{python} models/research/object_detection/model_main.py \
+        --pipeline_config_path={pipeline_config_path} \
+        --model_dir={model_dir} \
+        --alsologtostderr \
+        --num_train_steps={num_steps} \
+        --sample_1_of_n_eval_examples=1 \
+        --num_eval_steps={num_eval_steps}".format(
+        python=args.python,
+        pipeline_config_path=config["pipeline_config_path"],
+        model_dir=config["model_dir"],
+        num_steps=config["num_steps"],
+        num_eval_steps=config["num_eval_steps"],
+    )) != 0:
+        raise Exception('Model training failed...')
+
+
+def generate_evaluation_data_tf1():
+    if os.system("{python} models/research/object_detection/model_main.py \
+        --model_dir={model_dir} \
+        --pipeline_config_path={pipeline_config_path} \
+        --checkpoint_dir={checkpoint_dir}".format(
+        python=args.python,
+        model_dir=config["model_dir"],
+        pipeline_config_path=config["pipeline_config_path"],
+        checkpoint_dir=config["model_dir"],
+    )) != 0:
+        raise Exception('Generate evaluation data failed...')
+
+
+def export_saved_model_tf1():
+    print("Saving TFLite-friendly model...")
+    if os.system("{python} models/research/object_detection/export_tflite_ssd_graph.py \
+        --trained_checkpoint_dir {model_dir} \
+        --output_directory saved_model \
+        --add_postprocessing_op true \
+        --trained_checkpoint_prefix {trained_checkpoint_prefix} \
+        --pipeline_config_path {pipeline_config_path}".format(
+        python=args.python,
+        model_dir=config["model_dir"],
+        trained_checkpoint_prefix="{model_dir}/model.ckpt-{checkpoin}}".format(
+            model_dir=config["model_dir"],
+            checkpoin=config["num_steps"],
+        ),
+        pipeline_config_path=config["pipeline_config_path"],
+    )) != 0:
+        raise Exception('Export saved model failed...')
+
+    print("Converting TFLite model...")
+    # TODO
+
+
+def start_training_tf2():
     if os.system("{python} models/research/object_detection/model_main_tf2.py \
         --pipeline_config_path={pipeline_config_path} \
         --model_dir={model_dir} \
@@ -189,7 +241,7 @@ def start_training():
         raise Exception('Model training failed...')
 
 
-def generate_evaluation_data():
+def generate_evaluation_data_tf2():
     if os.system("{python} models/research/object_detection/model_main_tf2.py \
         --model_dir={model_dir} \
         --pipeline_config_path={pipeline_config_path} \
@@ -202,7 +254,7 @@ def generate_evaluation_data():
         raise Exception('Generate evaluation data failed...')
 
 
-def export_saved_model():
+def export_saved_model_tf2():
     print("Saving TFLite-friendly model...")
     if os.system("{python} models/research/object_detection/export_tflite_graph_tf2.py \
         --trained_checkpoint_dir {model_dir} \
@@ -253,8 +305,15 @@ if "prepare" not in args.skip:
     generate_pipeline_config()
 
 if "train" not in args.skip:
-    start_training()
-    generate_evaluation_data()
+    if config["tensorflow_version"] == 1:
+        start_training_tf1()
+        generate_evaluation_data_tf1()
+    else:
+        start_training_tf2()
+        generate_evaluation_data_tf2()
 
 if "export" not in args.skip:
-    export_saved_model()
+    if config["tensorflow_version"] == 1:
+        export_saved_model_tf1()
+    else:
+        export_saved_model_tf2()
