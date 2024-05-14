@@ -205,14 +205,14 @@ def generate_evaluation_data_tf1():
 def export_saved_model_tf1():
     print("Saving TFLite-friendly model...")
     if os.system("{python} models/research/object_detection/export_tflite_ssd_graph.py \
-        --trained_checkpoint_dir {model_dir} \
-        --output_directory saved_model \
-        --add_postprocessing_op true \
-        --trained_checkpoint_prefix {trained_checkpoint_prefix} \
-        --pipeline_config_path {pipeline_config_path}".format(
+        --trained_checkpoint_dir={model_dir} \
+        --output_directory=saved_model \
+        --add_postprocessing_op=true \
+        --trained_checkpoint_prefix={trained_checkpoint_prefix} \
+        --pipeline_config_path={pipeline_config_path}".format(
         python=args.python,
         model_dir=config["model_dir"],
-        trained_checkpoint_prefix="{model_dir}/model.ckpt-{checkpoin}}".format(
+        trained_checkpoint_prefix="{model_dir}/model.ckpt-{checkpoin}".format(
             model_dir=config["model_dir"],
             checkpoin=config["num_steps"],
         ),
@@ -221,7 +221,19 @@ def export_saved_model_tf1():
         raise Exception('Export saved model failed...')
 
     print("Converting TFLite model...")
-    # TODO
+    if not os.path.exists("saved_model_tflite"):
+        os.mkdir("saved_model_tflite")
+    if os.system("tflite_convert \
+        --graph_def_file=saved_model/tflite_graph.pb \
+        --output_file=saved_model_tflite/saved_model.tflite \
+        --input_shapes={input_shapes} \
+        --input_arrays=normalized_input_image_tensor \
+        --output_arrays=TFLite_Detection_PostProcess TFLite_Detection_PostProcess:1 TFLite_Detection_PostProcess:2 TFLite_Detection_PostProcess:3 \
+        --inference_input_type=FLOAT \
+        --allow_custom_ops".format(
+        input_shapes=config["input_shapes"]
+    )) != 0:
+        raise Exception('Converting TFLite model failed...')
 
 
 def start_training_tf2():

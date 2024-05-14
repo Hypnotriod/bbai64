@@ -96,18 +96,22 @@ pip install -r requirements.txt
 
 # Object detection
 [protocolbuffers_v3.20](https://github.com/protocolbuffers/protobuf/releases/tag/v3.20.3)
-* Download and extract the content of your model of choise (for ex.: [SSD MobileNet v2 320x320](http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_mobilenet_v2_320x320_coco17_tpu-8.tar.gz)) from [tf2_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md) to `python/object_detection/base_model` folder
+* Download and extract the content of your model of choise from link below and put into `python/object_detection/base_model` folder
+* * [tf1_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) 
+* * [tf2_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md) 
 * Update in `python/object_detection/base_model/pipeline.config` the `input_path: "PATH_TO_BE_CONFIGURED"` fields of `train_input_reader` and `eval_input_reader` with `"PATH_TO_BE_CONFIGURED/train"` and `"PATH_TO_BE_CONFIGURED/eval"` respectively
 ```
 cd python/object_detection
 conda create --name tensorflow_od
 conda activate tensorflow_od
 conda install python=3.7
-pip install -r requirements.txt
+pip install -r requirements_tf1.txt
+# pip install -r requirements_tf2.txt
 git clone --depth 1 https://github.com/tensorflow/models.git
 cd models/research/
 protoc object_detection/protos/*.proto --python_out=.
-cp object_detection/packages/tf2/setup.py .
+cp object_detection/packages/tf1/setup.py .
+# cp object_detection/packages/tf2/setup.py .
 python3 -m pip install .
 pip install protobuf==3.20.3
 ```
