@@ -228,7 +228,7 @@ def export_saved_model_tf1():
         --output_file=saved_model_tflite/saved_model.tflite \
         --input_shapes={input_shapes} \
         --input_arrays=normalized_input_image_tensor \
-        --output_arrays=TFLite_Detection_PostProcess TFLite_Detection_PostProcess:1 TFLite_Detection_PostProcess:2 TFLite_Detection_PostProcess:3 \
+        --output_arrays=TFLite_Detection_PostProcess,TFLite_Detection_PostProcess:1,TFLite_Detection_PostProcess:2,TFLite_Detection_PostProcess:3 \
         --inference_input_type=FLOAT \
         --allow_custom_ops".format(
         input_shapes=config["input_shapes"]
