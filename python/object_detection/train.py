@@ -205,7 +205,6 @@ def generate_evaluation_data_tf1():
 def export_saved_model_tf1():
     print("Saving TFLite-friendly model...")
     if os.system("{python} models/research/object_detection/export_tflite_ssd_graph.py \
-        --trained_checkpoint_dir={model_dir} \
         --output_directory=saved_model \
         --add_postprocessing_op=true \
         --trained_checkpoint_prefix={trained_checkpoint_prefix} \
