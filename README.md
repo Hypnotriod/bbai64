@@ -96,9 +96,9 @@ pip install -r requirements.txt
 
 # Object detection
 [protocolbuffers_v3.20](https://github.com/protocolbuffers/protobuf/releases/tag/v3.20.3)
-* Download and extract the content of your model of choise from link below and put into `python/object_detection/base_model` folder
+* Download and extract the content of your model of choise from link below and put into `python/object_detection/base_model` folder, for example: [ssd_mobilenet_v2_coco](http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v2_coco_2018_03_29.tar.gz)
 * * [tf1_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) 
-* * [tf2_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md) 
+* * [tf2_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md) !Proven not to work with TI's tfl_delegate, so tensorflow v1 should be used
 * Update in `python/object_detection/base_model/pipeline.config` the `input_path: "PATH_TO_BE_CONFIGURED"` fields of `train_input_reader` and `eval_input_reader` with `"PATH_TO_BE_CONFIGURED/train"` and `"PATH_TO_BE_CONFIGURED/eval"` respectively
 ```
 cd python/object_detection
