@@ -85,7 +85,8 @@ make compile-image-classification-docker
 [cuda-10.0 for tensorflow 1.15](https://developer.nvidia.com/cuda-10.0-download-archive)  
 [cudnn-archive](https://developer.nvidia.com/rdp/cudnn-archive)  
 
-# Image classification
+# Image classification custom model training on Ubuntu / Windows PC
+* Prepare [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) environment
 ```shell
 cd python/image_classification
 conda create --name tensorflow_ic
@@ -93,18 +94,16 @@ conda activate tensorflow_ic
 conda install python=3.7
 pip install -r requirements.txt
 ```
+* Add your `train` *(to train and validate)* and `test` *(to test the final result)* images to `train_data` and `test_data` folders respectively. Each image related to specific `class` should be in its own subfolder *named by the class name*.
 * `config.json` - training configuration file.
+  * Fill `classes` field with your class names in desired order.
+  * You may tweak the `epochs`, `validation_split`, `batch_size` e.t.c
 * `train.py` - script to train the model.
+  * At the end of successful training should generate `labels/labels.txt` and `saved_model_tflite/saved_model.tflite` files.
 
-# Labeling Tools
-[labelImg](https://github.com/HumanSignal/labelImg)
-
-# Object detection
-[protocolbuffers_v3.20](https://github.com/protocolbuffers/protobuf/releases/tag/v3.20.3)
-* Download and extract the content of your model of choise from link below and put into `python/object_detection/base_model` folder, for example: [ssd_mobilenet_v2_coco](http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v2_coco_2018_03_29.tar.gz)
-* * [tf1_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) 
-* * [tf2_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md) !Proven not to work with TI's tfl_delegate, so tensorflow v1 should be used
-* Update in `python/object_detection/base_model/pipeline.config` the `input_path: "PATH_TO_BE_CONFIGURED"` fields of `train_input_reader` and `eval_input_reader` with `"PATH_TO_BE_CONFIGURED/train"` and `"PATH_TO_BE_CONFIGURED/eval"` respectively  
+# Object detection custom model training on Ubuntu / Windows PC
+[protocolbuffers_v3.20](https://github.com/protocolbuffers/protobuf/releases/tag/v3.20.3) 
+* Prepare [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) environment
 ```shell
 cd python/object_detection
 conda create --name tensorflow_od
@@ -121,9 +120,20 @@ cp object_detection/packages/tf1/setup.py .
 python3 -m pip install .
 pip install protobuf==3.20.3
 ```
+* Prepare you images annotation with [labelImg](https://github.com/HumanSignal/labelImg) graphical image annotation tool. Should generate annotation `xml` file for each image file.
+* Add your `train` *(for training)* and `test` *(for evaluation)* images and xmls files to `train_data` and `test_data` folders respectively.   
+* Download and extract the content of your model of choise from link below and put into `python/object_detection/base_model` folder, for example: [ssd_mobilenet_v2_coco](http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v2_coco_2018_03_29.tar.gz)
+  * [tf1_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) 
+  * [tf2_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md) !Proven not to work with TI's tfl_delegate, so tensorflow v1 should be used
+* Update in `python/object_detection/base_model/pipeline.config` the `input_path: "PATH_TO_BE_CONFIGURED"` fields of `train_input_reader` and `eval_input_reader` with `"PATH_TO_BE_CONFIGURED/train"` and `"PATH_TO_BE_CONFIGURED/eval"` respectively 
 * `config.json` - training configuration file.
+  * Check the `base_config_path` and `fine_tune_checkpoint` paths to your model. 
+  * Update the `input_shapes` with the input shape of your model. Check `fixed_shape_resizer` field in `pipeline.config` 
+  * Fill `classes` field with your class names in desired order.
+  * You may tweak the `num_steps`, `batch_size` e.t.c
 * `train.py` - script to train the model.
   * `--skip` - to skip phases `prepare` `train` `export`
+  * At the end of successful training should generate `labels/labels.txt` and `saved_model_tflite/saved_model.tflite` files.
 
 # wifi vehicle hardware
 * 2 channels RC car platform with steering servo and ESC (Electronic Speed Control)
