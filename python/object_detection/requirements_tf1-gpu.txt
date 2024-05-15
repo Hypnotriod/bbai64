@@ -1,0 +1,5 @@
+tensorflow==1.15.5
+tensorflow-gpu==1.15.0
+tensorflow-object-detection-api==0.1.1
+pandas==1.3.5
+keras==2.2.5
