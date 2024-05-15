@@ -38,14 +38,14 @@ wget https://github.com/Hypnotriod/bbai64/raw/master/imaging.zip
 sudo unzip imaging.zip -d /opt/
 ```
 
-# libtensorflowlite_c 2.9.0 for linux arm64
+# libtensorflowlite_c.so 2.9.0 for linux arm64
 ```
 wget https://github.com/Hypnotriod/bbai64/raw/master/libtensorflowlite_c-2.9.0-linux-arm64.tar.gz
 sudo tar -C /usr/local -xvf libtensorflowlite_c-2.9.0-linux-arm64.tar.gz
 sudo ldconfig
 ```
 
-# libtensorflow 2.4.1 for linux arm64
+# libtensorflow.2.4.1.so for linux arm64
 ```
 wget https://github.com/kesuskim/libtensorflow-2.4.1-linux-arm64/raw/master/libtensorflow.tar.gz
 sudo tar -C /usr/local -xvf libtensorflow.tar.gz
