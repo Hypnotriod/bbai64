@@ -72,6 +72,13 @@ make compile-image-classification TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tid
 make compile-object-detection TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tidl-tools/tidl_tools/
 ```
 
+# Compile tflite model artifacts for tidl delegate using Docker container
+```
+make build-edgeai-tidl-tools-docker-container
+make compile-object-detection-docker
+make compile-image-classification-docker
+```
+
 # CUDA, cuDNN
 [tensorflow cuDNN CUDA configuration list](https://www.tensorflow.org/install/source#gpu)  
 [cuda-11.2.0 for tensorflow 2.10.1](https://developer.nvidia.com/cuda-11.2.0-download-archive)  
