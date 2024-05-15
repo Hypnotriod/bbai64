@@ -17,43 +17,43 @@ Based on `bbai64-emmc-flasher-debian-11.8-xfce-edgeai-arm64-2023-10-07-10gb.img.
 
 # Go installation  
 [Latest Go toolchain builds](https://go.dev/dl/) 
-```
+```shell
 wget https://go.dev/dl/go1.21.6.linux-arm64.tar.gz
 sudo rm -rf /usr/local/go
 sudo tar -C /usr/local -xzf go1.21.6.linux-arm64.tar.gz
 ```
 Update `~/.bashrc` with
-```
+```shell
 export PATH=$PATH:/usr/local/go/bin
 ```
 Apply changes with
-```
+```shell
 source ~/.bashrc
 ```
 
 # IMX219 Dynamic Camera Configuration files for Image Signal Processor
 Taken from [TI's PROCESSOR-SDK-J721E](https://www.ti.com/tool/PROCESSOR-SDK-J721E)  
-```
+```shell
 wget https://github.com/Hypnotriod/bbai64/raw/master/imaging.zip
 sudo unzip imaging.zip -d /opt/
 ```
 
 # libtensorflowlite_c.so 2.9.0 for linux arm64
-```
+```shell
 wget https://github.com/Hypnotriod/bbai64/raw/master/libtensorflowlite_c-2.9.0-linux-arm64.tar.gz
 sudo tar -C /usr/local -xvf libtensorflowlite_c-2.9.0-linux-arm64.tar.gz
 sudo ldconfig
 ```
 
 # libtensorflow.2.4.1.so for linux arm64
-```
+```shell
 wget https://github.com/kesuskim/libtensorflow-2.4.1-linux-arm64/raw/master/libtensorflow.tar.gz
 sudo tar -C /usr/local -xvf libtensorflow.tar.gz
 sudo ldconfig
 ```
 
 # Prepare edgeai-tidl-tools on Ubuntu PC
-```
+```shell
 sudo apt-get install libyaml-cpp-dev
 sudo apt-get install cmake
 conda create --name tensorflow_tidl
@@ -67,13 +67,13 @@ export SOC=am68pa
 # Compile tflite model artifacts for tidl delegate on Ubuntu PC
 [TI Deep Learning Library User Guide](https://software-dl.ti.com/jacinto7/esd/processor-sdk-rtos-jacinto7/07_03_00_07/exports/docs/tidl_j7_02_00_00_07/ti_dl/docs/user_guide_html/md_tidl_osr_tflrt_tidl.html)  
 [User options for TIDL Acceleration](https://github.com/TexasInstruments/edgeai-tidl-tools/blob/master/examples/osrt_python/README.md)
-```
+```shell
 make compile-image-classification TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tidl-tools/tidl_tools/
 make compile-object-detection TIDL_TOOLS_PATH=/path_to_tidl_tools/edgeai-tidl-tools/tidl_tools/
 ```
 
 # Compile tflite model artifacts for tidl delegate using Docker container
-```
+```shell
 make build-edgeai-tidl-tools-docker-container
 make compile-object-detection-docker
 make compile-image-classification-docker
@@ -86,7 +86,7 @@ make compile-image-classification-docker
 [cudnn-archive](https://developer.nvidia.com/rdp/cudnn-archive)  
 
 # Image classification
-```
+```shell
 cd python/image_classification
 conda create --name tensorflow_ic
 conda activate tensorflow_ic
@@ -104,8 +104,8 @@ pip install -r requirements.txt
 * Download and extract the content of your model of choise from link below and put into `python/object_detection/base_model` folder, for example: [ssd_mobilenet_v2_coco](http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v2_coco_2018_03_29.tar.gz)
 * * [tf1_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) 
 * * [tf2_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md) !Proven not to work with TI's tfl_delegate, so tensorflow v1 should be used
-* Update in `python/object_detection/base_model/pipeline.config` the `input_path: "PATH_TO_BE_CONFIGURED"` fields of `train_input_reader` and `eval_input_reader` with `"PATH_TO_BE_CONFIGURED/train"` and `"PATH_TO_BE_CONFIGURED/eval"` respectively
-```
+* Update in `python/object_detection/base_model/pipeline.config` the `input_path: "PATH_TO_BE_CONFIGURED"` fields of `train_input_reader` and `eval_input_reader` with `"PATH_TO_BE_CONFIGURED/train"` and `"PATH_TO_BE_CONFIGURED/eval"` respectively  
+```shell
 cd python/object_detection
 conda create --name tensorflow_od
 conda activate tensorflow_od
@@ -113,6 +113,7 @@ conda install python=3.7
 pip install -r requirements_tf1.txt
 # pip install -r requirements_tf2.txt
 git clone --depth 1 https://github.com/tensorflow/models.git
+# git clone https://github.com/tensorflow/models.git && git reset --hard a0d092533701cbbf4cde97337b1e4aac51943c4d
 cd models/research/
 protoc object_detection/protos/*.proto --python_out=.
 cp object_detection/packages/tf1/setup.py .
@@ -132,7 +133,7 @@ pip install protobuf==3.20.3
 * Gamepad for use as the car controller on the web page
 
 # Build and run go apps with make example
-```
+```shell
 make build-wifi-vehicle
 make run-wifi-vehicle
 ```
