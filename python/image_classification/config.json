@@ -6,11 +6,6 @@
     "model_path": "saved_model",
     "tflite_model_path": "saved_model_tflite",
     "labels_path": "labels",
-    "classes": [
-        "class0",
-        "class1",
-        "class2"
-    ],
     "batch_size": 32,
     "img_size": 224,
     "learning_rate": 0.001,
@@ -21,5 +16,10 @@
     "epochs": 50,
     "epochs_after_unfreeze": 0,
     "checkpoint_monitor": "val_loss",
-    "checkpoint_period": "epoch"
+    "checkpoint_period": "epoch",
+    "classes": [
+        "class0",
+        "class1",
+        "class2"
+    ]
 }
