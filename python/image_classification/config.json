@@ -15,11 +15,11 @@
     "img_size": 224,
     "learning_rate": 0.001,
     "momentum": 0.9,
-    "validation_split": 0.25,
+    "validation_split": 0.2,
     "shuffle": true,
     "seed": 1337,
     "epochs": 50,
-    "epochs_after_unfreeze": 5,
+    "epochs_after_unfreeze": 0,
     "checkpoint_monitor": "val_loss",
     "checkpoint_period": "epoch"
 }

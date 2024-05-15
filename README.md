@@ -31,14 +31,11 @@ Apply changes with
 source ~/.bashrc
 ```
 
-# imaging.zip, dri.zip
+# IMX219 Dynamic Camera Configuration files for Image Signal Processor
 Taken from [TI's PROCESSOR-SDK-J721E](https://www.ti.com/tool/PROCESSOR-SDK-J721E)  
 ```
 wget https://github.com/Hypnotriod/bbai64/raw/master/imaging.zip
 sudo unzip imaging.zip -d /opt/
-
-wget https://github.com/Hypnotriod/bbai64/raw/master/dri.zip
-sudo unzip dri.zip -d /usr/lib/
 ```
 
 # libtensorflowlite_c 2.9.0 for linux arm64

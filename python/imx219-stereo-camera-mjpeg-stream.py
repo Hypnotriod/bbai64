@@ -5,7 +5,7 @@
 # To add cameras overlays modify 'fdtoverlays' property of '/boot/firmware/extlinux/extlinux.conf' with:
 #   fdtoverlays /overlays/BBAI64-CSI0-imx219.dtbo /overlays/BBAI64-CSI1-imx219.dtbo
 # and reboot
-# Get TI Image Signal Processing GStreamer drivers:
+# Get TI's IMX219 Dynamic Camera Configuration files for Image Signal Processor:
 #   wget https://github.com/Hypnotriod/bbai64/raw/master/imaging.zip
 #   sudo unzip imaging.zip -d /opt/
 # Make this script executable with:

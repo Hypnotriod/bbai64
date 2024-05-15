@@ -2,7 +2,7 @@ package gstpipeline
 
 import "fmt"
 
-const SENSORS_DSP_PATH string = "/opt/imaging"
+const SENSORS_DCC_ISP_PATH string = "/opt/imaging"
 
 type Sensor string
 
@@ -61,7 +61,7 @@ func CsiCameraConfig(index uint, sensor Sensor, width uint, height uint) string 
 		subdev = "/dev/v4l-subdev5"
 	}
 	return fmt.Sprintf(" ! video/x-bayer, width=%d, height=%d, format=rggb ! tiovxisp sink_0::device=%s sensor-name=%s dcc-isp-file=%s/%s/dcc_viss.bin sink_0::dcc-2a-file=%s/%s/dcc_2a.bin format-msb=%d",
-		width, height, subdev, sensorName, SENSORS_DSP_PATH, sensor, SENSORS_DSP_PATH, sensor, formatMsb)
+		width, height, subdev, sensorName, SENSORS_DCC_ISP_PATH, sensor, SENSORS_DCC_ISP_PATH, sensor, formatMsb)
 }
 
 func UsbJpegCameraV4l2Source(index uint) string {
