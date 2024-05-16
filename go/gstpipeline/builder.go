@@ -65,7 +65,7 @@ func CsiCameraConfig(index uint, sensor Sensor, width uint, height uint) string 
 }
 
 func UsbJpegCameraV4l2Source(index uint) string {
-	return fmt.Sprintf(" v4l2src device=/dev/video%d", index)
+	return fmt.Sprintf(" v4l2src device=/dev/video%d io-mode=2", index)
 }
 
 func UsbJpegCameraConfig(width uint, height uint) string {

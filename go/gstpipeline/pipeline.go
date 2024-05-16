@@ -170,6 +170,7 @@ func LauchUsbJpegCameraAnalyticsRgbStream1VisualizationMjpegStream2(
 			UsbJpegCameraV4l2Source(index)+
 			UsbJpegCameraConfig(width, height)+
 			JpegDecode()+
+			TiOvxDlColorConvertNV12()+
 			TiOvxMultiscaler(r2Width, r2Height)+
 			TiOvxMultiscalerSplit2(
 				r1Width, r1Height,
