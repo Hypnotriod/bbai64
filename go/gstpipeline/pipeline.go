@@ -121,7 +121,7 @@ func LauchImx219CsiCameraAnalyticsRgbStream1VisualizationMjpegStream2(
 	index uint,
 	width uint, height uint,
 	r1Width uint, r1Height uint,
-	c1Width uint, c1Height uint,
+	boxWidth uint, boxHeight uint,
 	port1 uint,
 	r2Width uint, r2Height uint,
 	quality uint,
@@ -142,7 +142,39 @@ func LauchImx219CsiCameraAnalyticsRgbStream1VisualizationMjpegStream2(
 			TiOvxMultiscalerSplit2(
 				r1Width, r1Height,
 				TiOvxDlColorConvertRgb()+
-					VideoBox(c1Width/2, c1Width/2, c1Height/2, c1Height/2)+
+					VideoBox((r1Width-boxWidth)/2, (r1Width-boxWidth)/2, (r1Height-boxHeight)/2, (r1Height-boxHeight)/2)+
+					TcpStreamLocalhost(port1),
+				r2Width, r2Height,
+				JpegEncode(quality)+
+					MjpegTcpStreamLocalhost(boundary, port2),
+			),
+	)
+	log.Print(strings.Join(cmd.Args, " "))
+	if err := cmd.Run(); err != nil {
+		log.Fatal("Cannot start GStreamer pipeline: ", err)
+	}
+}
+
+func LauchUsbJpegCameraAnalyticsRgbStream1VisualizationMjpegStream2(
+	index uint,
+	width uint, height uint,
+	r1Width uint, r1Height uint,
+	boxWidth uint, boxHeight uint,
+	port1 uint,
+	r2Width uint, r2Height uint,
+	quality uint,
+	boundary string,
+	port2 uint) {
+	cmd := exec.Command(
+		"bash", "-c", GStreamerLaunch()+
+			UsbJpegCameraV4l2Source(index)+
+			UsbJpegCameraConfig(width, height)+
+			JpegDecode()+
+			TiOvxMultiscaler(r2Width, r2Height)+
+			TiOvxMultiscalerSplit2(
+				r1Width, r1Height,
+				TiOvxDlColorConvertRgb()+
+					VideoBox((r1Width-boxWidth)/2, (r1Width-boxWidth)/2, (r1Height-boxHeight)/2, (r1Height-boxHeight)/2)+
 					TcpStreamLocalhost(port1),
 				r2Width, r2Height,
 				JpegEncode(quality)+
