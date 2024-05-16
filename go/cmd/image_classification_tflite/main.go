@@ -142,7 +142,7 @@ func serveAnalyticsStreamTcpSocketConnection(conn net.Conn, width int, height in
 		buffer[i] = make(PixelsRGB, width*height*CHANNELS_NUM)
 	}
 
-	var buffIndex int32
+	var buffIndex int
 	for {
 		frame := buffer[buffIndex]
 		buffIndex = (buffIndex + 1) % FRAMES_BUFFER_SIZE
@@ -181,7 +181,7 @@ func serveVisualizationMjpegStreamTcpSocket(strmr *streamer.Streamer[Chunk], add
 
 func serveVisualizationMjpegStreamTcpSocketConnection(conn net.Conn, strmr *streamer.Streamer[Chunk], address string) {
 	log.Print("Accepted input stream at ", address)
-	var buffIndex int32
+	var buffIndex int
 	buffer := [MJPEG_STREAM_CHUNKS_BUFFER_LENGTH]Chunk{}
 	reader := bufio.NewReader(conn)
 	for {
@@ -339,7 +339,9 @@ func initModel() *tflite.Model {
 
 func processFramesUint8(frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *streamer.Streamer[Predictions]) {
 	inputTensor := (*[TENSOR_SIZE]byte)(interpreter.GetInputTensor(0).Data())
+	buffer := [FRAMES_BUFFER_SIZE]Predictions{}
 	client := frameStrmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
+	var buffIndex int
 	defer client.Close()
 	for {
 		for i := 0; i < PREDICT_EACH_FRAME-1; i++ {
@@ -352,13 +354,17 @@ func processFramesUint8(frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *str
 			return
 		}
 		copy(inputTensor[:], *frame)
-		predict(predStrmr)
+		predict(&buffer[buffIndex])
+		predStrmr.Broadcast(&buffer[buffIndex])
+		buffIndex = (buffIndex + 1) % FRAMES_BUFFER_SIZE
 	}
 }
 
 func processFramesFloat32(frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *streamer.Streamer[Predictions]) {
 	inputTensor := (*[TENSOR_SIZE]float32)(interpreter.GetInputTensor(0).Data())
+	buffer := [FRAMES_BUFFER_SIZE]Predictions{}
 	client := frameStrmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
+	var buffIndex int
 	defer client.Close()
 	for {
 		for i := 0; i < PREDICT_EACH_FRAME-1; i++ {
@@ -373,11 +379,12 @@ func processFramesFloat32(frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *s
 		for i, b := range *frame {
 			inputTensor[i] = (float32(b) - MEAN) * SCALE
 		}
-		predict(predStrmr)
+		predStrmr.Broadcast(&buffer[buffIndex])
+		buffIndex = (buffIndex + 1) % FRAMES_BUFFER_SIZE
 	}
 }
 
-func predict(predStrmr *streamer.Streamer[Predictions]) {
+func predict(predictions *Predictions) {
 	startTime := time.Now()
 	status := interpreter.Invoke()
 	if status != tflite.OK {
@@ -406,16 +413,15 @@ func predict(predStrmr *streamer.Streamer[Predictions]) {
 			break jloop
 		}
 	}
-	predictions := Predictions{}
+	*predictions = (*predictions)[:0]
 	for i, label := range topLabels {
 		fmt.Printf("%s: %.2f%%, ", label, topPredictions[i]*100)
-		predictions = append(predictions, Prediction{
+		*predictions = append(*predictions, Prediction{
 			Label: label,
 			Class: topClasses[i],
 			Score: topPredictions[i],
 		})
 	}
-	predStrmr.Broadcast(&predictions)
 	fmt.Println(endTime)
 }
 

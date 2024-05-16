@@ -348,7 +348,9 @@ func initModel() *tflite.Model {
 
 func processFramesUint8(frameStrmr *streamer.Streamer[PixelsRGB], detStrmr *streamer.Streamer[Detections]) {
 	inputTensor := (*[TENSOR_SIZE]byte)(interpreter.GetInputTensor(0).Data())
+	buffer := [FRAMES_BUFFER_SIZE]Detections{}
 	client := frameStrmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
+	var buffIndex int
 	defer client.Close()
 	for {
 		for i := 0; i < PREDICT_EACH_FRAME-1; i++ {
@@ -361,13 +363,17 @@ func processFramesUint8(frameStrmr *streamer.Streamer[PixelsRGB], detStrmr *stre
 			return
 		}
 		copy(inputTensor[:], *frame)
-		predict(detStrmr)
+		predict(&buffer[buffIndex])
+		detStrmr.Broadcast(&buffer[buffIndex])
+		buffIndex = (buffIndex + 1) % FRAMES_BUFFER_SIZE
 	}
 }
 
 func processFramesFloat32(frameStrmr *streamer.Streamer[PixelsRGB], detStrmr *streamer.Streamer[Detections]) {
 	inputTensor := (*[TENSOR_SIZE]float32)(interpreter.GetInputTensor(0).Data())
+	buffer := [FRAMES_BUFFER_SIZE]Detections{}
 	client := frameStrmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
+	var buffIndex int
 	defer client.Close()
 	for {
 		for i := 0; i < PREDICT_EACH_FRAME-1; i++ {
@@ -382,11 +388,13 @@ func processFramesFloat32(frameStrmr *streamer.Streamer[PixelsRGB], detStrmr *st
 		for i, b := range *frame {
 			inputTensor[i] = (float32(b) - MEAN) * SCALE
 		}
-		predict(detStrmr)
+		predict(&buffer[buffIndex])
+		detStrmr.Broadcast(&buffer[buffIndex])
+		buffIndex = (buffIndex + 1) % FRAMES_BUFFER_SIZE
 	}
 }
 
-func predict(detStrmr *streamer.Streamer[Detections]) {
+func predict(detections *Detections) {
 	startTime := time.Now()
 	status := interpreter.Invoke()
 	if status != tflite.OK {
@@ -399,17 +407,17 @@ func predict(detStrmr *streamer.Streamer[Detections]) {
 	boxes := interpreter.GetOutputTensor(BOXES_TENSOR_INDEX).Float32s()
 	count := interpreter.GetOutputTensor(COUNT_TENSOR_INDEX).Float32s()
 	classes := interpreter.GetOutputTensor(CLASSES_TENSOR_INDEX).Float32s()
-	detections := Detections{}
+	*detections = (*detections)[:0]
 	for n := 0; n < int(count[0]); n++ {
 		score := scores[n]
 		if score < MIN_SCORE {
 			continue
 		}
 		label := labels[int(classes[n])]
-		ymin := boxes[n+0]
-		xmin := boxes[n+1]
-		ymax := boxes[n+2]
-		xmax := boxes[n+3]
+		ymin := boxes[n*4+0]
+		xmin := boxes[n*4+1]
+		ymax := boxes[n*4+2]
+		xmax := boxes[n*4+3]
 		fmt.Printf("    %s score: %.2g [x: %d  y: %d w: %d h: %d]\n",
 			label,
 			score,
@@ -418,7 +426,7 @@ func predict(detStrmr *streamer.Streamer[Detections]) {
 			int((xmax-xmin)*TENSOR_WIDTH),
 			int((ymax-ymin)*TENSOR_HEIGHT),
 		)
-		detections = append(detections, Detection{
+		*detections = append(*detections, Detection{
 			Label: label,
 			Class: int(classes[n]),
 			Score: score,
@@ -428,7 +436,6 @@ func predict(detStrmr *streamer.Streamer[Detections]) {
 			Ymax:  FRAME_ADJUST_SCALE*(ymax-0.5) + 0.5,
 		})
 	}
-	detStrmr.Broadcast(&detections)
 }
 
 func main() {
