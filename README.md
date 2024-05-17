@@ -1,5 +1,6 @@
 # bbai64
-Small projects and experiments with the BeagleBone AI-64 platform (mostly written in Go).  
+Small projects and experiments with the BeagleBone AI-64 platform written in Go and Python.  
+Includes custom `Image Classification` and `Object Detection` train scripts with Tensorflow as well as scripts for further models compilation for `TI TFlite Delegate`.  
 Based on `bbai64-emmc-flasher-debian-11.8-xfce-edgeai-arm64-2023-10-07-10gb.img.xz` image from [arm64-debian-11-x-bullseye-monthly-snapshots-2023-10-07](https://forum.beagleboard.org/t/arm64-debian-11-x-bullseye-monthly-snapshots-2023-10-07/32318).  
 `setup_script.sh` from `/opt/edge_ai_apps/` must be run to install `edgeai-gst-plugins` 
 ```bash
