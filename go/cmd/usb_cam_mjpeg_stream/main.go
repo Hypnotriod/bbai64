@@ -16,6 +16,7 @@ const CHUNKS_BUFFER_SIZE = 1024
 const CHUNK_SIZE = 4096
 const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
+const CAMERA_INDEX = 0
 const CAMERA_WIDTH = 1280
 const CAMERA_HEIGHT = 720
 const JPEG_QUALITY = 50
@@ -110,7 +111,7 @@ func main() {
 	// open with mjpeg_stream.html
 	makeMjpegStreamer(":9990", "/mjpeg_stream")
 	go gstpipeline.LauchUsbJpegCameraMjpegStream(
-		2, CAMERA_WIDTH, CAMERA_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
+		CAMERA_INDEX, CAMERA_WIDTH, CAMERA_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
 
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 
