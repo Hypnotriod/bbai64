@@ -1,9 +1,10 @@
 # bbai64
 Small projects and experiments with the BeagleBone AI-64 platform (mostly written in Go).  
-Based on `bbai64-emmc-flasher-debian-11.8-xfce-edgeai-arm64-2023-10-07-10gb.img.xz` image.
-
-# Debian 11.x (Bullseye)
-[arm64-debian-11-x-bullseye-monthly-snapshots-2023-10-07](https://forum.beagleboard.org/t/arm64-debian-11-x-bullseye-monthly-snapshots-2023-10-07/32318)
+Based on `bbai64-emmc-flasher-debian-11.8-xfce-edgeai-arm64-2023-10-07-10gb.img.xz` image from [arm64-debian-11-x-bullseye-monthly-snapshots-2023-10-07](https://forum.beagleboard.org/t/arm64-debian-11-x-bullseye-monthly-snapshots-2023-10-07/32318).  
+`setup_script.sh` from `/opt/edge_ai_apps/` need to be launched in order to install `edgeai-gst-plugins` 
+```bash
+cd /opt/edge_ai_apps/ && sudo ./setup_script.sh
+```
 
 # P8 P9 headers periphery mapping
 [https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec)
