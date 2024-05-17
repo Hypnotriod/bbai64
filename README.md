@@ -1,11 +1,13 @@
 # bbai64
 Small projects and experiments with the BeagleBone AI-64 platform (mostly written in Go).  
 Based on `bbai64-emmc-flasher-debian-11.8-xfce-edgeai-arm64-2023-10-07-10gb.img.xz` image from [arm64-debian-11-x-bullseye-monthly-snapshots-2023-10-07](https://forum.beagleboard.org/t/arm64-debian-11-x-bullseye-monthly-snapshots-2023-10-07/32318).  
-`setup_script.sh` from `/opt/edge_ai_apps/` need to be launched in order to install `edgeai-gst-plugins` 
+`setup_script.sh` from `/opt/edge_ai_apps/` must be run to install `edgeai-gst-plugins` 
 ```bash
 cd /opt/edge_ai_apps/ && sudo ./setup_script.sh
 ```
-To add support of various periphery as well as CSI cameras `fdtoverlays` property of `/boot/firmware/extlinux/extlinux.conf` should be modified with `/overlay/YOUR_OVERLAY.dtbo`. For example:
+
+# Overlays
+To add support of various periphery as well as IMX219 CSI cameras `fdtoverlays` property of `/boot/firmware/extlinux/extlinux.conf` should be modified with `/overlay/THE_OVERLAY_NAME.dtbo`. For example:
 ```txt
 fdtoverlays /overlays/BONE-PWM0.dtbo /overlays/BONE-PWM1.dtbo /overlays/BONE-I2C1.dtbo /overlays/BBAI64-CSI0-imx219.dtbo /overlays/BBAI64-CSI1-imx219.dtbo
 ```
@@ -16,6 +18,7 @@ Checkout [arm64 overlays list](https://git.beagleboard.org/beagleboard/BeagleBoa
 * [I2C](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#I2C)
 * [PWM](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#PWM)
 * [SPI](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#SPI)
+* [UART](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#UART)
 
 # Docs
 [edgeai_dataflows](https://software-dl.ti.com/jacinto7/esd/processor-sdk-linux-edgeai/TDA4VM/08_06_01/exports/docs/common/edgeai_dataflows.html)  
@@ -41,6 +44,7 @@ go version
 
 # IMX219 Dynamic Camera Configuration files for Image Signal Processor
 Taken from [TI's PROCESSOR-SDK-J721E](https://www.ti.com/tool/PROCESSOR-SDK-J721E)  
+Required by `tiovxisp` **gstreamer** plugin to work with IMX219 SCI camera.
 ```shell
 wget https://github.com/Hypnotriod/bbai64/raw/master/imaging.zip
 sudo unzip imaging.zip -d /opt/
