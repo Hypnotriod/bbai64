@@ -20,6 +20,7 @@ Based on `bbai64-emmc-flasher-debian-11.8-xfce-edgeai-arm64-2023-10-07-10gb.img.
 ```shell
 wget https://go.dev/dl/go1.21.6.linux-arm64.tar.gz
 sudo rm -rf /usr/local/go
+sudo rm /usr/bin/go
 sudo tar -C /usr/local -xzf go1.21.6.linux-arm64.tar.gz
 ```
 Update `~/.bashrc` with
