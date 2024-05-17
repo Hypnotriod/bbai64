@@ -27,9 +27,10 @@ Update `~/.bashrc` with
 ```shell
 export PATH=$PATH:/usr/local/go/bin
 ```
-Apply changes with
+Apply changes and check go version
 ```shell
 source ~/.bashrc
+go version
 ```
 
 # IMX219 Dynamic Camera Configuration files for Image Signal Processor
