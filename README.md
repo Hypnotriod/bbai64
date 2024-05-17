@@ -5,6 +5,11 @@ Based on `bbai64-emmc-flasher-debian-11.8-xfce-edgeai-arm64-2023-10-07-10gb.img.
 ```bash
 cd /opt/edge_ai_apps/ && sudo ./setup_script.sh
 ```
+To add support of various periphery as well as CSI cameras `fdtoverlays` property of `/boot/firmware/extlinux/extlinux.conf` should be modified with `/overlay/YOUR_OVERLAY.dtbo`. For example:
+```txt
+fdtoverlays /overlays/BONE-PWM0.dtbo /overlays/BONE-PWM1.dtbo /overlays/BONE-I2C1.dtbo /overlays/BBAI64-CSI0-imx219.dtbo /overlays/BBAI64-CSI1-imx219.dtbo
+```
+Checkout [arm64 overlays list](https://git.beagleboard.org/beagleboard/BeagleBoard-DeviceTrees/-/tree/v5.10.x-ti-unified/src/arm64/overlays)
 
 # P8 P9 headers periphery mapping
 [https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec)
