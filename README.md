@@ -134,11 +134,12 @@ python3 -m pip install .
 pip install protobuf==3.20.3
 ```
 * Prepare you images annotation with [labelImg](https://github.com/HumanSignal/labelImg) graphical image annotation tool. Should generate annotation `xml` file for each image file.
-* Add your `train` *(for training)* and `test` *(for evaluation)* images and xmls files to `train_data` and `test_data` folders respectively.   
+* Add your `train` *(for training)* and `test` *(for evaluation)* images and xmls files to `train_data` and `test_data` folders respectively. 
 * Download and extract the content of your model of choise from link below and put into `python/object_detection/base_model` folder, for example: [ssd_mobilenet_v2_coco](http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v2_coco_2018_03_29.tar.gz)
   * [tf1_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) 
   * [tf2_detection_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md)
-* Update in `python/object_detection/base_model/pipeline.config` the `input_path: "PATH_TO_BE_CONFIGURED"` fields of `train_input_reader` and `eval_input_reader` with `"PATH_TO_BE_CONFIGURED/train"` and `"PATH_TO_BE_CONFIGURED/eval"` respectively 
+* Update in `python/object_detection/base_model/pipeline.config` the `input_path: "PATH_TO_BE_CONFIGURED"` fields of `train_input_reader` and `eval_input_reader` with `"PATH_TO_BE_CONFIGURED/train"` and `"PATH_TO_BE_CONFIGURED/eval"` respectively
+* Also delete if exists line `batch_norm_trainable: true` from `python/object_detection/base_model/pipeline.config`
 * `config.json` - training configuration file.
   * Check the `base_config_path` and `fine_tune_checkpoint` paths to your model. 
   * Update the `input_shapes` with the input shape of your model. Check `fixed_shape_resizer` field in `pipeline.config` 
