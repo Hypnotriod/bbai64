@@ -140,10 +140,7 @@ def infer_image(interpreter, image_files, config):
     return new_height, new_width
 
 
-def run_model(config):
-    print("\nRunning_Model : ", config["model_name"], "\n")
-
-    # set delegate options
+def compose_delegate_options(config):
     delegate_options = {}
     delegate_options.update(required_options)
     delegate_options.update(optional_options)
@@ -167,6 +164,15 @@ def run_model(config):
     if ("object_detection:confidence_threshold" in config and "object_detection:top_k" in config):
         delegate_options["object_detection:confidence_threshold"] = config["object_detection:confidence_threshold"]
         delegate_options["object_detection:top_k"] = config["object_detection:top_k"]
+
+    return delegate_options
+
+
+def run_model(config):
+    print("\nRunning_Model : ", config["model_name"], "\n")
+
+    # set delegate options
+    delegate_options = compose_delegate_options(config)
 
     # delete the contents of this folder
     os.makedirs(delegate_options["artifacts_folder"], exist_ok=True)
