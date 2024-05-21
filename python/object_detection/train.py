@@ -222,17 +222,23 @@ def export_saved_model_tf1():
     print("Converting TFLite model...")
     if not os.path.exists("saved_model_tflite"):
         os.mkdir("saved_model_tflite")
-    if os.system("tflite_convert \
-        --graph_def_file=saved_model/tflite_graph.pb \
-        --output_file=saved_model_tflite/saved_model.tflite \
-        --input_shapes={input_shapes} \
-        --input_arrays=normalized_input_image_tensor \
-        --output_arrays=TFLite_Detection_PostProcess,TFLite_Detection_PostProcess:1,TFLite_Detection_PostProcess:2,TFLite_Detection_PostProcess:3 \
-        --inference_input_type=FLOAT \
-        --allow_custom_ops".format(
-        input_shapes=config["input_shapes"]
-    )) != 0:
-        raise Exception('Converting TFLite model failed...')
+
+    converter = tf.lite.TFLiteConverter.from_frozen_graph(
+        "saved_model/tflite_graph.pb",
+        ["normalized_input_image_tensor"],
+        ["TFLite_Detection_PostProcess", "TFLite_Detection_PostProcess:1",
+            "TFLite_Detection_PostProcess:2", "TFLite_Detection_PostProcess:3"],
+        {"normalized_input_image_tensor": config["input_shapes"]},
+    )
+    converter.allow_custom_ops = True
+    converter.inference_type = tf.float32
+    # TODO: quantize model input
+    # converter.quantized_input_stats = {
+    #     'normalized_input_image_tensor': (128, 127)}
+    # converter.default_ranges_stats = (-128, 127) 
+    tflite_model = converter.convert()
+    with open("saved_model_tflite/saved_model.tflite", 'wb') as f:
+        f.write(tflite_model)
 
 
 def start_training_tf2():

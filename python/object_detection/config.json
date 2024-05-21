@@ -13,7 +13,7 @@
     "train_record_path": "training/train.record",
     "test_record_path": "training/test.record",
     "pipeline_config_path": "training/pipeline.config",
-    "input_shapes": "1,300,300,3",
+    "input_shapes": [1, 300, 300, 3],
     "batch_size": 16,
     "num_eval_steps": 1000,
     "num_steps": 10000,
