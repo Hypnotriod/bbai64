@@ -4,7 +4,6 @@ import (
 	"bbai64/gstpipeline"
 	"bbai64/streamer"
 	"bbai64/titfldelegate"
-	"bbai64/vehicle"
 	"bufio"
 	"context"
 	"encoding/json"
@@ -115,7 +114,6 @@ func serveInferenceResultWSRequest(strmr *streamer.Streamer[Predictions]) func(w
 				break
 			}
 		}
-		vehicle.Reset()
 		log.Print("Websocket connection terminated with ", r.Host)
 	}
 }
