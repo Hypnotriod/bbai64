@@ -125,6 +125,7 @@ func serveAnalyticsStreamTcpSocket(width int, height int, strmr *streamer.Stream
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
 	}
+	defer soc.Close()
 	for {
 		log.Print("Waiting for input stream at ", address)
 		conn, err := soc.Accept()
@@ -133,6 +134,9 @@ func serveAnalyticsStreamTcpSocket(width int, height int, strmr *streamer.Stream
 		}
 		serveAnalyticsStreamTcpSocketConnection(conn, width, height, strmr, address)
 		conn.Close()
+		if !strmr.IsRunning() {
+			break
+		}
 	}
 }
 
@@ -170,6 +174,7 @@ func serveVisualizationMjpegStreamTcpSocket(strmr *streamer.Streamer[Chunk], add
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
 	}
+	defer soc.Close()
 	for {
 		log.Print("Waiting for input stream at ", address)
 		conn, err := soc.Accept()
@@ -178,6 +183,9 @@ func serveVisualizationMjpegStreamTcpSocket(strmr *streamer.Streamer[Chunk], add
 		}
 		serveVisualizationMjpegStreamTcpSocketConnection(conn, strmr, address)
 		conn.Close()
+		if !strmr.IsRunning() {
+			break
+		}
 	}
 }
 

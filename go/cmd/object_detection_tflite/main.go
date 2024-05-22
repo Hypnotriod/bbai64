@@ -131,6 +131,7 @@ func serveInferenceResultWSRequest(strmr *streamer.Streamer[Detections]) func(w 
 
 func serveAnalyticsStreamTcpSocket(width int, height int, strmr *streamer.Streamer[PixelsRGB], address string) {
 	soc, err := net.Listen("tcp", address)
+	defer soc.Close()
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
 	}
@@ -142,6 +143,9 @@ func serveAnalyticsStreamTcpSocket(width int, height int, strmr *streamer.Stream
 		}
 		serveAnalyticsStreamTcpSocketConnection(conn, width, height, strmr, address)
 		conn.Close()
+		if !strmr.IsRunning() {
+			break
+		}
 	}
 }
 
@@ -176,6 +180,7 @@ func serveAnalyticsStreamTcpSocketConnection(conn net.Conn, width int, height in
 
 func serveVisualizationMjpegStreamTcpSocket(strmr *streamer.Streamer[Chunk], address string) {
 	soc, err := net.Listen("tcp", address)
+	defer soc.Close()
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
 	}
@@ -187,6 +192,9 @@ func serveVisualizationMjpegStreamTcpSocket(strmr *streamer.Streamer[Chunk], add
 		}
 		serveVisualizationMjpegStreamTcpSocketConnection(conn, strmr, address)
 		conn.Close()
+		if !strmr.IsRunning() {
+			break
+		}
 	}
 }
 

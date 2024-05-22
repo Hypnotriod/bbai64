@@ -59,6 +59,12 @@ func (s *Streamer[T]) NewClient(buffSize int) *Client[T] {
 	return c
 }
 
+func (s *Streamer[T]) IsRunning() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.isRunning
+}
+
 func (s *Streamer[T]) Broadcast(data *T) bool {
 	s.mu.Lock()
 	if !s.isRunning {
