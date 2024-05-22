@@ -131,10 +131,10 @@ func serveInferenceResultWSRequest(strmr *streamer.Streamer[Detections]) func(w 
 
 func serveAnalyticsStreamTcpSocket(width int, height int, strmr *streamer.Streamer[PixelsRGB], address string) {
 	soc, err := net.Listen("tcp", address)
-	defer soc.Close()
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
 	}
+	defer soc.Close()
 	for {
 		log.Print("Waiting for input stream at ", address)
 		conn, err := soc.Accept()
@@ -180,10 +180,10 @@ func serveAnalyticsStreamTcpSocketConnection(conn net.Conn, width int, height in
 
 func serveVisualizationMjpegStreamTcpSocket(strmr *streamer.Streamer[Chunk], address string) {
 	soc, err := net.Listen("tcp", address)
-	defer soc.Close()
 	if err != nil {
 		log.Fatal("Cannot open socket at ", address, " : ", err)
 	}
+	defer soc.Close()
 	for {
 		log.Print("Waiting for input stream at ", address)
 		conn, err := soc.Accept()
