@@ -381,6 +381,7 @@ func processFramesFloat32(frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *s
 		for i, b := range *frame {
 			inputTensor[i] = (float32(b) - MEAN) * SCALE
 		}
+		predict(&buffer[buffIndex])
 		predStrmr.Broadcast(&buffer[buffIndex])
 		buffIndex = (buffIndex + 1) % FRAMES_BUFFER_SIZE
 	}
@@ -414,6 +415,9 @@ func predict(predictions *Predictions) {
 			topClasses[j] = i
 			break jloop
 		}
+	}
+	if cap(*predictions) == 0 {
+		*predictions = make(Predictions, 0, TOP_PREDICTIONS_NUM)
 	}
 	*predictions = (*predictions)[:0]
 	for i, label := range topLabels {

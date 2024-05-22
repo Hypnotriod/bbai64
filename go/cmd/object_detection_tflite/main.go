@@ -409,6 +409,9 @@ func predict(detections *Detections) {
 	boxes := interpreter.GetOutputTensor(BOXES_TENSOR_INDEX).Float32s()
 	count := interpreter.GetOutputTensor(COUNT_TENSOR_INDEX).Float32s()
 	classes := interpreter.GetOutputTensor(CLASSES_TENSOR_INDEX).Float32s()
+	if cap(*detections) == 0 && int(count[0]) > 0 {
+		*detections = make(Detections, 0, int(count[0]))
+	}
 	*detections = (*detections)[:0]
 	for n := 0; n < int(count[0]); n++ {
 		score := scores[n]
