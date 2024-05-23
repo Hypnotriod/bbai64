@@ -363,7 +363,9 @@ func processFramesUint8(frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *str
 		}
 		copy(inputTensor[:], *frame)
 		predict(&buffer[buffIndex])
-		predStrmr.Broadcast(&buffer[buffIndex])
+		if !predStrmr.Broadcast(&buffer[buffIndex]) {
+			break
+		}
 		buffIndex = (buffIndex + 1) % FRAMES_BUFFER_SIZE
 	}
 }
@@ -388,7 +390,9 @@ func processFramesFloat32(frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *s
 			inputTensor[i] = (float32(b) - MEAN) * SCALE
 		}
 		predict(&buffer[buffIndex])
-		predStrmr.Broadcast(&buffer[buffIndex])
+		if !predStrmr.Broadcast(&buffer[buffIndex]) {
+			break
+		}
 		buffIndex = (buffIndex + 1) % FRAMES_BUFFER_SIZE
 	}
 }
@@ -439,15 +443,9 @@ func predict(predictions *Predictions) {
 
 func main() {
 	server := &http.Server{Addr: SERVER_ADDRESS}
-
 	model := initModel()
-	defer model.Delete()
-
-	strmrAnalytics := makeAnalyticsCameraStreamer(":9990", "/mjpeg_stream1")
-	defer strmrAnalytics.Stop()
-
-	strmrVisualization := makeVisualizationMjpegStreamer(":9991", "/mjpeg_stream2")
-	defer strmrVisualization.Stop()
+	analyticsStrmr := makeAnalyticsCameraStreamer(":9990", "/mjpeg_stream1")
+	visualizationStrmr := makeVisualizationMjpegStreamer(":9991", "/mjpeg_stream2")
 
 	if USE_IMX219_CSI_CAMERA {
 		go gstpipeline.LauchImx219CsiCameraAnalyticsRgbStream1VisualizationMjpegStream2(
@@ -465,20 +463,18 @@ func main() {
 			JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9991)
 	}
 
-	predStrmr := streamer.NewStreamer[Predictions](streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
-	go predStrmr.Run()
-	defer predStrmr.Stop()
-
+	predictionsStrmr := streamer.NewStreamer[Predictions](streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
+	go predictionsStrmr.Run()
 	tensorType := interpreter.GetInputTensor(0).Type()
 	if tensorType == tflite.UInt8 {
-		go processFramesUint8(strmrAnalytics, predStrmr)
+		go processFramesUint8(analyticsStrmr, predictionsStrmr)
 	} else if tensorType == tflite.Float32 {
-		go processFramesFloat32(strmrAnalytics, predStrmr)
+		go processFramesFloat32(analyticsStrmr, predictionsStrmr)
 	} else {
 		log.Fatal("Input tensor type", tensorType, "is not supperted")
 	}
 
-	http.HandleFunc("/ws", serveInferenceResultWSRequest(predStrmr))
+	http.HandleFunc("/ws", serveInferenceResultWSRequest(predictionsStrmr))
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 
 	go func() {
@@ -490,6 +486,11 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
+
+	predictionsStrmr.Stop()
+	visualizationStrmr.Stop()
+	analyticsStrmr.Stop()
+	model.Delete()
 
 	if err := server.Shutdown(context.Background()); err != nil {
 		log.Fatalf("HTTP shutdown error: %v", err)

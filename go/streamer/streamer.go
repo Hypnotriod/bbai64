@@ -91,7 +91,6 @@ func (s *Streamer[T]) Run() {
 				close(client.input)
 			}
 			clear(s.clients)
-			break
 		case client := <-s.add:
 			s.clients[client] = true
 		case client := <-s.remove:
