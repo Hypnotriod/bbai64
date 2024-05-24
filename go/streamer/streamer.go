@@ -83,15 +83,19 @@ func (s *Streamer[T]) Broadcast(data *T) bool {
 	return true
 }
 
-func (s *Streamer[T]) Run() {
+func (s *Streamer[T]) Run() *Streamer[T] {
 	s.mu.Lock()
 	if s.isRunning {
 		s.mu.Unlock()
-		return
+		return s
 	}
 	s.isRunning = true
 	s.mu.Unlock()
-loop:
+	go s.run()
+	return s
+}
+
+func (s *Streamer[T]) run() {
 	for {
 		select {
 		case <-s.stop:
@@ -99,7 +103,7 @@ loop:
 				close(client.input)
 			}
 			clear(s.clients)
-			break loop
+			return
 		case client := <-s.add:
 			s.clients[client] = true
 		case client := <-s.remove:

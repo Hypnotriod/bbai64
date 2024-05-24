@@ -230,16 +230,14 @@ func handleAnalyticsMjpegStreamRequest(width int, height int, strmr *streamer.St
 }
 
 func makeVisualizationMjpegStreamer(inputAddr string, outputAddr string) *streamer.Streamer[Chunk] {
-	strmr := streamer.NewStreamer[Chunk](CHUNKS_BUFFER_SIZE/2 - 2)
-	go strmr.Run()
+	strmr := streamer.NewStreamer[Chunk](CHUNKS_BUFFER_SIZE/2 - 2).Run()
 	go serveVisualizationMjpegStreamTcpSocket(strmr, inputAddr)
 	http.HandleFunc(outputAddr, handleVisualizationMjpegStreamRequest(strmr))
 	return strmr
 }
 
 func makeAnalyticsCameraStreamer(inputAddr string, outputAddr string) *streamer.Streamer[PixelsRGB] {
-	strmr := streamer.NewStreamer[PixelsRGB](FRAMES_BUFFER_SIZE/2 - 2)
-	go strmr.Run()
+	strmr := streamer.NewStreamer[PixelsRGB](FRAMES_BUFFER_SIZE/2 - 2).Run()
 	go serveAnalyticsStreamTcpSocket(TENSOR_WIDTH, TENSOR_HEIGHT, strmr, inputAddr)
 	http.HandleFunc(outputAddr, handleAnalyticsMjpegStreamRequest(TENSOR_WIDTH, TENSOR_HEIGHT, strmr))
 	return strmr

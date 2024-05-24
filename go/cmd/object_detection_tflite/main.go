@@ -306,16 +306,14 @@ func handleAnalyticsMjpegStreamRequest(width int, height int, strmr *streamer.St
 }
 
 func makeVisualizationMjpegStreamer(inputAddr string, outputAddr string) *streamer.Streamer[Chunk] {
-	strmr := streamer.NewStreamer[Chunk](streamer.BufferSizeFromTotal(CHUNKS_BUFFER_SIZE))
-	go strmr.Run()
+	strmr := streamer.NewStreamer[Chunk](streamer.BufferSizeFromTotal(CHUNKS_BUFFER_SIZE)).Run()
 	go serveVisualizationMjpegStreamTcpSocket(strmr, inputAddr)
 	http.HandleFunc(outputAddr, handleVisualizationMjpegStreamRequest(strmr))
 	return strmr
 }
 
 func makeAnalyticsCameraStreamer(inputAddr string, outputAddr string) *streamer.Streamer[PixelsRGB] {
-	strmr := streamer.NewStreamer[PixelsRGB](streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
-	go strmr.Run()
+	strmr := streamer.NewStreamer[PixelsRGB](streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE)).Run()
 	go serveAnalyticsStreamTcpSocket(TENSOR_WIDTH, TENSOR_HEIGHT, strmr, inputAddr)
 	http.HandleFunc(outputAddr, handleAnalyticsMjpegStreamRequest(TENSOR_WIDTH, TENSOR_HEIGHT, strmr))
 	return strmr
@@ -475,8 +473,7 @@ func main() {
 			JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9991)
 	}
 
-	detectionsStrmr := streamer.NewStreamer[Detections](streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
-	go detectionsStrmr.Run()
+	detectionsStrmr := streamer.NewStreamer[Detections](streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE)).Run()
 	tensorType := interpreter.GetInputTensor(0).Type()
 	if tensorType == tflite.UInt8 {
 		go processFramesUint8(analyticsStrmr, detectionsStrmr)

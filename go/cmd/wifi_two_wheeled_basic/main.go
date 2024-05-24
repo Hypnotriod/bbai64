@@ -169,8 +169,7 @@ func handleMjpegStreamHttpRequest(strmr *streamer.Streamer[Chunk]) func(w http.R
 }
 
 func makeMjpegStreamer(inputAddr string, outputAddr string) *streamer.Streamer[Chunk] {
-	strmr := streamer.NewStreamer[Chunk](MJPEG_STREAM_CHUNKS_BUFFER_LENGTH/2 - 2)
-	go strmr.Run()
+	strmr := streamer.NewStreamer[Chunk](MJPEG_STREAM_CHUNKS_BUFFER_LENGTH/2 - 2).Run()
 	go serveMjpegStreamTcpSocket(strmr, inputAddr)
 	http.HandleFunc(outputAddr, handleMjpegStreamHttpRequest(strmr))
 	return strmr
