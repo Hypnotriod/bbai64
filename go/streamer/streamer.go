@@ -84,6 +84,7 @@ func (s *Streamer[T]) Run() {
 	}
 	s.isRunning = true
 	s.mu.Unlock()
+loop:
 	for {
 		select {
 		case <-s.stop:
@@ -91,6 +92,7 @@ func (s *Streamer[T]) Run() {
 				close(client.input)
 			}
 			clear(s.clients)
+			break loop
 		case client := <-s.add:
 			s.clients[client] = true
 		case client := <-s.remove:
