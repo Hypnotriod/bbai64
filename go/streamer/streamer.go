@@ -55,7 +55,14 @@ func (s *Streamer[T]) NewClient(buffSize int) *Client[T] {
 		input:    ch,
 		C:        ch,
 	}
+	s.mu.Lock()
+	if !s.isRunning {
+		s.mu.Unlock()
+		close(ch)
+		return c
+	}
 	c.streamer.add <- c
+	s.mu.Unlock()
 	return c
 }
 
