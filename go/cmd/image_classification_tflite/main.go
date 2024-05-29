@@ -70,6 +70,10 @@ type Prediction struct {
 
 type Predictions []Prediction
 
+type InputTensor interface {
+	*[TENSOR_SIZE]byte | *[TENSOR_SIZE]float32
+}
+
 var interpreter *tflite.Interpreter
 var labels []string
 
@@ -343,8 +347,7 @@ func initModel() *tflite.Model {
 	return model
 }
 
-func processFramesUint8(frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *streamer.Streamer[Predictions]) {
-	inputTensor := (*[TENSOR_SIZE]byte)(interpreter.GetInputTensor(0).Data())
+func processFrames[T InputTensor](inputTensor T, frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *streamer.Streamer[Predictions]) {
 	buffer := [FRAMES_BUFFER_SIZE]Predictions{}
 	client := frameStrmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
 	var buffIndex int
@@ -359,33 +362,13 @@ func processFramesUint8(frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *str
 		if !ok {
 			return
 		}
-		copy(inputTensor[:], *frame)
-		predict(&buffer[buffIndex])
-		if !predStrmr.Broadcast(&buffer[buffIndex]) {
-			break
-		}
-		buffIndex = (buffIndex + 1) % FRAMES_BUFFER_SIZE
-	}
-}
-
-func processFramesFloat32(frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *streamer.Streamer[Predictions]) {
-	inputTensor := (*[TENSOR_SIZE]float32)(interpreter.GetInputTensor(0).Data())
-	buffer := [FRAMES_BUFFER_SIZE]Predictions{}
-	client := frameStrmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
-	var buffIndex int
-	defer client.Close()
-	for {
-		for i := 0; i < PREDICT_EACH_FRAME-1; i++ {
-			if _, ok := <-client.C; !ok {
-				return
+		switch t := any(inputTensor).(type) {
+		case *[TENSOR_SIZE]byte:
+			copy(t[:], *frame)
+		case *[TENSOR_SIZE]float32:
+			for i, b := range *frame {
+				t[i] = (float32(b) - MEAN) * SCALE
 			}
-		}
-		frame, ok := <-client.C
-		if !ok {
-			return
-		}
-		for i, b := range *frame {
-			inputTensor[i] = (float32(b) - MEAN) * SCALE
 		}
 		predict(&buffer[buffIndex])
 		if !predStrmr.Broadcast(&buffer[buffIndex]) {
@@ -439,6 +422,12 @@ func predict(predictions *Predictions) {
 	fmt.Println(endTime)
 }
 
+func runServer(server *http.Server) {
+	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+		log.Fatalf("HTTP server error: %v", err)
+	}
+}
+
 func main() {
 	server := &http.Server{Addr: SERVER_ADDRESS}
 	model := initModel()
@@ -464,21 +453,19 @@ func main() {
 	predictionsStrmr := streamer.NewStreamer[Predictions](streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE)).Run()
 	tensorType := interpreter.GetInputTensor(0).Type()
 	if tensorType == tflite.UInt8 {
-		go processFramesUint8(analyticsStrmr, predictionsStrmr)
+		inputTensor := (*[TENSOR_SIZE]byte)(interpreter.GetInputTensor(0).Data())
+		go processFrames(inputTensor, analyticsStrmr, predictionsStrmr)
 	} else if tensorType == tflite.Float32 {
-		go processFramesFloat32(analyticsStrmr, predictionsStrmr)
+		inputTensor := (*[TENSOR_SIZE]float32)(interpreter.GetInputTensor(0).Data())
+		go processFrames(inputTensor, analyticsStrmr, predictionsStrmr)
 	} else {
-		log.Fatal("Input tensor type", tensorType, "is not supperted")
+		log.Fatal("Input tensor type", tensorType, "is not supported")
 	}
 
 	http.HandleFunc("/ws", serveInferenceResultWSRequest(predictionsStrmr))
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 
-	go func() {
-		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("HTTP server error: %v", err)
-		}
-	}()
+	go runServer(server)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
