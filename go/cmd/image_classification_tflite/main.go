@@ -391,7 +391,7 @@ func predict(predictions *Predictions) {
 	topLabels := make([]string, TOP_PREDICTIONS_NUM)
 	topClasses := make([]int, TOP_PREDICTIONS_NUM)
 	for i, label := range labels {
-		for j := 0; j < len(topPredictions); j++ {
+		for j := range topPredictions {
 			if result[i] < topPredictions[j] {
 				continue
 			}
