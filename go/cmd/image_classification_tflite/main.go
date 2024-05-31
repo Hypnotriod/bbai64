@@ -387,24 +387,21 @@ func predict(predictions *Predictions) {
 	}
 	endTime := time.Since(startTime)
 	result := interpreter.GetOutputTensor(0).Float32s()
-	var topPredictions []float32 = make([]float32, TOP_PREDICTIONS_NUM)
-	var topLabels []string = make([]string, TOP_PREDICTIONS_NUM)
-	var topClasses []int = make([]int, TOP_PREDICTIONS_NUM)
+	topPredictions := make([]float32, TOP_PREDICTIONS_NUM)
+	topLabels := make([]string, TOP_PREDICTIONS_NUM)
+	topClasses := make([]int, TOP_PREDICTIONS_NUM)
 	for i, label := range labels {
-	jloop:
 		for j := 0; j < len(topPredictions); j++ {
 			if result[i] < topPredictions[j] {
 				continue
 			}
-			for k := len(topPredictions) - 2; k >= j; k-- {
-				topPredictions[k+1] = topPredictions[k]
-				topLabels[k+1] = topLabels[k]
-				topClasses[k+1] = topClasses[k]
-			}
+			topPredictions = append(topPredictions[:j+1], topPredictions[j:len(topPredictions)-1]...)
 			topPredictions[j] = result[i]
+			topLabels = append(topLabels[:j+1], topLabels[j:len(topLabels)-1]...)
 			topLabels[j] = label
+			topClasses = append(topClasses[:j+1], topClasses[j:len(topClasses)-1]...)
 			topClasses[j] = i
-			break jloop
+			break
 		}
 	}
 	if cap(*predictions) == 0 {
