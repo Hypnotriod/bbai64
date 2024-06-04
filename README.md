@@ -30,7 +30,7 @@ Checkout [arm64 overlays list](https://git.beagleboard.org/beagleboard/BeagleBoa
 ```shell
 wget https://go.dev/dl/go1.21.6.linux-arm64.tar.gz
 sudo rm -rf /usr/local/go
-sudo rm /usr/bin/go
+sudo rm -rf /usr/bin/go
 sudo tar -C /usr/local -xzf go1.21.6.linux-arm64.tar.gz
 ```
 Update `~/.bashrc` with
