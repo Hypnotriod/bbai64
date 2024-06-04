@@ -72,6 +72,12 @@ compile-object-detection:
 	cd python/osrt_tfl && \
 	python3 compile.py -c object_detection_config.json
 
+build-semantic-segmentation-tflite:
+	cd go/ && go build -o ../bin/semantic-segmentation-tflite cmd/semantic_segmentation_tflite/main.go && rsync -cr model/ ../bin/model/ && rsync -cr public/ ../bin/public/
+
+run-semantic-segmentation-tflite:
+	cd bin && sudo ./semantic-segmentation-tflite
+
 build-edgeai-tidl-tools-docker-container:
 	docker build -t edgeai-tidl-tools-08_02_00_05 -f edgeai-tidl-tools-08_02_00_05.Dockerfile .
 
