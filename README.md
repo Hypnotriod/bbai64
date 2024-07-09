@@ -71,6 +71,7 @@ sudo apt-get install libyaml-cpp-dev
 sudo apt-get install cmake
 conda create --name tensorflow_tidl
 conda activate tensorflow_tidl
+conda install python=3.7
 git clone --depth 1 --branch 08_02_00_05 https://github.com/TexasInstruments/edgeai-tidl-tools
 cd edgeai-tidl-tools
 export SOC=am68pa
