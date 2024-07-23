@@ -4,7 +4,6 @@ import (
 	"bbai64/gstpipeline"
 	"bbai64/streamer"
 	"bbai64/titfldelegate"
-	"bufio"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -149,11 +148,10 @@ func serveVisualizationMjpegStreamTcpSocketConnection(conn net.Conn, strmr *stre
 	log.Print("Accepted input stream at ", address)
 	var buffIndex int
 	buffer := [MJPEG_STREAM_CHUNKS_BUFFER_LENGTH]Chunk{}
-	reader := bufio.NewReader(conn)
 	for {
 		chunk := &buffer[buffIndex]
 		buffIndex = (buffIndex + 1) % MJPEG_STREAM_CHUNKS_BUFFER_LENGTH
-		size, err := reader.Read(chunk.Data[:])
+		size, err := conn.Read(chunk.Data[:])
 		if err != nil {
 			if err == io.EOF {
 				log.Print("Socket connection closed at ", address)

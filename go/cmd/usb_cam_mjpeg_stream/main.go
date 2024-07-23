@@ -3,7 +3,6 @@ package main
 import (
 	"bbai64/gstpipeline"
 	"bbai64/streamer"
-	"bufio"
 	"io"
 	"log"
 	"net"
@@ -46,11 +45,10 @@ func serveTcpSocketConnection(conn net.Conn, strmr *streamer.Streamer[Chunk], ad
 	log.Print("Accepted input stream at ", address)
 	var buffIndex int32
 	buffer := [CHUNKS_BUFFER_SIZE]Chunk{}
-	reader := bufio.NewReader(conn)
 	for {
 		chunk := &buffer[buffIndex]
 		buffIndex = (buffIndex + 1) % CHUNKS_BUFFER_SIZE
-		size, err := reader.Read(chunk.Data[:])
+		size, err := conn.Read(chunk.Data[:])
 		if err != nil {
 			if err == io.EOF {
 				log.Print("Socket connection closed at ", address)
