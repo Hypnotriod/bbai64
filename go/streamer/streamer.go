@@ -1,10 +1,14 @@
 package streamer
 
-import "sync"
+import (
+	"sync"
+	"sync/atomic"
+)
 
 type Client[T any] struct {
 	streamer *Streamer[T]
 	input    chan<- *T
+	overrun  atomic.Uintptr
 	C        <-chan *T
 }
 
@@ -19,6 +23,14 @@ func (c *Client[T]) Close() {
 			return
 		}
 	}
+}
+
+func (c *Client[T]) Overrun() uint {
+	return uint(c.overrun.Load())
+}
+
+func (c *Client[T]) ResetOverrun() {
+	c.overrun.Store(0)
 }
 
 type Streamer[T any] struct {
@@ -113,7 +125,11 @@ func (s *Streamer[T]) run() {
 			}
 		case chunk := <-s.broadcast:
 			for client := range s.clients {
-				client.input <- chunk
+				select {
+				case client.input <- chunk:
+				default:
+					client.overrun.Add(1)
+				}
 			}
 		}
 	}
