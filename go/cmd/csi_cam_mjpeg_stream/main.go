@@ -20,6 +20,7 @@ const CAMERA_HEIGHT = 1080
 const RESCALE_WIDTH = 1280
 const RESCALE_HEIGHT = 720
 const JPEG_QUALITY = 50
+const USE_STEREO_CAMERA = false
 
 type Chunk struct {
 	Data [CHUNK_SIZE]byte
@@ -106,23 +107,20 @@ func makeMjpegStreamer(inputAddr string, outputAddr string) {
 }
 
 func main() {
-	// open with stereoseparate.html
-	makeMjpegStreamer(":9990", "/mjpeg_stream1")
-	makeMjpegStreamer(":9991", "/mjpeg_stream2")
-	go gstpipeline.LauchImx219CsiCameraMjpegStream(
-		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
-	go gstpipeline.LauchImx219CsiCameraMjpegStream(
-		1, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9991)
-
-	/*
-		// For now I'm stuck with:
-		// MESA-LOADER: failed to open tidss: /lib/aarch64-linux-gnu/libc.so.6: version `GLIBC_2.32'
-		// not found (required by /usr/lib/dri/tidss_dri.so) (search paths /usr/lib/aarch64-linux-gnu/dri:\$${ORIGIN}/dri:/usr/lib/dri, suffix _dri)
-
-		makeMjpegStreamer(":9990", "/mjpeg_stereo_stream")
-		go gstpipeline.LauchImx219CsiStereoCameraMjpegStream(
-			CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
-	*/
+	if USE_STEREO_CAMERA {
+		// open with stereoseparate.html
+		makeMjpegStreamer(":9990", "/mjpeg_stream1")
+		makeMjpegStreamer(":9991", "/mjpeg_stream2")
+		go gstpipeline.LauchImx219CsiCameraMjpegStream(
+			0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
+		go gstpipeline.LauchImx219CsiCameraMjpegStream(
+			1, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9991)
+	} else {
+		// open with mjpeg_stream.html
+		makeMjpegStreamer(":9990", "/mjpeg_stream")
+		go gstpipeline.LauchImx219CsiCameraMjpegStream(
+			0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
+	}
 
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 

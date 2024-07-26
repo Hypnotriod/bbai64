@@ -1,9 +1,9 @@
 
-build-mjpeg-http-stream:
-	cd go/ && go build -o ../bin/mjpeg-http-stream cmd/mjpeg_http_stream/main.go && rsync -cr public/ ../bin/public/
+build-csi-cam-mjpeg-stream:
+	cd go/ && go build -o ../bin/csi-cam-mjpeg-stream cmd/csi_cam_mjpeg_stream/main.go && rsync -cr public/ ../bin/public/
 
-run-mjpeg-http-stream:
-	cd bin && sudo ./mjpeg-http-stream
+run-csi-cam-mjpeg-stream:
+	cd bin && sudo ./csi-cam-mjpeg-stream
 
 build-usb-cam-mjpeg-stream:
 	cd go/ && go build -o ../bin/usb-cam-mjpeg-stream cmd/usb_cam_mjpeg_stream/main.go && rsync -cr public/ ../bin/public/
