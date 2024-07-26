@@ -21,6 +21,7 @@ import (
 	"github.com/Hypnotriod/jpegenc"
 	"github.com/gorilla/websocket"
 	"github.com/mattn/go-tflite"
+	"github.com/mattn/go-tflite/delegates"
 )
 
 const SERVER_ADDRESS = ":1337"
@@ -321,7 +322,8 @@ func makeAnalyticsCameraStreamer(inputAddr string, outputAddr string) *streamer.
 	return strmr
 }
 
-func initModel() *tflite.Model {
+func initModel() (*tflite.Model, delegates.Delegater) {
+	var delegate delegates.Delegater
 	model := tflite.NewModelFromFile(MODEL_PATH)
 	if model == nil {
 		log.Fatal("Cannot load model")
@@ -338,7 +340,7 @@ func initModel() *tflite.Model {
 
 	options := tflite.NewInterpreterOptions()
 	if USE_DELEGATE {
-		delegate := titfldelegate.TiTflDelegateCreate(TFL_DELEGATE_PATH, ARTIFACTS_PATH)
+		delegate = titfldelegate.TiTflDelegateCreate(TFL_DELEGATE_PATH, ARTIFACTS_PATH)
 		options.AddDelegate(delegate)
 	}
 
@@ -351,7 +353,7 @@ func initModel() *tflite.Model {
 	if status != tflite.OK {
 		log.Fatal("Tensor allocation failed")
 	}
-	return model
+	return model, delegate
 }
 
 func processFrames[T InputTensor](inputTensor T, frameStrmr *streamer.Streamer[PixelsRGB], detStrmr *streamer.Streamer[Detections]) {
@@ -440,7 +442,7 @@ func runServer(server *http.Server) {
 
 func main() {
 	server := &http.Server{Addr: SERVER_ADDRESS}
-	model := initModel()
+	model, delegate := initModel()
 	analyticsStrmr := makeAnalyticsCameraStreamer(":9990", "/mjpeg_stream1")
 	visualizationStrmr := makeVisualizationMjpegStreamer(":9991", "/mjpeg_stream2")
 
@@ -484,6 +486,9 @@ func main() {
 	detectionsStrmr.Stop()
 	visualizationStrmr.Stop()
 	analyticsStrmr.Stop()
+	if delegate != nil {
+		delegate.Delete()
+	}
 	model.Delete()
 
 	if err := server.Shutdown(context.Background()); err != nil {
