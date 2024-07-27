@@ -1,30 +1,46 @@
 <html>
+
 <head>
-    <title>Waveshare IMX219-83 CSI Stereo Camera testing</title>
+    <title>Camera mjpeg stream stereo</title>
     <style>
-        body, div, img {
+        body,
+        div,
+        img {
             outline: none;
             margin: 0;
             padding: 0;
             background-color: black;
         }
+
         img {
             width: 50%;
             height: auto;
         }
+
+        #stream {
+            pointer-events: none;
+            overflow: hidden;
+            width: 50vw;
+            height: auto;
+            object-fit: cover;
+        }
+
         #container {
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
             text-align: center;
-            min-height: 100vh;
+            height: 100vh;
         }
     </style>
 </head>
+
 <body>
     <div id="container">
-        <img src="/mjpeg_stream1"/>
-        <img src="/mjpeg_stream2"/>
+        <img id="stream" src="/mjpeg_stream1" />
+        <img id="stream" src="/mjpeg_stream2" />
     </div>
 </body>
+
 </html>

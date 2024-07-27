@@ -108,7 +108,7 @@ func makeMjpegStreamer(inputAddr string, outputAddr string) {
 
 func main() {
 	if USE_STEREO_CAMERA {
-		// open with stereoseparate.html
+		// open with mjpeg_stream_stereo.html
 		makeMjpegStreamer(":9990", "/mjpeg_stream1")
 		makeMjpegStreamer(":9991", "/mjpeg_stream2")
 		go gstpipeline.LauchImx219CsiCameraMjpegStream(

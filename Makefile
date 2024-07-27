@@ -11,11 +11,11 @@ build-usb-cam-mjpeg-stream:
 run-usb-cam-mjpeg-stream:
 	cd bin && sudo ./usb-cam-mjpeg-stream
 
-build-comb-mjpeg-http-stream:
-	cd go/ && go build -o ../bin/comb-mjpeg-http-stream cmd/comb_mjpeg_http_stream/main.go && rsync -cr public/ ../bin/public/
+build-csi-cam-stereo-comb-mjpeg-stream:
+	cd go/ && go build -o ../bin/csi-cam-stereo-comb-mjpeg-stream cmd/csi_cam_stereo_comb_mjpeg_stream/main.go && rsync -cr public/ ../bin/public/
 
-run-comb-mjpeg-http-stream:
-	cd bin && sudo ./comb-mjpeg-http-stream
+run-csi-cam-stereo-comb-mjpeg-stream:
+	cd bin && sudo ./csi-cam-stereo-comb-mjpeg-stream
 
 build-wifi-vehicle:
 	cd go/ && go build -o ../bin/wifi-vehicle cmd/wifi_vehicle_basic/main.go && rsync -cr public/ ../bin/public/

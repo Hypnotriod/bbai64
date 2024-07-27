@@ -24,9 +24,9 @@ const RESCALE_HEIGHT = 360 //720
 type PixelsRGB16 []byte
 
 var jpegParams = jpegenc.EncodeParams{
-	QualityFactor: jpegenc.QualityFactorHigh,
+	QualityFactor: jpegenc.QualityFactorMedium,
 	PixelType:     jpegenc.PixelTypeRGB565,
-	Subsample:     jpegenc.Subsample444,
+	Subsample:     jpegenc.Subsample424,
 }
 
 func serveTcpRgb16StreamSocket(width int, height int, strmr *streamer.Streamer[PixelsRGB16], address string) {
@@ -153,7 +153,7 @@ func makeStereoCameraStreamer(inputAddrL string, inputAddrR string, outputAddr s
 }
 
 func main() {
-	// open with stereocomb.html
+	// open with mjpeg_stream_stereo_comb.html
 	makeStereoCameraStreamer(":9990", ":9991", "/mjpeg_stream")
 	// gst-launch-1.0 videotestsrc ! video/x-raw, width=640, height=480, format=NV12 ! videoconvert ! video/x-raw, format=RGB16 ! tcpclientsink host=127.0.0.1 port=9990
 	go gstpipeline.LauchImx219CsiCameraRgb16Stream(
