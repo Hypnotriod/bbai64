@@ -313,7 +313,6 @@ func initModel() (*tflite.Model, delegates.Delegater) {
 
 func processFrames[T InputTensor](inputTensor T, frameStrmr *streamer.Streamer[PixelsRGB], segmStrmr *streamer.Streamer[PixelsRGB]) {
 	client := frameStrmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
-	var buffIndex int
 	defer client.Close()
 	for {
 		for i := 0; i < PREDICT_EACH_FRAME-1; i++ {
@@ -337,7 +336,6 @@ func processFrames[T InputTensor](inputTensor T, frameStrmr *streamer.Streamer[P
 		if !segmStrmr.Broadcast(frame) {
 			break
 		}
-		buffIndex = (buffIndex + 1) % FRAMES_BUFFER_SIZE
 	}
 }
 

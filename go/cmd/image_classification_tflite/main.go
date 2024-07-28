@@ -349,6 +349,9 @@ func initModel() (*tflite.Model, delegates.Delegater) {
 
 func processFrames[T InputTensor](inputTensor T, frameStrmr *streamer.Streamer[PixelsRGB], predStrmr *streamer.Streamer[Predictions]) {
 	buffer := [FRAMES_BUFFER_SIZE]Predictions{}
+	for i := range buffer {
+		buffer[i] = make(Predictions, 0, TOP_PREDICTIONS_NUM)
+	}
 	client := frameStrmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
 	var buffIndex int
 	defer client.Close()
@@ -403,9 +406,6 @@ func predict(predictions *Predictions) {
 			topClasses[j] = i
 			break
 		}
-	}
-	if cap(*predictions) == 0 {
-		*predictions = make(Predictions, 0, TOP_PREDICTIONS_NUM)
 	}
 	*predictions = (*predictions)[:0]
 	for i, label := range topLabels {
