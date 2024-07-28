@@ -29,10 +29,6 @@ func (c *Client[T]) Overrun() uint {
 	return uint(c.overrun.Load())
 }
 
-func (c *Client[T]) ResetOverrun() {
-	c.overrun.Store(0)
-}
-
 type Streamer[T any] struct {
 	mu        sync.Mutex
 	isRunning bool
@@ -127,8 +123,13 @@ func (s *Streamer[T]) run() {
 			for client := range s.clients {
 				select {
 				case client.input <- chunk:
+					client.overrun.Store(0)
 				default:
-					client.overrun.Add(1)
+					overrun := client.overrun.Add(1)
+					if int(overrun) > cap(s.broadcast) {
+						delete(s.clients, client)
+						close(client.input)
+					}
 				}
 			}
 		}
