@@ -2,7 +2,6 @@ package main
 
 import (
 	"bbai64/gstpipeline"
-	"bbai64/streamer"
 	"io"
 	"log"
 	"net"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Hypnotriod/jpegenc"
+	"github.com/Hypnotriod/streamer"
 )
 
 const SERVER_ADDRESS = ":1337"
@@ -80,10 +80,10 @@ func handleMjpegStreamRequest(width int, height int, strmrL *streamer.Streamer[P
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		boundary := "\r\n--" + MJPEG_FRAME_BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n"
 
-		clientL := strmrL.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
-		defer clientL.Close()
-		clientR := strmrR.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
-		defer clientR.Close()
+		consumerL := strmrL.NewConsumer(FRAMES_BUFFER_SIZE/2 - 2)
+		defer consumerL.Close()
+		consumerR := strmrR.NewConsumer(FRAMES_BUFFER_SIZE/2 - 2)
+		defer consumerR.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
 
@@ -97,9 +97,9 @@ func handleMjpegStreamRequest(width int, height int, strmrL *streamer.Streamer[P
 			case <-timer.C:
 				log.Print("Lost stream for ", req.RemoteAddr)
 				return
-			case frameL, ok = <-clientL.C:
-				for ok && len(clientL.C) != 0 {
-					frameL, ok = <-clientL.C
+			case frameL, ok = <-consumerL.C:
+				for ok && len(consumerL.C) != 0 {
+					frameL, ok = <-consumerL.C
 				}
 			}
 			if !ok {
@@ -109,9 +109,9 @@ func handleMjpegStreamRequest(width int, height int, strmrL *streamer.Streamer[P
 			case <-timer.C:
 				log.Print("Lost stream for ", req.RemoteAddr)
 				return
-			case frameR, ok = <-clientR.C:
-				for ok && len(clientR.C) != 0 {
-					frameR, ok = <-clientR.C
+			case frameR, ok = <-consumerR.C:
+				for ok && len(consumerR.C) != 0 {
+					frameR, ok = <-consumerR.C
 				}
 			}
 			if !ok {

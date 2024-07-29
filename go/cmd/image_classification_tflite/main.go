@@ -2,7 +2,6 @@ package main
 
 import (
 	"bbai64/gstpipeline"
-	"bbai64/streamer"
 	"bbai64/titfldelegate"
 	"context"
 	"encoding/json"
@@ -19,6 +18,7 @@ import (
 	"time"
 
 	"github.com/Hypnotriod/jpegenc"
+	"github.com/Hypnotriod/streamer"
 	"github.com/gorilla/websocket"
 	"github.com/mattn/go-tflite"
 	"github.com/mattn/go-tflite/delegates"
@@ -103,10 +103,10 @@ func serveInferenceResultWSRequest(strmr *streamer.Streamer[Predictions]) func(w
 		}
 		log.Print("Websocket connection established with ", r.Host)
 		defer conn.Close()
-		client := strmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
-		defer client.Close()
+		consumer := strmr.NewConsumer(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
+		defer consumer.Close()
 		for {
-			predictions, ok := <-client.C
+			predictions, ok := <-consumer.C
 			if !ok {
 				break
 			}
@@ -219,8 +219,8 @@ func handleVisualizationMjpegStreamRequest(strmr *streamer.Streamer[Chunk]) func
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 
-		client := strmr.NewClient(CHUNKS_BUFFER_SIZE/2 - 2)
-		defer client.Close()
+		consumer := strmr.NewConsumer(CHUNKS_BUFFER_SIZE/2 - 2)
+		defer consumer.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
 
@@ -231,7 +231,7 @@ func handleVisualizationMjpegStreamRequest(strmr *streamer.Streamer[Chunk]) func
 			case <-timer.C:
 				log.Print("Lost stream for ", req.RemoteAddr)
 				return
-			case chunk, ok = <-client.C:
+			case chunk, ok = <-consumer.C:
 			}
 			timer.Reset(CONNECTION_TIMEOUT)
 			if !ok {
@@ -254,8 +254,8 @@ func handleAnalyticsMjpegStreamRequest(width int, height int, strmr *streamer.St
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		boundary := "\r\n--" + MJPEG_FRAME_BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n"
 
-		client := strmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
-		defer client.Close()
+		consumer := strmr.NewConsumer(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
+		defer consumer.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
 
@@ -267,9 +267,9 @@ func handleAnalyticsMjpegStreamRequest(width int, height int, strmr *streamer.St
 			case <-timer.C:
 				log.Print("Lost stream for ", req.RemoteAddr)
 				return
-			case frame, ok = <-client.C:
-				for ok && len(client.C) != 0 {
-					frame, ok = <-client.C
+			case frame, ok = <-consumer.C:
+				for ok && len(consumer.C) != 0 {
+					frame, ok = <-consumer.C
 				}
 			}
 			if !ok {
@@ -352,16 +352,16 @@ func processFrames[T InputTensor](inputTensor T, frameStrmr *streamer.Streamer[P
 	for i := range buffer {
 		buffer[i] = make(Predictions, 0, TOP_PREDICTIONS_NUM)
 	}
-	client := frameStrmr.NewClient(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
+	consumer := frameStrmr.NewConsumer(streamer.BufferSizeFromTotal(FRAMES_BUFFER_SIZE))
 	var buffIndex int
-	defer client.Close()
+	defer consumer.Close()
 	for {
 		for i := 0; i < PREDICT_EACH_FRAME-1; i++ {
-			if _, ok := <-client.C; !ok {
+			if _, ok := <-consumer.C; !ok {
 				return
 			}
 		}
-		frame, ok := <-client.C
+		frame, ok := <-consumer.C
 		if !ok {
 			return
 		}

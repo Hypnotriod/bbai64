@@ -2,12 +2,13 @@ package main
 
 import (
 	"bbai64/gstpipeline"
-	"bbai64/streamer"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/Hypnotriod/streamer"
 )
 
 const SERVER_ADDRESS = ":1337"
@@ -69,8 +70,8 @@ func handleMjpegStreamRequest(strmr *streamer.Streamer[Chunk]) func(w http.Respo
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 
-		client := strmr.NewClient(CHUNKS_BUFFER_SIZE/2 - 2)
-		defer client.Close()
+		consumer := strmr.NewConsumer(CHUNKS_BUFFER_SIZE/2 - 2)
+		defer consumer.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
 
@@ -81,7 +82,7 @@ func handleMjpegStreamRequest(strmr *streamer.Streamer[Chunk]) func(w http.Respo
 			case <-timer.C:
 				log.Print("Lost stream for ", req.RemoteAddr)
 				return
-			case chunk, ok = <-client.C:
+			case chunk, ok = <-consumer.C:
 			}
 			timer.Reset(CONNECTION_TIMEOUT)
 			if !ok {

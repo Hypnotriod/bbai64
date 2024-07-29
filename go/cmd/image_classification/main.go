@@ -2,7 +2,6 @@ package main
 
 import (
 	"bbai64/gstpipeline"
-	"bbai64/streamer"
 	"fmt"
 	"io"
 	"log"
@@ -14,6 +13,7 @@ import (
 	"unsafe"
 
 	"github.com/Hypnotriod/jpegenc"
+	"github.com/Hypnotriod/streamer"
 	tf "github.com/galeone/tensorflow/tensorflow/go"
 	tg "github.com/galeone/tfgo"
 )
@@ -147,8 +147,8 @@ func handleVisualizationMjpegStreamRequest(strmr *streamer.Streamer[Chunk]) func
 		log.Print("HTTP Connection established with ", req.RemoteAddr)
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 
-		client := strmr.NewClient(CHUNKS_BUFFER_SIZE/2 - 2)
-		defer client.Close()
+		consumer := strmr.NewConsumer(CHUNKS_BUFFER_SIZE/2 - 2)
+		defer consumer.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
 
@@ -159,7 +159,7 @@ func handleVisualizationMjpegStreamRequest(strmr *streamer.Streamer[Chunk]) func
 			case <-timer.C:
 				log.Print("Lost stream for ", req.RemoteAddr)
 				return
-			case chunk, ok = <-client.C:
+			case chunk, ok = <-consumer.C:
 			}
 			timer.Reset(CONNECTION_TIMEOUT)
 			if !ok {
@@ -182,8 +182,8 @@ func handleAnalyticsMjpegStreamRequest(width int, height int, strmr *streamer.St
 		rw.Header().Add("Content-Type", "multipart/x-mixed-replace; boundary=--"+MJPEG_FRAME_BOUNDARY)
 		boundary := "\r\n--" + MJPEG_FRAME_BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n"
 
-		client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
-		defer client.Close()
+		consumer := strmr.NewConsumer(FRAMES_BUFFER_SIZE/2 - 2)
+		defer consumer.Close()
 		timer := time.NewTimer(CONNECTION_TIMEOUT)
 		defer timer.Stop()
 
@@ -195,9 +195,9 @@ func handleAnalyticsMjpegStreamRequest(width int, height int, strmr *streamer.St
 			case <-timer.C:
 				log.Print("Lost stream for ", req.RemoteAddr)
 				return
-			case frame, ok = <-client.C:
-				for ok && len(client.C) != 0 {
-					frame, ok = <-client.C
+			case frame, ok = <-consumer.C:
+				for ok && len(consumer.C) != 0 {
+					frame, ok = <-consumer.C
 				}
 			}
 			if !ok {
@@ -303,15 +303,15 @@ func feedFrame(frame []byte) {
 }
 
 func processFrames(strmr *streamer.Streamer[PixelsRGB]) {
-	client := strmr.NewClient(FRAMES_BUFFER_SIZE/2 - 2)
-	defer client.Close()
+	consumer := strmr.NewConsumer(FRAMES_BUFFER_SIZE/2 - 2)
+	defer consumer.Close()
 	for {
 		for i := 0; i < PREDICT_EACH_FRAME-1; i++ { // skip frames
-			if _, ok := <-client.C; !ok {
+			if _, ok := <-consumer.C; !ok {
 				return
 			}
 		}
-		frame, ok := <-client.C
+		frame, ok := <-consumer.C
 		if !ok {
 			return
 		}
