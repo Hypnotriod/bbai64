@@ -31,7 +31,7 @@ type i2cRdWrIoctlData struct {
 	nmsgs uint32
 }
 
-func Open(busNumber BusNumber) (c *Bus, err error) {
+func Open(busNumber BusNumber) (*Bus, error) {
 	path := fmt.Sprintf(DevicePath, busNumber)
 	f, err := os.OpenFile(path, syscall.O_RDWR, 0666)
 	if err != nil {
