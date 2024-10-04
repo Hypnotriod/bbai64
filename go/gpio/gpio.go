@@ -11,7 +11,6 @@ import (
 type Alias string
 
 const (
-	P8_02 Alias = "P8_02"
 	P8_03 Alias = "P8_03"
 	P8_04 Alias = "P8_04"
 	P8_05 Alias = "P8_05"
