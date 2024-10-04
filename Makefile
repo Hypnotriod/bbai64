@@ -1,4 +1,10 @@
 
+build-gpio-blink:
+	cd go/ && go build -o ../bin/gpio-blink cmd/gpio_blink/main.go
+
+run-gpio-blink:
+	cd bin && sudo ./gpio-blink
+
 build-csi-cam-mjpeg-stream:
 	cd go/ && go build -o ../bin/csi-cam-mjpeg-stream cmd/csi_cam_mjpeg_stream/main.go && rsync -cr public/ ../bin/public/
 
