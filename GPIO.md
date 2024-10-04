@@ -1,4 +1,6 @@
-# Create GPIO overlay `/opt/source/dtb-5.10-ti/src/arm64/overlays/BBAI64-GPIO.dts` file with code below:
+# Create GPIO overlay example
+
+* Create `/opt/source/dtb-5.10-ti/src/arm64/overlays/BBAI64-GPIO.dts` file with code below:
 ```txt
 /dts-v1/;
 /plugin/;
@@ -25,18 +27,18 @@
 };
 ```
 
-# Compile BBAI64-GPIO.dtbo:
+* Compile BBAI64-GPIO.dtbo:
 ```bash
 cd /opt/source/dtb-5.10-ti/
 sudo make
 ```
 
-# Copy `BBAI64-GPIO.dtbo` overlay to `/boot/firmware/overlays/` folder
+* Copy `BBAI64-GPIO.dtbo` file to `/boot/firmware/overlays/` folder
 ```bash
 sudo cp /opt/source/dtb-5.10-ti/src/arm64/overlays/BBAI64-GPIO.dtbo /boot/firmware/overlays/
 ```
 
-# Add `BBAI64-GPIO.dtbo` to `fdtoverlays` in `/boot/firmware/extlinux/extlinux.conf` file and reboot
+* Add `BBAI64-GPIO.dtbo` to `fdtoverlays` in `/boot/firmware/extlinux/extlinux.conf` file and reboot
 ```txt
     fdtoverlays /overlays/BBAI64-GPIO.dtbo
 ```
