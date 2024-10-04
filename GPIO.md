@@ -1,4 +1,4 @@
-# Create GPIO overlay example
+# GPIO overlay example
 
 * Create `/opt/source/dtb-5.10-ti/src/arm64/overlays/BBAI64-GPIO.dts` file with code below:
 ```txt
