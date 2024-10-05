@@ -103,23 +103,23 @@ const (
 	OUT Direction = "out"
 )
 
-type Gpio struct {
+type Pin struct {
 	alias     Alias
 	number    Number
 	direction string
 	value     string
 }
 
-func (g *Gpio) Number() Number {
-	return g.number
+func (p *Pin) Number() Number {
+	return p.number
 }
 
-func (g *Gpio) Alias() Alias {
-	return g.alias
+func (p *Pin) Alias() Alias {
+	return p.alias
 }
 
-func (g *Gpio) Value() (Value, error) {
-	data, err := os.ReadFile(g.value)
+func (p *Pin) Value() (Value, error) {
+	data, err := os.ReadFile(p.value)
 	if err != nil {
 		return LOW, err
 	}
@@ -130,29 +130,29 @@ func (g *Gpio) Value() (Value, error) {
 	return Value(value), nil
 }
 
-func (g *Gpio) SetValue(value Value) error {
+func (p *Pin) SetValue(value Value) error {
 	data := fmt.Sprintf("%d", value)
-	return os.WriteFile(g.value, []byte(data), 0666)
+	return os.WriteFile(p.value, []byte(data), 0666)
 }
 
-func (g *Gpio) Direction() (Direction, error) {
-	data, err := os.ReadFile(g.direction)
+func (p *Pin) Direction() (Direction, error) {
+	data, err := os.ReadFile(p.direction)
 	if err != nil {
 		return IN, err
 	}
 	return Direction(data), nil
 }
 
-func (g *Gpio) SetDirection(direction Direction) error {
-	return os.WriteFile(g.direction, []byte(direction), 0666)
+func (p *Pin) SetDirection(direction Direction) error {
+	return os.WriteFile(p.direction, []byte(direction), 0666)
 }
 
-func (g *Gpio) Unexport() error {
-	value := fmt.Sprintf("%d", g.number)
+func (p *Pin) Unexport() error {
+	value := fmt.Sprintf("%d", p.number)
 	return os.WriteFile("/sys/class/gpio/unexport", []byte(value), 0666)
 }
 
-func Export(alias Alias) (*Gpio, error) {
+func Export(alias Alias) (*Pin, error) {
 	number, err := GrepNumber(alias)
 	if err != nil {
 		return nil, err
@@ -161,7 +161,7 @@ func Export(alias Alias) (*Gpio, error) {
 	if err := os.WriteFile("/sys/class/gpio/export", []byte(value), 0666); err != nil {
 		return nil, err
 	}
-	return &Gpio{
+	return &Pin{
 		number:    Number(number),
 		alias:     alias,
 		value:     fmt.Sprintf("/sys/class/gpio/gpio%d/value", number),
