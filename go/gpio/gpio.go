@@ -12,14 +12,14 @@ type Alias string
 
 const (
 	P8_03 Alias = "P8_03"
-	P8_04 Alias = "P8_04"
+	P8_04 Alias = "P8_04 (BOOTMODE2)"
 	P8_05 Alias = "P8_05"
 	P8_06 Alias = "P8_06"
 	P8_07 Alias = "P8_07"
 	P8_08 Alias = "P8_08"
 	P8_09 Alias = "P8_09"
 	P8_10 Alias = "P8_10"
-	P8_11 Alias = "P8_11"
+	P8_11 Alias = "P8_11 (BOOTMODE7)"
 	P8_12 Alias = "P8_12"
 	P8_13 Alias = "P8_13"
 	P8_14 Alias = "P8_14"
@@ -39,43 +39,43 @@ const (
 	P8_28 Alias = "P8_28"
 	P8_29 Alias = "P8_29"
 	P8_30 Alias = "P8_30"
-	P8_31 Alias = "P8_31"
-	P8_32 Alias = "P8_32"
-	P8_33 Alias = "P8_33"
+	P8_31 Alias = "P8_31A"
+	P8_32 Alias = "P8_32A"
+	P8_33 Alias = "P8_33A"
 	P8_34 Alias = "P8_34"
-	P8_35 Alias = "P8_35"
+	P8_35 Alias = "P8_35A"
 	P8_36 Alias = "P8_36"
-	P8_37 Alias = "P8_37"
-	P8_38 Alias = "P8_38"
+	P8_37 Alias = "P8_37A"
+	P8_38 Alias = "P8_38A"
 	P8_39 Alias = "P8_39"
 	P8_40 Alias = "P8_40"
 	P8_41 Alias = "P8_41"
-	P8_42 Alias = "P8_42"
+	P8_42 Alias = "P8_42 (BOOTMODE6)"
 	P8_43 Alias = "P8_43"
 	P8_44 Alias = "P8_44"
 	P8_45 Alias = "P8_45"
-	P8_46 Alias = "P8_46"
+	P8_46 Alias = "P8_46 (BOOTMODE3)"
 	P9_11 Alias = "P9_11"
 	P9_12 Alias = "P9_12"
 	P9_13 Alias = "P9_13"
 	P9_14 Alias = "P9_14"
 	P9_15 Alias = "P9_15"
 	P9_16 Alias = "P9_16"
-	P9_17 Alias = "P9_17"
-	P9_18 Alias = "P9_18"
-	P9_19 Alias = "P9_19"
-	P9_20 Alias = "P9_20"
-	P9_21 Alias = "P9_21"
-	P9_22 Alias = "P9_22"
+	P9_17 Alias = "P9_17A"
+	P9_18 Alias = "P9_18A"
+	P9_19 Alias = "P9_19A"
+	P9_20 Alias = "P9_20A"
+	P9_21 Alias = "P9_21A"
+	P9_22 Alias = "P9_22A (BOOTMODE1)"
 	P9_23 Alias = "P9_23"
-	P9_24 Alias = "P9_24"
-	P9_25 Alias = "P9_25"
-	P9_26 Alias = "P9_26"
-	P9_27 Alias = "P9_27"
-	P9_28 Alias = "P9_28"
-	P9_29 Alias = "P9_29"
-	P9_30 Alias = "P9_30"
-	P9_31 Alias = "P9_31"
+	P9_24 Alias = "P9_24A"
+	P9_25 Alias = "P9_25A"
+	P9_26 Alias = "P9_26A"
+	P9_27 Alias = "P9_27A"
+	P9_28 Alias = "P9_28A"
+	P9_29 Alias = "P9_29A"
+	P9_30 Alias = "P9_30A"
+	P9_31 Alias = "P9_31A"
 	P9_33 Alias = "P9_33"
 	P9_35 Alias = "P9_35"
 	P9_36 Alias = "P9_36"
@@ -84,7 +84,7 @@ const (
 	P9_39 Alias = "P9_39"
 	P9_40 Alias = "P9_40"
 	P9_41 Alias = "P9_41"
-	P9_42 Alias = "P9_42"
+	P9_42 Alias = "P9_42A"
 )
 
 type Number int
@@ -94,6 +94,15 @@ type Value int
 const (
 	LOW  Value = 0
 	HIGH Value = 1
+)
+
+type Edge string
+
+const (
+	NONE    Edge = "none"
+	RISING  Edge = "rising"
+	FALLING Edge = "falling"
+	BOTH    Edge = "both"
 )
 
 type Direction string
@@ -107,7 +116,12 @@ type Pin struct {
 	alias     Alias
 	number    Number
 	direction string
-	value     string
+	edge      string
+	f         *os.File
+}
+
+func (p Pin) String() string {
+	return fmt.Sprintf("%d \"%s\"", p.number, p.alias)
 }
 
 func (p *Pin) Number() Number {
@@ -119,7 +133,9 @@ func (p *Pin) Alias() Alias {
 }
 
 func (p *Pin) Value() (Value, error) {
-	data, err := os.ReadFile(p.value)
+	data := make([]byte, 1)
+	p.f.Seek(0, 0)
+	_, err := p.f.Read(data)
 	if err != nil {
 		return LOW, err
 	}
@@ -132,7 +148,8 @@ func (p *Pin) Value() (Value, error) {
 
 func (p *Pin) SetValue(value Value) error {
 	data := fmt.Sprintf("%d", value)
-	return os.WriteFile(p.value, []byte(data), 0666)
+	_, err := p.f.Write([]byte(data))
+	return err
 }
 
 func (p *Pin) Direction() (Direction, error) {
@@ -145,6 +162,18 @@ func (p *Pin) Direction() (Direction, error) {
 
 func (p *Pin) SetDirection(direction Direction) error {
 	return os.WriteFile(p.direction, []byte(direction), 0666)
+}
+
+func (p *Pin) Edge() (Edge, error) {
+	data, err := os.ReadFile(p.edge)
+	if err != nil {
+		return NONE, err
+	}
+	return Edge(data), nil
+}
+
+func (p *Pin) SetEdge(edge Edge) error {
+	return os.WriteFile(p.edge, []byte(edge), 0666)
 }
 
 func (p *Pin) Unexport() error {
@@ -161,18 +190,23 @@ func Export(alias Alias) (*Pin, error) {
 	if err := os.WriteFile("/sys/class/gpio/export", []byte(value), 0666); err != nil {
 		return nil, err
 	}
+	file, err := os.OpenFile(fmt.Sprintf("/sys/class/gpio/gpio%d/value", number), os.O_RDWR, 0666)
+	if err != nil {
+		return nil, err
+	}
 	return &Pin{
 		number:    Number(number),
 		alias:     alias,
-		value:     fmt.Sprintf("/sys/class/gpio/gpio%d/value", number),
+		f:         file,
 		direction: fmt.Sprintf("/sys/class/gpio/gpio%d/direction", number),
+		edge:      fmt.Sprintf("/sys/class/gpio/gpio%d/edge", number),
 	}, nil
 }
 
 func GrepNumber(alias Alias) (int, error) {
 	cmd := exec.Command(
 		"bash", "-c",
-		fmt.Sprintf("expr $(ls -l /sys/class/gpio/gpiochip* | grep $(gpiodetect | grep $(gpiofind %s | grep -o -E \"gpiochip[0-9]+\") | grep -o -E \"[0-9]+\\.gpio\") | grep -o -E \"[0-9]+$\") + $(gpiofind %s | grep -o -E \"[0-9]+$\")", alias, alias))
+		fmt.Sprintf("expr $(ls -l /sys/class/gpio/gpiochip* | grep $(gpiodetect | grep $(gpiofind \"%s\" | grep -o -E \"gpiochip[0-9]+\") | grep -o -E \"[0-9]+\\.gpio\") | grep -o -E \"[0-9]+$\") + $(gpiofind \"%s\" | grep -o -E \"[0-9]+$\")", alias, alias))
 	stdout, err := cmd.Output()
 	if err != nil {
 		return 0, err
