@@ -138,6 +138,7 @@ type Pin struct {
 	number    Number
 	direction string
 	edge      string
+	buff      []byte
 	f         *os.File
 }
 
@@ -154,61 +155,76 @@ func (p *Pin) Alias() Alias {
 }
 
 func (p *Pin) Poll() (Value, error) {
-	if _, err := p.Value(); err != nil {
-		return LOW, err
+	p.f.Seek(0, 0)
+	if _, err := p.f.Read(p.buff); err != nil {
+		return LOW, fmt.Errorf("unable to read gpio value of %s: %w", p, err)
 	}
 	C.GpioPoll(C.int(p.f.Fd()))
 	return p.Value()
 }
 
 func (p *Pin) Value() (Value, error) {
-	data := make([]byte, 1)
 	p.f.Seek(0, 0)
-	_, err := p.f.Read(data)
+	_, err := p.f.Read(p.buff)
 	if err != nil {
-		return LOW, err
+		return LOW, fmt.Errorf("unable to read gpio value of %s: %w", p, err)
 	}
-	value, err := strconv.Atoi(string(data))
+	value, err := strconv.Atoi(string(p.buff))
 	if err != nil {
-		return LOW, err
+		return LOW, fmt.Errorf("unable to convert gpio value of %s: %w", p, err)
 	}
 	return Value(value), nil
 }
 
 func (p *Pin) SetValue(value Value) error {
-	data := fmt.Sprintf("%d", value)
-	_, err := p.f.Write([]byte(data))
-	return err
+	p.buff[0] = byte(value) + '0'
+	_, err := p.f.Write([]byte(p.buff))
+	if err != nil {
+		return fmt.Errorf("unable to set gpio value for %s: %w", p, err)
+	}
+	return nil
 }
 
 func (p *Pin) Direction() (Direction, error) {
 	data, err := os.ReadFile(p.direction)
 	if err != nil {
-		return IN, err
+		return IN, fmt.Errorf("unable to read gpio direction of %s: %w", p, err)
 	}
 	return Direction(data), nil
 }
 
 func (p *Pin) SetDirection(direction Direction) error {
-	return os.WriteFile(p.direction, []byte(direction), 0666)
+	err := os.WriteFile(p.direction, []byte(direction), 0666)
+	if err != nil {
+		return fmt.Errorf("unable to set gpio direction for %s: %w", p, err)
+	}
+	return nil
 }
 
 func (p *Pin) Edge() (Edge, error) {
 	data, err := os.ReadFile(p.edge)
 	if err != nil {
-		return NONE, err
+		return NONE, fmt.Errorf("unable to read gpio edge of %s: %w", p, err)
 	}
 	return Edge(data), nil
 }
 
 func (p *Pin) SetEdge(edge Edge) error {
-	return os.WriteFile(p.edge, []byte(edge), 0666)
+	err := os.WriteFile(p.edge, []byte(edge), 0666)
+	if err != nil {
+		return fmt.Errorf("unable to set gpio edge for %s: %w", p, err)
+	}
+	return nil
 }
 
 func (p *Pin) Unexport() error {
 	p.f.Close()
 	value := fmt.Sprintf("%d", p.number)
-	return os.WriteFile("/sys/class/gpio/unexport", []byte(value), 0666)
+	err := os.WriteFile("/sys/class/gpio/unexport", []byte(value), 0666)
+	if err != nil {
+		return fmt.Errorf("unable to unexport gpio %s: %w", p, err)
+	}
+	return nil
 }
 
 func Export(alias Alias) (*Pin, error) {
@@ -218,16 +234,17 @@ func Export(alias Alias) (*Pin, error) {
 	}
 	value := fmt.Sprintf("%d", number)
 	if err := os.WriteFile("/sys/class/gpio/export", []byte(value), 0666); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to export gpio %s: %w", alias, err)
 	}
 	file, err := os.OpenFile(fmt.Sprintf("/sys/class/gpio/gpio%d/value", number), os.O_RDWR, 0666)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to open gpio %s: %w", alias, err)
 	}
 	return &Pin{
 		number:    Number(number),
 		alias:     alias,
 		f:         file,
+		buff:      make([]byte, 1),
 		direction: fmt.Sprintf("/sys/class/gpio/gpio%d/direction", number),
 		edge:      fmt.Sprintf("/sys/class/gpio/gpio%d/edge", number),
 	}, nil
@@ -239,13 +256,13 @@ func GrepNumber(alias Alias) (int, error) {
 		fmt.Sprintf("expr $(ls -l /sys/class/gpio/gpiochip* | grep $(gpiodetect | grep $(gpiofind \"%s\" | grep -o -E \"gpiochip[0-9]+\") | grep -o -E \"[0-9]+\\.gpio\") | grep -o -E \"[0-9]+$\") + $(gpiofind \"%s\" | grep -o -E \"[0-9]+$\")", alias, alias))
 	stdout, err := cmd.Output()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("unable to grep gpio number for %s: %w", alias, err)
 	}
 	number, err := strconv.Atoi(
 		strings.Trim(string(stdout), "\n\r"),
 	)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("unable to convert gpio number for %s: %w", alias, err)
 	}
 	return number, nil
 }

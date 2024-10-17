@@ -12,7 +12,7 @@ import (
 func main() {
 	led, err := gpio.Export(gpio.P8_03)
 	if err != nil {
-		fmt.Println("Can not export P8_03: ", err)
+		fmt.Println(err)
 		return
 	}
 	defer led.Unexport()
@@ -21,7 +21,7 @@ func main() {
 
 	button, err := gpio.Export(gpio.P8_04)
 	if err != nil {
-		fmt.Println("Can not export P8_04: ", err)
+		fmt.Println(err)
 		return
 	}
 	defer button.Unexport()
@@ -35,7 +35,6 @@ func main() {
 
 	go func() {
 		button.Poll()
-		fmt.Println("Button was pressed.")
 		buttonChan <- struct{}{}
 	}()
 
@@ -49,8 +48,10 @@ stop_blinking:
 		ledStateIndx = (ledStateIndx + 1) % len(ledStates)
 		select {
 		case <-buttonChan:
+			fmt.Println("Button was pressed.")
 			break stop_blinking
 		case <-terminateChan:
+			fmt.Println("Program was terminated.")
 			break stop_blinking
 		case <-time.After(time.Second):
 		}
