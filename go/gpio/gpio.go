@@ -253,7 +253,7 @@ func Export(alias Alias) (*Pin, error) {
 func GrepNumber(alias Alias) (int, error) {
 	cmd := exec.Command(
 		"bash", "-c",
-		fmt.Sprintf("expr $(ls -l /sys/class/gpio/gpiochip* | grep $(gpiodetect | grep $(gpiofind \"%s\" | grep -o -E \"gpiochip[0-9]+\") | grep -o -E \"[0-9]+\\.gpio\") | grep -o -E \"[0-9]+$\") + $(gpiofind \"%s\" | grep -o -E \"[0-9]+$\")", alias, alias))
+		fmt.Sprintf("expr $(ls -l /sys/class/gpio/gpiochip* | grep $(gpiodetect | grep $(gpiofind \"%[1]s\" | grep -o -E \"gpiochip[0-9]+\") | grep -o -E \"[0-9]+\\.gpio\") | grep -o -E \"[0-9]+$\") + $(gpiofind \"%[1]s\" | grep -o -E \"[0-9]+$\")", alias))
 	stdout, err := cmd.Output()
 	if err != nil {
 		return 0, fmt.Errorf("unable to grep gpio number for %s: %w", alias, err)
