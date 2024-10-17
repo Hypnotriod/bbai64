@@ -206,6 +206,7 @@ func (p *Pin) SetEdge(edge Edge) error {
 }
 
 func (p *Pin) Unexport() error {
+	p.f.Close()
 	value := fmt.Sprintf("%d", p.number)
 	return os.WriteFile("/sys/class/gpio/unexport", []byte(value), 0666)
 }
