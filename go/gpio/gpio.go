@@ -1,5 +1,26 @@
 package gpio
 
+/*
+#ifndef GPIO_HELPER_H_
+#define GPIO_HELPER_H_
+
+#cgo CFLAGS: -std=c99
+#cgo CXXFLAGS: -std=c99
+
+#include <poll.h>
+
+void GpioPoll(int fd)
+{
+	struct pollfd pfd;
+	pfd.fd = fd;
+	pfd.events = POLLPRI | POLLERR;
+	pfd.revents = 0;
+	poll(&pfd, 1, -1);
+}
+
+#endif // GPIO_HELPER_H_
+*/
+import "C"
 import (
 	"fmt"
 	"os"
@@ -130,6 +151,14 @@ func (p *Pin) Number() Number {
 
 func (p *Pin) Alias() Alias {
 	return p.alias
+}
+
+func (p *Pin) Poll() (Value, error) {
+	if _, err := p.Value(); err != nil {
+		return LOW, err
+	}
+	C.GpioPoll(C.int(p.f.Fd()))
+	return p.Value()
 }
 
 func (p *Pin) Value() (Value, error) {
