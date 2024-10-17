@@ -42,17 +42,17 @@ func main() {
 	ledStateIndx := 0
 
 	fmt.Println("Start blinking.")
-stop_blinking:
+blinking:
 	for {
 		led.SetValue(ledStates[ledStateIndx])
 		ledStateIndx = (ledStateIndx + 1) % len(ledStates)
 		select {
 		case <-buttonChan:
 			fmt.Println("Button was pressed.")
-			break stop_blinking
+			break blinking
 		case <-terminateChan:
 			fmt.Println("Program was terminated.")
-			break stop_blinking
+			break blinking
 		case <-time.After(time.Second):
 		}
 	}
