@@ -20,6 +20,8 @@ Checkout [arm64 overlays list](https://git.beagleboard.org/beagleboard/BeagleBoa
 * [PWM](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#PWM)
 * [SPI](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#SPI)
 * [UART](https://elinux.org/Beagleboard:BeagleBone_cape_interface_spec#UART)
+* [GPIO](
+https://github.com/Hypnotriod/bbai64/blob/master/GPIO.md)
 
 # Docs
 [edgeai_dataflows](https://software-dl.ti.com/jacinto7/esd/processor-sdk-linux-edgeai/TDA4VM/08_06_01/exports/docs/common/edgeai_dataflows.html)  
