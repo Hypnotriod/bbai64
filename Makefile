@@ -1,3 +1,4 @@
+PYTHON=python3
 
 build-gpio-blink:
 	cd go/ && go build -o ../bin/gpio-blink cmd/gpio_blink/main.go
@@ -48,7 +49,7 @@ run-image-classification-tflite:
 	cd bin && sudo ./image-classification-tflite
 
 train-image-classification:
-	cd python/image_classification && python3 train.py
+	cd python/image_classification && ${PYTHON} train.py
 
 compile-image-classification:
 	export SOC=am68pa && \
@@ -56,7 +57,7 @@ compile-image-classification:
 	export TIDL_TOOLS_PATH=${TIDL_TOOLS_PATH}
 	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${TIDL_TOOLS_PATH} && \
 	cd python/osrt_tfl && \
-	python3 compile.py -c classification_config.json
+	${PYTHON} compile.py -c classification_config.json
 
 build-object-detection-tflite:
 	cd go/ && go build -o ../bin/object-detection-tflite cmd/object_detection_tflite/main.go && rsync -cr model/ ../bin/model/ && rsync -cr public/ ../bin/public/
@@ -65,7 +66,7 @@ run-object-detection-tflite:
 	cd bin && sudo ./object-detection-tflite
 
 train-object-detection:
-	cd python/object_detection && python3 train.py --python=python3
+	cd python/object_detection && ${PYTHON} train.py --python=${PYTHON}
 
 tensorboard-object-detection:
 	cd python/object_detection && tensorboard --logdir training
@@ -76,7 +77,7 @@ compile-object-detection:
 	export TIDL_TOOLS_PATH=${TIDL_TOOLS_PATH}
 	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${TIDL_TOOLS_PATH} && \
 	cd python/osrt_tfl && \
-	python3 compile.py -c object_detection_config.json
+	${PYTHON} compile.py -c object_detection_config.json
 
 build-semantic-segmentation-tflite:
 	cd go/ && go build -o ../bin/semantic-segmentation-tflite cmd/semantic_segmentation_tflite/main.go && rsync -cr model/ ../bin/model/ && rsync -cr public/ ../bin/public/
