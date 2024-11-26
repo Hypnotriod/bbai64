@@ -20,3 +20,12 @@ func TestBuildAnalyticsPipeline(t *testing.T) {
 				MjpegTcpStreamLocalhost("boundary", 9999),
 		))
 }
+
+func TestBuildUsbMjpegStream(t *testing.T) {
+	fmt.Println(GStreamerLaunch() +
+		UsbJpegCameraV4l2Source(0) +
+		UsbJpegCameraConfig(1280, 720) +
+		JpegDecode() +
+		JpegEncode(50) +
+		MjpegTcpStreamLocalhost("boundary", 9990))
+}
