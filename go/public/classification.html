@@ -70,8 +70,9 @@
 
         const labels = document.getElementById("labels");
 
+        let webSocket = null;
         let snapshotCounter = 0;
-        var predictions = [
+        let predictions = [
             {
                 label: "label1",
                 class: 0,
