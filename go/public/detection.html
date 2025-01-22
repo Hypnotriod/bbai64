@@ -78,6 +78,7 @@
             + `//${window.location.hostname}:${window.location.port}/ws`;
 
         const boxes = [];
+        let webSocket = null;
         let snapshotCounter = 0;
         let detections = [
             {
