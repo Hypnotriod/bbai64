@@ -1,9 +1,6 @@
 package gpio
 
 /*
-#ifndef GPIO_HELPER_H_
-#define GPIO_HELPER_H_
-
 #cgo CFLAGS: -std=c99
 #cgo CXXFLAGS: -std=c99
 
@@ -17,8 +14,6 @@ void GpioPoll(int fd)
 	pfd.revents = 0;
 	poll(&pfd, 1, -1);
 }
-
-#endif // GPIO_HELPER_H_
 */
 import "C"
 import (
