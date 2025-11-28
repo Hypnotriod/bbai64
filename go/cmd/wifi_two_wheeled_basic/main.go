@@ -25,6 +25,7 @@ const MJPEG_STREAM_CHUNKS_BUFFER_LENGTH = 1024
 const MJPEG_STREAM_CHUNK_SIZE = 4096
 const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
+const USE_IMX219_CSI_CAMERA = true
 const CAMERA_WIDTH = 1920
 const CAMERA_HEIGHT = 1080
 const RESCALE_WIDTH = 1280
@@ -181,8 +182,13 @@ func main() {
 	twowheeled.Initialize()
 	strmr := makeMjpegStreamer(":9990", "/mjpeg_stream")
 	defer strmr.Stop()
-	go gstpipeline.LauchImx219CsiCameraMjpegStream(
-		0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
+	if USE_IMX219_CSI_CAMERA {
+		go gstpipeline.LauchImx219CsiCameraMjpegStream(
+			0, CAMERA_WIDTH, CAMERA_HEIGHT, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
+	} else {
+		go gstpipeline.LauchUsbJpegCameraMjpegStream(
+			0, RESCALE_WIDTH, RESCALE_HEIGHT, JPEG_QUALITY, MJPEG_FRAME_BOUNDARY, 9990)
+	}
 
 	http.HandleFunc("/ws", serveVehicleControlWSRequest)
 	http.Handle("/", http.FileServer(http.Dir("./public")))
