@@ -26,6 +26,7 @@ const MJPEG_STREAM_CHUNK_SIZE = 4096
 const MJPEG_FRAME_BOUNDARY = "frameboundary"
 const CONNECTION_TIMEOUT = 1 * time.Second
 const USE_IMX219_CSI_CAMERA = true
+const USE_UPS_MODULE = true
 const CAMERA_WIDTH = 1920
 const CAMERA_HEIGHT = 1080
 const RESCALE_WIDTH = 1280
@@ -82,7 +83,9 @@ func serveVehicleControlWSRequest(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		twowheeled.UpdateWithState(vehicleState)
-		systemStatus.Battery = upsModule.Status()
+		if USE_UPS_MODULE {
+			systemStatus.Battery = upsModule.Status()
+		}
 		message, _ = json.Marshal(systemStatus)
 		err = conn.WriteMessage(websocket.TextMessage, message)
 		if err != nil {
@@ -175,9 +178,11 @@ func makeMjpegStreamer(inputAddr string, outputAddr string) *streamer.Streamer[C
 }
 
 func main() {
-	upsModule = ups.NewUpsModule3S(i2c.Bus1)
-	go upsModule.Run(time.Second)
-	defer upsModule.Stop()
+	if USE_UPS_MODULE {
+		upsModule = ups.NewUpsModule3S(i2c.Bus1)
+		go upsModule.Run(time.Second)
+		defer upsModule.Stop()
+	}
 
 	twowheeled.Initialize()
 	strmr := makeMjpegStreamer(":9990", "/mjpeg_stream")
